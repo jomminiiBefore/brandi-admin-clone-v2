@@ -1,0 +1,8 @@
+CREATE DATABASE brandi default CHARACTER SET UTF8;
+
+use brandi;
+
+CREATE TABLE seller(
+    id      INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name    VARCHAR(255) NOT NULL
+) CHARSET=utf8;
