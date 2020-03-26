@@ -332,8 +332,10 @@ tags
 
 # End of https://www.gitignore.io/api/vim,react,linux,macos,flask,python,pycharm
 
-# soheon
+# back-end
 config.py
+venv00/
+.idea/
 
 # front-end
 webpack.common.js
