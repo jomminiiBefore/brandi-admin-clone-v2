@@ -334,8 +334,3 @@ tags
 
 # soheon
 config.py
-
-# front-end
-webpack.common.js
-webpack.dev.js
-webpack.prod.js
