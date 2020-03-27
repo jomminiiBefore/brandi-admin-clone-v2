@@ -36,6 +36,9 @@ class SellerView:
                 2020-03-25 (leesh3@brandi.co.kr): 초기 생성
             """
             new_seller = request.json
-            new_seller = seller_service.create_new_seller(new_seller)
+            new_seller_result = seller_service.create_new_seller(new_seller)
+            print(new_seller)
+            print(new_seller_result)
 
-            return jsonify({'message': 'SUCCESS'}, 200)
+            return new_seller_result
+#            return jsonify({'message': 'SUCCESS'}, 200)

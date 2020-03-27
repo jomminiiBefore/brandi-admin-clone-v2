@@ -20,4 +20,4 @@ class SellerService:
 
         insert_new_seller = self.seller_dao.insert_seller(new_seller)
 
-        return insert_new_seller
+        return  insert_new_seller

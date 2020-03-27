@@ -1,4 +1,5 @@
-from flask import abort
+from flask import jsonify, abort
+from mysql.connector.errors import ProgrammingError
 
 
 class SellerDao:
@@ -7,11 +8,11 @@ class SellerDao:
     :authors:
         leesh3@brandi.co.kr (이소헌)
     :history:
-        2020-03-25 (leesh3@brandi.co.kr): 초기 생
+        2020-03-25 (leesh3@brandi.co.kr): 초기 생성
     """
 
     def __init__(self, database):
-        self.db_connection = database.get_connection()
+        self.db_connection = database
     
     def insert_seller(self, new_seller):
 
@@ -38,8 +39,17 @@ class SellerDao:
             """)
 
             db_cursor.execute(insert_statement, new_seller_data)
+            
             self.db_connection.commit()
-            db_cursor.close()
 
-        except TypeError:
-            abort(400, description='INVALID_VALUE')
+            return jsonify({'message': 'SUCCESS'}), 200 
+
+        except KeyError:
+            return jsonify({'message': 'INVALID_KEY'}), 400
+        except ProgrammingError:
+            return jsonify({'message': 'PRGRAMMING_ERROR'}), 400
+        except AttributeError:
+            self.db_connection.rollback()
+            return jsonify({'message': 'ATTRIBUTE_ERROR'}), 400
+        finally:
+            db_cursor.close()
