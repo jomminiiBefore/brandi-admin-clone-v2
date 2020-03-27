@@ -1,8 +1,7 @@
+import mysql.connector
+
 from flask import Flask
 from flask_cors import CORS
-
-import mysql.connector
-import mysql.connector.pooling
 
 from config import DATABASES
 from seller.model import SellerDao
@@ -12,7 +11,6 @@ from seller.view import SellerView
 
 class Services:
     pass
-
 
 def get_db_config():
     """
@@ -31,13 +29,15 @@ def get_db_config():
 
 def create_app():
     app = Flask(__name__)
+    app.config["DEBUG"] = True
+
     db_config = get_db_config()
-    connection_pool = mysql.connector.pooling.MySQLConnectionPool(pool_name='POOL', pool_size=5, **db_config)
+    db_connection = mysql.connector.connect(**db_config)
 
     CORS(app)
 
     # Model
-    seller_dao = SellerDao(connection_pool)
+    seller_dao = SellerDao(db_connection)
 
     # Service
     services = Services
