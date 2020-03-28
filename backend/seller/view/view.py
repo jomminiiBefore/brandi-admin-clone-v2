@@ -3,6 +3,10 @@ from flask.json import JSONEncoder
 
 
 class CustomJSONEncoder(JSONEncoder):
+
+    """
+    set 자료형을 list 자료형으로 변환하여 JSONEencoding을 가능하게 함.
+    """
     def default(self, obj):
         if isinstance(obj, set):
             return list(obj)
@@ -11,6 +15,10 @@ class CustomJSONEncoder(JSONEncoder):
 
 
 class SellerView:
+
+    """
+    셀러 뷰
+    """
     def create_endpoints(app, services):
 
         app.json_encoder = CustomJSONEncoder
@@ -19,11 +27,11 @@ class SellerView:
         @app.route("/seller", methods=['POST'])
         def sign_up():
 
-            """신규 셀러 회원가입
+            """ 신규 셀러 회원가입 엔드포인드
 
             입력된 인자가 신규 셀러로 가입됩니다.
 
-            :return:
+            Returns: http 응답코드
                 200: 신규 셀러 계정 저장 완료
                 400: key error
                 500: server error
@@ -42,9 +50,9 @@ class SellerView:
         @app.route('/seller', methods=['GET'])
         def get_all_sellers():
 
-            """가입된 모든 셀러 표출
+            """ 가입된 모든 셀러 표출
 
-            :return:
+            Return:
                 200: 가입된 모든 셀러 및 셀러 세부 정보 표출
 
             Authors:
