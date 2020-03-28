@@ -1,23 +1,21 @@
 from flask import request, jsonify
 from flask.json import JSONEncoder
 
-
-class CustomJSONEncoder(JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, set):
-            return list(obj)
-
-        return JSONEncoder.default(self, obj)
-
-
+       
 class SellerView:
     def create_endpoints(app, services):
-
-        app.json_encoder = CustomJSONEncoder
+        #app.json_encoder = CustomJSONEncoder
         seller_service = services.seller_service
 
+
+        @app.errorhandler(400)
+        def http_400_bad_request(self, KeyError): 
+            response = jsonify({'message' : KeyError.description})
+            return response
+
+
         @app.route("/ping", methods=['GET'])
-        def ping():
+        def ping(self):
             return "pong"
 
         @app.route("/seller", methods=['POST'])
@@ -37,8 +35,9 @@ class SellerView:
             """
             new_seller = request.json
             new_seller_result = seller_service.create_new_seller(new_seller)
-            print(new_seller)
-            print(new_seller_result)
-
             return new_seller_result
-#            return jsonify({'message': 'SUCCESS'}, 200)
+        
+        @app.route('/seller', methods=['GET'])
+        def get_all_sellers():
+            data = seller_service.get_all_sellers()
+            return data
