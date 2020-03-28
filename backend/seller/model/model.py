@@ -1,10 +1,8 @@
-import mysql.connector
-
 from flask import jsonify
-from mysql.connector.errors import ProgrammingError
 
 
 class SellerDao:
+
     """ 셀러 모델
 
     :authors:
@@ -12,31 +10,34 @@ class SellerDao:
     :history:
         2020-03-25 (leesh3@brandi.co.kr): 초기 생성
     """
-
     def __init__(self, db_connection):
         self.db_connection = db_connection
 
     def insert_seller(self, new_seller):
 
-        """ 신규 셀러 계정 INSERT INTO DB성
+        """ 신규 셀러 계정 INSERT INTO DB
 
         :param new_seller: 신규 가입 셀러
-        :return:
-            신규 셀러 생성
-        :authors:
+        :type new_seller: dictionary
+        :param antoehr: 추가 파라미터 있는 경우
+
+        :returns:
+            200: 신규 셀러 계정 저장 완료
+            400: key error
+            500: server error
+
+        Authors:
             leesh3@brandi.co.kr (이소헌)
-        :history:
+        History:
             2020-03-25 (leesh3@brandi.co.kr): 초기 생성
         """
-
-        # with self.db_connection.cursor(buffered=True, dictionary=True) as db_cursor:
         db_cursor = self.db_connection.cursor(buffered=True, dictionary=True)
         try:
             new_seller_info_data = {
                 'name_kr': new_seller['name_kr'],
                 'name_en': new_seller['name_en'],
                 'site_url': new_seller['site_url'],
-                'center_number': new_seller['center_number'],
+                'center_number': new_seller['center_number']
             }
 
             new_manager_info_data = {
@@ -52,7 +53,7 @@ class SellerDao:
             # seller_infos 테이블 INSERT INTO
             insert_seller_info_statement = ("""
                 INSERT INTO seller_infos (name_kr, name_en, site_url, center_number)
-                VALUES (%(name_kr, name_en, site_url, center_number)s)
+                VALUES (%(name_kr)s, %(name_en)s, %(site_url)s, %(center_number)s)
             """)
 
             db_cursor.execute(insert_seller_info_statement, new_seller_info_data)
@@ -62,7 +63,7 @@ class SellerDao:
             # manager_infos 테이블 INSERT INTO
             insert_manager_info_statement = ("""
                 INSERT INTO manager_infos (contact_number, is_deleted, seller_id)
-                VALUES (%(contact_number, is_deleted, seller_id)s)
+                VALUES (%(contact_number)s, %(is_deleted)s, %(seller_id)s)
             """)
 
             db_cursor.execute(insert_manager_info_statement, new_manager_info_data)
@@ -74,27 +75,30 @@ class SellerDao:
             print(f'KEY_ERROR WITH {e}')
             self.db_connection.rollback()
             return jsonify({'message': 'INVALID_KEY'}), 400
-        
-        except ProgrammingError:
-            self.db_connection.rollback()
-            return jsonify({'message': 'PROGRAMMING_ERROR'}), 400
-        
-        except AttributeError:
-            self.db_connection.rollback()
-            return jsonify({'message': 'ATTRIBUTE_ERROR'}), 400
-        
+
         finally:
             db_cursor.close()
+            self.db_connection.close()
     
     def select_seller_info(self):
+
+        """가입된 모든 셀러 표출
+        :return:
+            200: 가입된 모든 셀러 및 셀러 세부 정보 표출
+
+        Authors:
+            yoonhc@brandi.co.kr (윤희철)
+        History:
+            2020-03-27 (yoonhc@brandi.co.kr): 초기 생성
+        """
         db_cursor = self.db_connection.cursor(buffered=True, dictionary=True)
         try:
             seler_info = ("""
-                    SELECT * FROM sellers
+                    SELECT * FROM seller_infos
             """)
             db_cursor.execute(seler_info)
             result = db_cursor.fetchmany(size=3)
-            return jsonify({'result' : result}), 200
+            return jsonify({'sellers': result}), 200
         
-        except :
+        except:
             pass
