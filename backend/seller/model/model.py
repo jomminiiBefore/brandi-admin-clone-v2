@@ -1,5 +1,6 @@
 import mysql.connector
-from flask import jsonify, abort
+
+from flask import jsonify
 from mysql.connector.errors import ProgrammingError
 
 
@@ -28,29 +29,55 @@ class SellerDao:
             2020-03-25 (leesh3@brandi.co.kr): 초기 생성
         """
 
-        db_cursor = self.db_connection.cursor(buffered = True, dictionary = True)
+        # with self.db_connection.cursor(buffered=True, dictionary=True) as db_cursor:
+        db_cursor = self.db_connection.cursor(buffered=True, dictionary=True)
         try:
-            new_seller_data = {
-                'name': new_seller['name']
+            new_seller_info_data = {
+                'name_kr': new_seller['name_kr'],
+                'name_en': new_seller['name_en'],
+                'site_url': new_seller['site_url'],
+                'center_number': new_seller['center_number'],
             }
 
-            insert_statement = ("""
-                INSERT INTO sellers(name)
-                VALUES (%(name)s)
+            new_manager_info_data = {
+                'contact_number': new_seller['contact_number'],
+                'is_deleted': new_seller['is_deleted']
+            }
+
+            # 트랜잭션 시작
+            db_cursor.execute("START TRANSACTION")
+            # 자동 커밋 비활성화
+            db_cursor.execute("SET AUTOCOMMIT=0")
+
+            # seller_infos 테이블 INSERT INTO
+            insert_seller_info_statement = ("""
+                INSERT INTO seller_infos (name_kr, name_en, site_url, center_number)
+                VALUES (%(name_kr, name_en, site_url, center_number)s)
             """)
 
-            db_cursor.execute(insert_statement, new_seller_data)
-            
-            self.db_connection.commit()
-            db_cursor.close()
-            return jsonify({'message' : 'success'}), 200
+            db_cursor.execute(insert_seller_info_statement, new_seller_info_data)
 
-        
-        except KeyError:
+            new_manager_info_data['seller_id'] = db_cursor.lastrowid
+
+            # manager_infos 테이블 INSERT INTO
+            insert_manager_info_statement = ("""
+                INSERT INTO manager_infos (contact_number, is_deleted, seller_id)
+                VALUES (%(contact_number, is_deleted, seller_id)s)
+            """)
+
+            db_cursor.execute(insert_manager_info_statement, new_manager_info_data)
+
+            self.db_connection.commit()
+            return jsonify({'message' : 'SUCCESS'}), 200
+
+        except KeyError as e:
+            print(f'KEY_ERROR WITH {e}')
+            self.db_connection.rollback()
             return jsonify({'message': 'INVALID_KEY'}), 400
         
         except ProgrammingError:
-            return jsonify({'message': 'PRGRAMMING_ERROR'}), 400
+            self.db_connection.rollback()
+            return jsonify({'message': 'PROGRAMMING_ERROR'}), 400
         
         except AttributeError:
             self.db_connection.rollback()
@@ -71,8 +98,3 @@ class SellerDao:
         
         except :
             pass
-
-
-
-
-            

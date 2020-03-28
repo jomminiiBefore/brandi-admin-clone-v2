@@ -35,6 +35,7 @@ class SellerView:
             """
             new_seller = request.json
             new_seller_result = seller_service.create_new_seller(new_seller)
+
             return new_seller_result
         
         @app.route('/seller', methods=['GET'])

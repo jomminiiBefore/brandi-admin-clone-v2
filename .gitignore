@@ -335,6 +335,9 @@ tags
 # back-end
 config.py
 .idea/
+venv00/
+*.sql
+*.sh
 
 # front-end
 webpack.common.js
