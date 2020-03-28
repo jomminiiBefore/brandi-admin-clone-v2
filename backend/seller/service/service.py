@@ -20,4 +20,9 @@ class SellerService:
 
         insert_new_seller = self.seller_dao.insert_seller(new_seller)
 
-        return  insert_new_seller
+        return insert_new_seller
+
+    def get_all_sellers(self):
+        get_all_sellers = self.seller_dao.select_seller_info()
+        return get_all_sellers
+

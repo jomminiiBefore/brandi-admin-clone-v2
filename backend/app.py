@@ -4,9 +4,10 @@ from flask import Flask
 from flask_cors import CORS
 
 from config import DATABASES
-from seller.model import SellerDao
-from seller.service import SellerService
-from seller.view import SellerView
+from seller.model.model import SellerDao
+from seller.service.service import SellerService
+from seller.view.view import SellerView
+
 
 
 class Services:
@@ -29,11 +30,9 @@ def get_db_config():
 
 def create_app():
     app = Flask(__name__)
-    app.config["DEBUG"] = True
-
+    app.config['DEBUG'] = True
     db_config = get_db_config()
     db_connection = mysql.connector.connect(**db_config)
-
     CORS(app)
 
     # Model
