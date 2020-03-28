@@ -9,7 +9,6 @@ from seller.service.service import SellerService
 from seller.view.view import SellerView
 
 
-
 class Services:
     pass
 
