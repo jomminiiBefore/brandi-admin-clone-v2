@@ -5,9 +5,9 @@ class SellerDao:
 
     """ 셀러 모델
 
-    :authors:
+    Authors:
         leesh3@brandi.co.kr (이소헌)
-    :history:
+    History:
         2020-03-25 (leesh3@brandi.co.kr): 초기 생성
     """
     def __init__(self, db_connection):
@@ -17,17 +17,20 @@ class SellerDao:
 
         """ 신규 셀러 계정 INSERT INTO DB
 
-        :param new_seller: 신규 가입 셀러
-        :type new_seller: dictionary
-        :param antoehr: 추가 파라미터 있는 경우
+        입력된 인자가 새로운 셀러로 가입됩니다.
 
-        :returns:
+        Args:
+            new_seller(dictionary): 신규 가입 셀러
+            others(param type):description
+
+        Returns: http 응답코드
             200: 신규 셀러 계정 저장 완료
             400: key error
             500: server error
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
+
         History:
             2020-03-25 (leesh3@brandi.co.kr): 초기 생성
         """
@@ -82,12 +85,14 @@ class SellerDao:
     
     def select_seller_info(self):
 
-        """가입된 모든 셀러 표출
-        :return:
-            200: 가입된 모든 셀러 및 셀러 세부 정보 표출
+        """ 가입된 모든 셀러 표출
+
+        Returns:
+            200: 가입된 모든 셀러 세부 정보
 
         Authors:
             yoonhc@brandi.co.kr (윤희철)
+
         History:
             2020-03-27 (yoonhc@brandi.co.kr): 초기 생성
         """
