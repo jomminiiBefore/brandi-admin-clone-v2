@@ -12,7 +12,9 @@ from seller.view.view import SellerView
 class Services:
     pass
 
+
 def get_db_config():
+
     """
     데이터 베이스 정보
     """
