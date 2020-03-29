@@ -1,3 +1,5 @@
+from flask import request
+
 class SellerService:
 
     """
@@ -6,7 +8,7 @@ class SellerService:
     def __init__(self, seller_dao):
         self.seller_dao = seller_dao
 
-    def create_new_seller(self, new_seller):
+    def create_new_seller(self, request):
 
         """ 신규 셀러 회원가입
 
@@ -27,11 +29,12 @@ class SellerService:
         History:
             2020-03-25 (leesh3@brandi.co.kr): 초기 생성
         """
-        insert_new_seller = self.seller_dao.insert_seller(new_seller)
+        new_seller = request.json
+        new_seller_result = self.seller_dao.insert_seller(new_seller)
 
-        return insert_new_seller
+        return new_seller_result 
 
-    def get_all_sellers(self):
+    def get_all_sellers(self, request):
 
         """ 가입된 모든 셀러 표출
 
