@@ -18,6 +18,8 @@ class SellerDao:
         """ 신규 셀러 계정 INSERT INTO DB
 
         입력된 인자가 새로운 셀러로 가입됩니다.
+        가입된 셀러의 매니저 인포도 동시에 저장됩니다.
+        셀러 인포와 매니저 인포가 모두 정상 저장되어야만 계정 저장이 완료됩니다.
 
         Args:
             new_seller(dictionary): 신규 가입 셀러
@@ -55,9 +57,17 @@ class SellerDao:
 
             # seller_infos 테이블 INSERT INTO
             insert_seller_info_statement = ("""
-                INSERT INTO seller_infos (name_kr, name_en, site_url, center_number)
-                VALUES (%(name_kr)s, %(name_en)s, %(site_url)s, %(center_number)s)
-            """)
+                INSERT INTO seller_infos (
+                name_kr,
+                name_en,
+                site_url,
+                center_number
+            ) VALUES (
+                %(name_kr)s,
+                %(name_en)s,
+                %(site_url)s,
+                %(center_number)s
+            )""")
 
             db_cursor.execute(insert_seller_info_statement, new_seller_info_data)
 
@@ -65,9 +75,15 @@ class SellerDao:
 
             # manager_infos 테이블 INSERT INTO
             insert_manager_info_statement = ("""
-                INSERT INTO manager_infos (contact_number, is_deleted, seller_id)
-                VALUES (%(contact_number)s, %(is_deleted)s, %(seller_id)s)
-            """)
+                INSERT INTO manager_infos (
+                contact_number,
+                is_deleted,
+                seller_id
+            ) VALUES (
+                %(contact_number)s,
+                %(is_deleted)s,
+                %(seller_id)s
+            )""")
 
             db_cursor.execute(insert_manager_info_statement, new_manager_info_data)
 

@@ -42,8 +42,7 @@ class SellerView:
             History:
                 2020-03-25 (leesh3@brandi.co.kr): 초기 생성
             """
-            new_seller = request.json
-            new_seller_result = seller_service.create_new_seller(new_seller)
+            new_seller_result = seller_service.create_new_seller(request)
 
             return new_seller_result
         
@@ -61,5 +60,5 @@ class SellerView:
             History:
                 2020-03-27 (yoonhc@brandi.co.kr): 초기 생성
             """
-            sellers = seller_service.get_all_sellers()
+            sellers = seller_service.get_all_sellers(request)
             return sellers
