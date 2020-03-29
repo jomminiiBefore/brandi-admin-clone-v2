@@ -44,25 +44,28 @@ class SellerDao:
                 'is_deleted': new_seller['is_deleted']
             }
 
+
             # 트랜잭션 시작
             db_cursor.execute("START TRANSACTION")
             # 자동 커밋 비활성화
             db_cursor.execute("SET AUTOCOMMIT=0")
 
+
             # seller_infos 테이블 INSERT INTO
             insert_seller_info_statement = ("""
                 INSERT INTO seller_infos (name_kr, name_en, site_url, center_number)
-                VALUES (%(name_kr, name_en, site_url, center_number)s)
+                VALUES (%(name_kr)s, %(name_en)s, %(site_url)s, %(center_number)s)
             """)
 
             db_cursor.execute(insert_seller_info_statement, new_seller_info_data)
 
             new_manager_info_data['seller_id'] = db_cursor.lastrowid
-
+            print(db_cursor.lastrowid)
+            print(new_manager_info_data)
             # manager_infos 테이블 INSERT INTO
             insert_manager_info_statement = ("""
                 INSERT INTO manager_infos (contact_number, is_deleted, seller_id)
-                VALUES (%(contact_number, is_deleted, seller_id)s)
+                VALUES (%(contact_number)s, %(is_deleted)s, %(seller_id)s)
             """)
 
             db_cursor.execute(insert_manager_info_statement, new_manager_info_data)
