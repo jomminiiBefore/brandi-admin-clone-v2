@@ -1,17 +1,4 @@
 from flask import request
-from flask.json import JSONEncoder
-
-
-class CustomJSONEncoder(JSONEncoder):
-
-    """
-    set 자료형을 list 자료형으로 변환하여 JSONEencoding을 가능하게 함.
-    """
-    def default(self, obj):
-        if isinstance(obj, set):
-            return list(obj)
-
-        return JSONEncoder.default(self, obj)
 
 
 class SellerView:
@@ -21,7 +8,6 @@ class SellerView:
     """
     def create_endpoints(app, services):
 
-        app.json_encoder = CustomJSONEncoder
         seller_service = services.seller_service
 
         @app.route("/seller", methods=['POST'])

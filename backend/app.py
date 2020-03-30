@@ -2,11 +2,24 @@ import mysql.connector
 
 from flask import Flask
 from flask_cors import CORS
+from flask.json import JSONEncoder
 
 from config import DATABASES
-from seller.model.model import SellerDao
-from seller.service.service import SellerService
-from seller.view.view import SellerView
+from seller.model.seller_dao import SellerDao
+from seller.service.seller_service import SellerService
+from seller.view.seller_view import SellerView
+
+
+class CustomJSONEncoder(JSONEncoder):
+
+    """
+    set 자료형을 list 자료형으로 변환하여 JSONEencoding을 가능하게 함.
+    """
+    def default(self, obj):
+        if isinstance(obj, set):
+            return list(obj)
+
+        return JSONEncoder.default(self, obj)
 
 
 class Services:
@@ -32,6 +45,8 @@ def get_db_config():
 def create_app():
     app = Flask(__name__)
     app.config['DEBUG'] = True
+    app.json_encoder = CustomJSONEncoder
+
     db_config = get_db_config()
     db_connection = mysql.connector.connect(**db_config)
     CORS(app)
