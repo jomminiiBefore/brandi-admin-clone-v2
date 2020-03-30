@@ -8,7 +8,7 @@ class SellerService:
     def __init__(self, seller_dao):
         self.seller_dao = seller_dao
 
-    def create_new_seller(self, request):
+    def create_new_seller(self, request, db_connection):
 
         """ 신규 셀러 회원가입
 
@@ -30,11 +30,11 @@ class SellerService:
             2020-03-25 (leesh3@brandi.co.kr): 초기 생성
         """
         new_seller = request.json
-        new_seller_result = self.seller_dao.insert_seller(new_seller)
+        new_seller_result = self.seller_dao.insert_seller(new_seller, db_connection)
 
         return new_seller_result 
 
-    def get_all_sellers(self, request):
+    def get_all_sellers(self, request, db_connection):
 
         """ 가입된 모든 셀러 표출
 
@@ -49,6 +49,6 @@ class SellerService:
         History:
             2020-03-27 (yoonhc@brandi.co.kr): 초기 생성
         """
-        get_all_sellers = self.seller_dao.select_seller_info()
+        get_all_sellers = self.seller_dao.select_seller_info(db_connection)
         return get_all_sellers
 

@@ -1,10 +1,9 @@
-import mysql.connector
-
 from flask import Flask
+
 from flask_cors import CORS
 from flask.json import JSONEncoder
 
-from config import DATABASES
+from config import S3_CONFIG
 from seller.model.seller_dao import SellerDao
 from seller.service.seller_service import SellerService
 from seller.view.seller_view import SellerView
@@ -26,33 +25,24 @@ class Services:
     pass
 
 
-def get_db_config():
+def make_config(app):
+    app.config['AWS_ACCESS_KEY_ID'] = S3_CONFIG['AWS_ACCESS_KEY_ID']
+    app.config['AWS_SECRET_ACCESS_KEY'] = S3_CONFIG['AWS_SECRET_ACCESS_KEY']
+    app.config['S3_BUCKET_NAME'] = S3_CONFIG['S3_BUCKET_NAME']
+    app.config['DEBUG'] = True
+    return
 
-    """
-    데이터 베이스 정보
-    """
-    db_config = {
-        'database': DATABASES['database'],
-        'user': DATABASES['user'],
-        'password': DATABASES['password'],
-        'host': DATABASES['host'],
-        'port': DATABASES['port'],
-    }
 
-    return db_config
 
 
 def create_app():
     app = Flask(__name__)
-    app.config['DEBUG'] = True
     app.json_encoder = CustomJSONEncoder
-
-    db_config = get_db_config()
-    db_connection = mysql.connector.connect(**db_config)
+    make_config(app)
     CORS(app)
 
     # Model
-    seller_dao = SellerDao(db_connection)
+    seller_dao = SellerDao()
 
     # Service
     services = Services
@@ -61,4 +51,7 @@ def create_app():
     # Endpoint
     SellerView.create_endpoints(app, services)
 
+
     return app
+
+
