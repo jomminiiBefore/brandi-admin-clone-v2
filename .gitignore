@@ -338,6 +338,7 @@ config.py
 venv00/
 *.sql
 *.sh
+venv/
 
 # front-end
 webpack.common.js
