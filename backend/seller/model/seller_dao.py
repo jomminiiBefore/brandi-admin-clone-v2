@@ -1,5 +1,5 @@
 from flask import jsonify
-
+from datetime import datetime, timedelta
 
 class SellerDao:
 
@@ -89,7 +89,7 @@ class SellerDao:
             db_cursor.execute(insert_manager_info_statement, new_manager_info_data)
 
             db_connection.commit()
-            return jsonify({'message' : 'SUCCESS'}), 200
+            return jsonify({'message': 'SUCCESS'}), 200
 
         except KeyError as e:
             print(f'KEY_ERROR WITH {e}')
@@ -98,8 +98,6 @@ class SellerDao:
 
         finally:
             db_cursor.close()
-
-
 
     def select_seller_info(self, db_connection):
 
@@ -116,12 +114,18 @@ class SellerDao:
         """
         db_cursor = db_connection.cursor(dictionary=True)
         try:
-            seler_info = ("""
-                    SELECT * FROM events
+            seller_info = ("""
+                    SELECT * FROM seller_infos WHERE seller_info_no=1 
             """)
-            db_cursor.execute(seler_info)
-            result = db_cursor.fetchmany(size=3)
-            return jsonify({'sellers': result}), 200
-        
+            db_cursor.execute(seller_info)
+            sellers = db_cursor.fetchall()
+
+            for seller in sellers:
+                print(seller['weekday_end_time'].days)
+                # seller['weekday_end_time'] = seller['weekday_end_time'].days * 24 + seller['weekday_end_time'].hours
+
+            return jsonify(sellers), 200
+
         except:
             pass
+

@@ -9,6 +9,15 @@ class SellerService:
         self.seller_dao = seller_dao
 
     def create_new_seller(self, request, db_connection):
+        """
+
+        Args:
+            request:
+            db_connection:
+
+        Returns:
+
+        """
 
         """ 신규 셀러 회원가입
 
@@ -50,5 +59,9 @@ class SellerService:
             2020-03-27 (yoonhc@brandi.co.kr): 초기 생성
         """
         get_all_sellers = self.seller_dao.select_seller_info(db_connection)
+
+        # for seller in get_all_sellers:
+        #     if
+
         return get_all_sellers
 

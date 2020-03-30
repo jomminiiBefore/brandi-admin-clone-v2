@@ -1,3 +1,5 @@
+from datetime import timedelta, datetime
+
 from flask import Flask
 
 from flask_cors import CORS
@@ -12,11 +14,15 @@ from seller.view.seller_view import SellerView
 class CustomJSONEncoder(JSONEncoder):
 
     """
-    set 자료형을 list 자료형으로 변환하여 JSONEencoding을 가능하게 함.
+    set 자료형을 list 자료형으로 변환하여 JSONEncoding을 가능하게 함.
     """
     def default(self, obj):
+
         if isinstance(obj, set):
             return list(obj)
+
+        if isinstance(obj, timedelta):
+            return str(obj)
 
         return JSONEncoder.default(self, obj)
 
@@ -31,8 +37,6 @@ def make_config(app):
     app.config['S3_BUCKET_NAME'] = S3_CONFIG['S3_BUCKET_NAME']
     app.config['DEBUG'] = True
     return
-
-
 
 
 def create_app():
@@ -50,7 +54,6 @@ def create_app():
 
     # Endpoint
     SellerView.create_endpoints(app, services)
-
 
     return app
 
