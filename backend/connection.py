@@ -1,5 +1,7 @@
-from config import DATABASES
 import mysql.connector
+from mysql.connector.errors import InterfaceError, ProgrammingError, NotSupportedError
+
+from config import DATABASES
 
 
 # make database connection
@@ -24,6 +26,18 @@ def get_connection():
         'charset': DATABASES['charset'],
         'collation': DATABASES['collation'],
     }
-    db_connection = mysql.connector.connect(**db_config)
-    return db_connection
+    try:
+        db_connection = mysql.connector.connect(**db_config)
+        return db_connection
+
+    except InterfaceError as e:
+        print(f'INTERFACE_ERROR_WITH {e}')
+        return
+
+    except ProgrammingError as e:
+        print(f'PROGRAMMING_ERROR_WITH {e}')
+        return
+
+    except NotSupportedError as e:
+        print(f'NOT_SUPPORTED_ERROR_WITH {e}')
 
