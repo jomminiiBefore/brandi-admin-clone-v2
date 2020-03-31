@@ -1,6 +1,7 @@
 from flask import jsonify
 from datetime import datetime, timedelta
 
+
 class SellerDao:
 
     """ 셀러 모델
@@ -21,7 +22,7 @@ class SellerDao:
 
         Args:
             new_seller(dictionary): 신규 가입 셀러
-            others(param type):description
+            db_connection: 데이터베이스 커넥션 객체
 
         Returns: http 응답코드
             200: 신규 셀러 계정 저장 완료
@@ -72,8 +73,7 @@ class SellerDao:
             db_cursor.execute(insert_seller_info_statement, new_seller_info_data)
 
             new_manager_info_data['seller_id'] = db_cursor.lastrowid
-            print(db_cursor.lastrowid)
-            print(new_manager_info_data)
+
             # manager_infos 테이블 INSERT INTO
             insert_manager_info_statement = ("""
                 INSERT INTO manager_infos (
@@ -103,6 +103,9 @@ class SellerDao:
 
         """ 가입된 모든 셀러 표출
 
+        Args:
+            db_connection: 데이터베이스 커넥션 객체
+
         Returns:
             200: 가입된 모든 셀러 세부 정보
 
@@ -112,20 +115,18 @@ class SellerDao:
         History:
             2020-03-27 (yoonhc@brandi.co.kr): 초기 생성
         """
-        db_cursor = db_connection.cursor(dictionary=True)
         try:
+            db_cursor = db_connection.cursor(dictionary=True)
             seller_info = ("""
-                    SELECT * FROM seller_infos WHERE seller_info_no=1 
+                    SELECT * FROM seller_infos
             """)
             db_cursor.execute(seller_info)
             sellers = db_cursor.fetchall()
 
-            for seller in sellers:
-                print(seller['weekday_end_time'].days)
-                # seller['weekday_end_time'] = seller['weekday_end_time'].days * 24 + seller['weekday_end_time'].hours
-
-            return jsonify(sellers), 200
+            return jsonify({'sellers': sellers}), 200
 
         except:
             pass
+
+
 
