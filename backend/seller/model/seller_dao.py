@@ -1,6 +1,5 @@
 from flask import jsonify
-from datetime import datetime, timedelta
-
+from mysql.connector.errors import Error
 
 class SellerDao:
 
@@ -35,69 +34,72 @@ class SellerDao:
         History:
             2020-03-25 (leesh3@brandi.co.kr): 초기 생성
         """
-        db_cursor = db_connection.cursor(buffered=True, dictionary=True)
         try:
-            new_seller_info_data = {
-                'name_kr': new_seller['name_kr'],
-                'name_en': new_seller['name_en'],
-                'site_url': new_seller['site_url'],
-                'center_number': new_seller['center_number']
-            }
+            with db_connection.cursor(buffered=True, dictionary=True) as db_cursor:
 
-            new_manager_info_data = {
-                'contact_number': new_seller['contact_number'],
-                'is_deleted': new_seller['is_deleted']
-            }
+                new_seller_info_data = {
+                    'name_kr': new_seller['name_kr'],
+                    'name_en': new_seller['name_en'],
+                    'site_url': new_seller['site_url'],
+                    'center_number': new_seller['center_number']
+                }
 
-
-            # 트랜잭션 시작
-            db_cursor.execute("START TRANSACTION")
-            # 자동 커밋 비활성화
-            db_cursor.execute("SET AUTOCOMMIT=0")
+                new_manager_info_data = {
+                    'contact_number': new_seller['contact_number'],
+                    'is_deleted': new_seller['is_deleted']
+                }
 
 
-            # seller_infos 테이블 INSERT INTO
-            insert_seller_info_statement = ("""
-                INSERT INTO seller_infos (
-                name_kr,
-                name_en,
-                site_url,
-                center_number
-            ) VALUES (
-                %(name_kr)s,
-                %(name_en)s,
-                %(site_url)s,
-                %(center_number)s
-            )""")
+                # 트랜잭션 시작
+                db_cursor.execute("START TRANSACTION")
+                # 자동 커밋 비활성화
+                db_cursor.execute("SET AUTOCOMMIT=0")
 
-            db_cursor.execute(insert_seller_info_statement, new_seller_info_data)
 
-            new_manager_info_data['seller_id'] = db_cursor.lastrowid
+                # seller_infos 테이블 INSERT INTO
+                insert_seller_info_statement = ("""
+                    INSERT INTO seller_infos (
+                    name_kr,
+                    name_en,
+                    site_url,
+                    center_number
+                ) VALUES (
+                    %(name_kr)s,
+                    %(name_en)s,
+                    %(site_url)s,
+                    %(center_number)s
+                )""")
 
-            # manager_infos 테이블 INSERT INTO
-            insert_manager_info_statement = ("""
-                INSERT INTO manager_infos (
-                contact_number,
-                is_deleted,
-                seller_id
-            ) VALUES (
-                %(contact_number)s,
-                %(is_deleted)s,
-                %(seller_id)s
-            )""")
+                db_cursor.execute(insert_seller_info_statement, new_seller_info_data)
 
-            db_cursor.execute(insert_manager_info_statement, new_manager_info_data)
+                new_manager_info_data['seller_id'] = db_cursor.lastrowid
 
-            db_connection.commit()
-            return jsonify({'message': 'SUCCESS'}), 200
+                # manager_infos 테이블 INSERT INTO
+                insert_manager_info_statement = ("""
+                    INSERT INTO manager_infos (
+                    contact_number,
+                    is_deleted,
+                    seller_id
+                ) VALUES (
+                    %(contact_number)s,
+                    %(is_deleted)s,
+                    %(seller_id)s
+                )""")
+
+                db_cursor.execute(insert_manager_info_statement, new_manager_info_data)
+
+                db_connection.commit()
+                return jsonify({'message': 'SUCCESS'}), 200
 
         except KeyError as e:
-            print(f'KEY_ERROR WITH {e}')
+            print(f'KEY_ERROR_WITH {e}')
             db_connection.rollback()
             return jsonify({'message': 'INVALID_KEY'}), 400
 
-        finally:
-            db_cursor.close()
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'DB_CURSOR_ERROR'})
 
     def select_seller_info(self, db_connection):
 
