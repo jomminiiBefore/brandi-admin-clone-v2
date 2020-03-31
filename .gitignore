@@ -336,7 +336,6 @@ tags
 config.py
 .idea/
 venv00/
-*.sql
 *.sh
 venv/
 
