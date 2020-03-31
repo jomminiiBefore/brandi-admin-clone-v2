@@ -1,5 +1,5 @@
 drop database brandi;
-create database brandi character set utf8mb4 collate utf8mb4_0900_ai_ci;
+create database brandi character set utf8mb4 collate utf8mb4_general_ci;
 use brandi;
 
 -- authorization_types Table Create SQL
@@ -9,7 +9,7 @@ CREATE TABLE authorization_types
     `name`          VARCHAR(10)    NOT NULL    COMMENT '타입명', 
     `is_deleted`    TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (auth_type_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '권한 타입(마스터 or 셀러)' ;
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '권한 타입(마스터 or 셀러)' ;
 
 INSERT INTO authorization_types
 (
@@ -33,7 +33,7 @@ CREATE TABLE accounts
     `password`      VARCHAR(80)    NOT NULL    COMMENT '비밀번호', 
     `is_deleted`    TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (account_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '계정 정보';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '계정 정보';
 
 ALTER TABLE accounts
     ADD CONSTRAINT FK_auth_type_id FOREIGN KEY (auth_type_id)
@@ -57,7 +57,8 @@ INSERT INTO accounts
 ),(
 	3, -- account_no 
 	2, -- auth_type_id 
-	'seller_shopping', '$2b$12$iJN2OxkW69HHb6cVLeRjPuAQoGYKIZY.nlCbwJVRzrWGUrvmJRypi'
+	'seller_shopping',
+	'$2b$12$iJN2OxkW69HHb6cVLeRjPuAQoGYKIZY.nlCbwJVRzrWGUrvmJRypi'
 ),(
 	4, -- account_no 
 	2, -- auth_type_id
@@ -98,7 +99,7 @@ CREATE TABLE product_sorts
     `name`             VARCHAR(10)    NOT NULL    UNIQUE COMMENT '분류명', 
     `is_deleted`       TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (product_sort_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '상품 분류(트렌드, 브랜드, 뷰티)';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '상품 분류(트렌드, 브랜드, 뷰티)';
 
 INSERT INTO product_sorts
 (
@@ -124,7 +125,7 @@ CREATE TABLE seller_accounts
     `created_at`         DATETIME    NOT NULL    DEFAULT CURRENT_TIMESTAMP COMMENT '최초 등록일시', 
     `is_deleted`         TINYINT     NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (seller_account_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '셀러 계정';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '셀러 계정';
 
 ALTER TABLE seller_accounts
     ADD CONSTRAINT FK_account_id FOREIGN KEY (account_id)
@@ -172,7 +173,7 @@ CREATE TABLE seller_types
     `name`             VARCHAR(45)    NOT NULL    UNIQUE COMMENT '셀러 속성명', 
     `is_deleted`       TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (seller_type_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '셀러 속성(쇼핑몰, 마켓, 로드샵, 디자이너브랜드 ...)';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '셀러 속성(쇼핑몰, 마켓, 로드샵, 디자이너브랜드 ...)';
 
 ALTER TABLE seller_types
     ADD CONSTRAINT FK_product_sort_id FOREIGN KEY (product_sort_id)
@@ -221,7 +222,7 @@ CREATE TABLE seller_statuses
     `name`        VARCHAR(45)    NOT NULL    UNIQUE COMMENT '셀러 상태명', 
     `is_deleted`  TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (status_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '셀러 상태(입점, 입점대기, 퇴점, 퇴점대기, 휴점)';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '셀러 상태(입점, 입점대기, 퇴점, 퇴점대기, 휴점)';
 
 INSERT INTO seller_statuses
 (
@@ -252,7 +253,7 @@ CREATE TABLE brandi_app_users
     `app_id`       VARCHAR(45)    NOT NULL    UNIQUE COMMENT '브랜디 앱 아이디', 
     `is_deleted`   TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (app_user_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '브랜디 앱 유저';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '브랜디 앱 유저';
 
 INSERT INTO brandi_app_users
 (
@@ -317,7 +318,7 @@ CREATE TABLE seller_infos
     `close_time`                 DATETIME         NOT NULL    DEFAULT '2037-12-31 23:59:59' COMMENT '종료일시', 
     `is_deleted`                 TINYINT          NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (seller_info_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '셀러 수정페이지 전체 / 셀러 정보 수정할때마다 새로운 row로 생성(변경이력 관리 용)';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '셀러 수정페이지 전체 / 셀러 정보 수정할때마다 새로운 row로 생성(변경이력 관리 용)';
 
 ALTER TABLE seller_infos
     ADD CONSTRAINT FK_seller_type_id FOREIGN KEY (seller_type_id)
@@ -401,9 +402,9 @@ INSERT INTO seller_infos
     '서울시 강남구 역삼동', -- address
     '청송빌딩', -- detail_address
     '10:00', -- weekday_start_time
-    '24:00', -- weekday_end_time
+    '23:59', -- weekday_end_time
     '10:00', -- weekend_start_time
-    '24:00', -- weekend_end_time
+    '23:59', -- weekend_end_time
     '하나은행', -- bank_name
     '브랜디', -- bank_holder_name
     '12-12345-12345123', -- account_number
@@ -436,9 +437,9 @@ INSERT INTO seller_infos
     '서울시 강남구 역삼동', -- address
     '청송빌딩', -- detail_address
     '10:00', -- weekday_start_time
-    '24:00', -- weekday_end_time
+    '23:59', -- weekday_end_time
     '10:00', -- weekend_start_time
-    '24:00', -- weekend_end_time
+    '23:59', -- weekend_end_time
     '하나은행', -- bank_name
     '브랜디', -- bank_holder_name
     '12-12345-12345123', -- account_number
@@ -471,9 +472,9 @@ INSERT INTO seller_infos
     '서울시 강남구 역삼동', -- address
     '청송빌딩', -- detail_address
     '10:00', -- weekday_start_time
-    '24:00', -- weekday_end_time
+    '23:59', -- weekday_end_time
     '10:00', -- weekend_start_time
-    '24:00', -- weekend_end_time
+    '23:59', -- weekend_end_time
     '하나은행', -- bank_name
     '브랜디', -- bank_holder_name
     '12-12345-12345123', -- account_number
@@ -506,9 +507,9 @@ INSERT INTO seller_infos
     '서울시 강남구 역삼동', -- address
     '청송빌딩', -- detail_address
     '10:00', -- weekday_start_time
-    '24:00', -- weekday_end_time
+    '23:59', -- weekday_end_time
     '10:00', -- weekend_start_time
-    '24:00', -- weekend_end_time
+    '23:59', -- weekend_end_time
     '하나은행', -- bank_name
     '브랜디', -- bank_holder_name
     '12-12345-12345123', -- account_number
@@ -541,9 +542,9 @@ INSERT INTO seller_infos
     '서울시 강남구 역삼동', -- address
     '청송빌딩', -- detail_address
     '10:00', -- weekday_start_time
-    '24:00', -- weekday_end_time
+    '23:59', -- weekday_end_time
     '10:00', -- weekend_start_time
-    '24:00', -- weekend_end_time
+    '23:59', -- weekend_end_time
     '하나은행', -- bank_name
     '브랜디', -- bank_holder_name
     '12-12345-12345123', -- account_number
@@ -558,7 +559,7 @@ CREATE TABLE first_categories
     `name`               VARCHAR(45)    NOT NULL    UNIQUE COMMENT '카테고리명', 
     `is_deleted`         TINYINT        NULL        DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (first_category_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '1차 카테고리';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '1차 카테고리';
 
 INSERT INTO first_categories
 (
@@ -584,7 +585,7 @@ CREATE TABLE second_categories
     `first_category_id`   INT            NOT NULL    COMMENT '1차 카테고리 아이디', 
     `is_deleted`          TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (second_category_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '2차 카테고리';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '2차 카테고리';
 
 ALTER TABLE second_categories
     ADD CONSTRAINT FK_first_category_no FOREIGN KEY (first_category_id)
@@ -723,7 +724,7 @@ CREATE TABLE color_filters
     `image_url`        VARCHAR(200)    NOT NULL    UNIQUE COMMENT '이미지 url', 
     `is_deleted`       TINYINT         NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (color_filter_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '색상 필터';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '색상 필터';
 
 INSERT INTO color_filters
 (
@@ -835,7 +836,7 @@ CREATE TABLE style_filters
     `name`             VARCHAR(45)    NOT NULL    UNIQUE COMMENT '필터명', 
     `is_deleted`       TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (style_filter_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '스타일필터';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '스타일필터';
 
 INSERT INTO style_filters
 (
@@ -869,7 +870,7 @@ CREATE TABLE products
     `created_at`  DATETIME    NOT NULL    DEFAULT CURRENT_TIMESTAMP COMMENT '최초 등록일시', 
     `is_deleted`  TINYINT     NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (product_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '상품 번호';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '상품 번호';
 
 INSERT INTO products (product_no) VALUES (1), (2), (3);
 
@@ -905,7 +906,7 @@ CREATE TABLE product_infos
     `is_deleted`           TINYINT          NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     `product_id`           INT              NOT NULL    COMMENT '상품 아이디', 
     PRIMARY KEY (product_info_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '상품 정보';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '상품 정보';
 
 ALTER TABLE product_infos
     ADD CONSTRAINT FK_first_category_id FOREIGN KEY (first_category_id)
@@ -1052,7 +1053,7 @@ CREATE TABLE event_types
     `name`           VARCHAR(45)    NOT NULL    UNIQUE COMMENT '타입명', 
     `is_deleted`     TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (event_type_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '기획전 타입(이벤트, 쿠폰, 상품(이미지,텍스트), 유튜브)';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '기획전 타입(이벤트, 쿠폰, 상품(이미지,텍스트), 유튜브)';
 
 INSERT INTO event_types (
 	event_type_no,
@@ -1083,7 +1084,7 @@ CREATE TABLE event_sorts
     `event_type_id`  INT            NOT NULL    COMMENT '기획전 타입 아이디', 
     `is_deleted`     TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (event_sort_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '기획전 종류';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '기획전 종류';
 
 ALTER TABLE event_sorts
     ADD CONSTRAINT FK_event_type_id FOREIGN KEY (event_type_id)
@@ -1160,7 +1161,7 @@ CREATE TABLE events
     `created_at`  DATETIME    NOT NULL    DEFAULT CURRENT_TIMESTAMP COMMENT '최초 등록일시',
     `is_deleted`  TINYINT     NOT NULL    DEFAULT FALSE COMMENT '삭제여부',
     PRIMARY KEY (event_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '기획전';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '기획전';
 
 INSERT INTO events (event_no) VALUES (1), (2), (3), (4);
 
@@ -1189,7 +1190,7 @@ CREATE TABLE event_infos
     `is_deleted`         TINYINT         NOT NULL    DEFAULT FALSE COMMENT '삭제여부',
     `event_id`           INT             NOT NULL    COMMENT '이벤트 아이디',
     PRIMARY KEY (event_info_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '기획전 정보(한번 저장하면 타입 수정 불가)';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '기획전 정보(한번 저장하면 타입 수정 불가)';
 
 ALTER TABLE event_infos
     ADD CONSTRAINT FK_event_infos_event_type_id FOREIGN KEY (event_type_id)
@@ -1314,7 +1315,7 @@ CREATE TABLE image_sizes
     `height`         INT           NULL        COMMENT '높이',
     `width`          INT           NULL        COMMENT '세로',
     PRIMARY KEY (image_size_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '이미지 사이즈';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '이미지 사이즈';
 
 INSERT INTO image_sizes
 (
@@ -1343,7 +1344,7 @@ CREATE TABLE event_button_link_types
     `name`                       VARCHAR(45)    NOT NULL    UNIQUE COMMENT '링크타입명', 
     `is_deleted`                 TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부',
     PRIMARY KEY (event_button_link_type_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '이벤트 버튼 링크 타입';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '이벤트 버튼 링크 타입';
 
 INSERT INTO event_button_link_types
 (
@@ -1380,7 +1381,7 @@ CREATE TABLE manager_infos
     `seller_info_id`   INT        	   NOT NULL    COMMENT '셀러 아이디', 
     `is_deleted`       TINYINT         NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (manager_info_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '셀러 담당자 정보';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '셀러 담당자 정보';
 
 ALTER TABLE manager_infos
     ADD CONSTRAINT FK_seller_info_id FOREIGN KEY (seller_info_id)
@@ -1440,7 +1441,7 @@ CREATE TABLE product_images
     `image_order`       INT             NOT NULL    COMMENT '이미지 순서',
     `is_deleted`        TINYINT         NOT NULL    DEFAULT FALSE COMMENT '삭제여부',
     PRIMARY KEY (product_image_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '상품 이미지';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '상품 이미지';
 
 ALTER TABLE product_images
     ADD CONSTRAINT FK_product_images_product_info_id FOREIGN KEY (product_info_id)
@@ -1492,7 +1493,7 @@ CREATE TABLE product_tags
     `product_info_id`      INT       NOT NULL    COMMENT '상품 정보 외래키', 
     `is_deleted`      TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (product_tag_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '상품 태그 관리';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '상품 태그 관리';
 
 ALTER TABLE product_tags
     ADD CONSTRAINT FK_product_info_id FOREIGN KEY (product_info_id)
@@ -1566,7 +1567,7 @@ CREATE TABLE event_detail_infos
     `event_info_id`            INT            NOT NULL    COMMENT '기획전 정보 아이디', 
     `is_deleted`               TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부', 
     PRIMARY KEY (event_detail_info_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '이벤트 상세정보';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '이벤트 상세정보';
 
 ALTER TABLE event_detail_infos
     ADD CONSTRAINT FK_button_link_type_id FOREIGN KEY (button_link_type_id)
@@ -1614,7 +1615,7 @@ CREATE TABLE event_detail_product_infos
     `event_info_id`                 INT        NOT NULL    COMMENT '기획전 정보 아이디', 
     `is_deleted`                    TINYINT    NOT NULL    DEFAULT FALSE COMMENT '삭제여부',
 	PRIMARY KEY (event_detail_product_info_no)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT '이벤트 상세정보(매핑 상품)';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '이벤트 상세정보(매핑 상품)';
  
 ALTER TABLE event_detail_product_infos
 	ADD CONSTRAINT FK_event_detail_product_infos_product_id FOREIGN KEY (product_id)
