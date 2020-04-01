@@ -1,7 +1,6 @@
 from seller.model.seller_dao import SellerDao
 
 
-
 class SellerService:
 
     """

@@ -1,8 +1,5 @@
 from flask import jsonify
 from mysql.connector.errors import Error
-from contextlib import closing
-import mysql
-
 
 
 class SellerDao:
@@ -103,7 +100,7 @@ class SellerDao:
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
-            return jsonify({'message': 'DB_CURSOR_ERROR'})
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
 
     def select_seller_info(self, db_connection):
 
@@ -137,5 +134,3 @@ class SellerDao:
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'})
 
-        except Exception as e:
-            print(e)
