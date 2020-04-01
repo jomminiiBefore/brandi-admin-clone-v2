@@ -1,11 +1,11 @@
 import mysql.connector
 from mysql.connector.errors import InterfaceError, ProgrammingError, NotSupportedError
-
-from config import DATABASES
+from config import DATABASES, S3_CONFIG
+import mysql.connector, boto3
 
 
 # make database connection
-def get_connection():
+def get_db_connection():
     """ database connection 생성
 
     Returns:
@@ -40,4 +40,17 @@ def get_connection():
 
     except NotSupportedError as e:
         print(f'NOT_SUPPORTED_ERROR_WITH {e}')
+
+
+# make s3 connection
+def get_s3_connection():
+    s3_connection = boto3.client(
+        's3',
+        aws_access_key_id = S3_CONFIG['AWS_ACCESS_KEY_ID'],
+        aws_secret_access_key = S3_CONFIG['AWS_SECRET_ACCESS_KEY'],
+        region_name = S3_CONFIG['REGION_NAME'],
+    )
+    return s3_connection
+
+
 
