@@ -73,3 +73,6 @@ class DatabaseConnection:
 
     def close(self):
         return self.db_connection.close()
+
+    def commit(self):
+        return self.db_connection.commit()

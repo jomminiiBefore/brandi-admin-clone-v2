@@ -134,3 +134,119 @@ class SellerDao:
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'})
 
+        except Exception as e:
+            print(e)
+
+    # noinspection PyMethodMayBeStatic
+    def get_account_password(self, account_info, db_connection):
+
+        """ 계정의 암호화된 비밀번호 표출
+
+        비밀번호 변경 시 기존 비밀번호를 제대로 입력했는지 확인하기 위해,
+        인자로 받아온 account_info['parameter_account_no'] 의 password 를 표출합니다.
+
+        Args:
+            account_info: account 정보
+            (parameter_account_no: 비밀번호를 확인할 account_no)
+            db_connection: 연결된 database connection 객체
+
+        Returns:
+            200: 요청된 계정의 계정번호 및 암호화된 비밀번호
+            400: 존재하지 않는 계정 정보
+            500: SERVER ERROR
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-03-31 (leejm3@brandi.co.kr): 초기 생성
+        """
+
+        try:
+            with db_connection as db_cursor:
+
+                # SELECT 문에서 확인할 데이터
+                account_info_data = {
+                    'account_no': account_info['parameter_account_no']
+                }
+
+                # accounts 테이블 SELECT
+                select_account_password_statement = """
+                    SELECT account_no, password 
+                    FROM accounts 
+                    WHERE account_no = %(account_no)s
+                """
+
+                # SELECT 문 실행
+                db_cursor.execute(select_account_password_statement, account_info_data)
+
+                # 쿼리로 나온 기존 비밀번호를 가져옴
+                original_password = db_cursor.fetchone()
+                return original_password
+
+        except KeyError as e:
+            print(f'KEY_ERROR WITH {e}')
+            return jsonify({'message': 'INVALID_KEY'}), 400
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
+
+        finally:
+            db_cursor.close()
+
+    # noinspection PyMethodMayBeStatic
+    def change_password(self, account_info, db_connection):
+
+        """ UPDATE 계정 비밀번호 DB
+
+        Args:
+            account_info: account 정보
+            (parameter_account_no: 비밀번호를 확인할 account_no
+            db_connection: 연결된 database connection 객체
+
+        Returns: http 응답코드
+            200: SUCCESS 비밀번호 변경 완료
+            400: INVALID_KEY
+            500: SERVER ERROR
+
+        Authors:
+            leejm@brandi.co.kr (이종민)
+
+        History:
+            2020-03-31 (leejm3@brandi.co.kr): 초기 생성
+        """
+
+        try:
+            with db_connection as db_cursor:
+
+                # SELECT 문에서 확인할 데이터
+                account_info_data = {
+                    'account_no': account_info['parameter_account_no'],
+                    'password': account_info['new_password'],
+                }
+
+                # accounts 테이블 UPDATE
+                update_password_statement = """
+                    UPDATE 
+                    accounts 
+                    SET
+                    password = %(password)s
+                    WHERE
+                    account_no = %(account_no)s
+                """
+
+                # UPDATE 문 실행
+                db_cursor.execute(update_password_statement, account_info_data)
+                print(db_connection)
+                # 실행 결과 반영
+                db_connection.commit()
+                return jsonify({'message': 'SUCCESS'}), 200
+
+        except KeyError:
+            return jsonify({'message': 'INVALID_KEY'}), 400
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
+
