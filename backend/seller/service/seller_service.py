@@ -1,13 +1,11 @@
-from flask import request
+from seller.model.seller_dao import SellerDao
+
 
 class SellerService:
 
     """
     셀러 서비스
     """
-    def __init__(self, seller_dao):
-        self.seller_dao = seller_dao
-
     def create_new_seller(self, request, db_connection):
 
         """ 신규 셀러 회원가입
@@ -29,8 +27,9 @@ class SellerService:
         History:
             2020-03-25 (leesh3@brandi.co.kr): 초기 생성
         """
+        seller_dao = SellerDao()
         new_seller = request.json
-        new_seller_result = self.seller_dao.insert_seller(new_seller, db_connection)
+        new_seller_result = seller_dao.insert_seller(new_seller, db_connection)
 
         return new_seller_result 
 
@@ -49,6 +48,7 @@ class SellerService:
         History:
             2020-03-27 (yoonhc@brandi.co.kr): 초기 생성
         """
-        get_all_sellers = self.seller_dao.select_seller_info(db_connection)
+        seller_dao = SellerDao()
+        get_all_sellers = seller_dao.select_seller_info(db_connection)
         return get_all_sellers
 

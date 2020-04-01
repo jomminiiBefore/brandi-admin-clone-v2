@@ -99,8 +99,6 @@ class SellerDao:
         finally:
             db_cursor.close()
 
-
-
     def select_seller_info(self, db_connection):
 
         """ 가입된 모든 셀러 표출
