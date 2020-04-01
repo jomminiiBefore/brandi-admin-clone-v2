@@ -1,5 +1,5 @@
 from flask import request
-from connection import get_db_connection
+from connection import DatabaseConnection
 
 
 class ImageView:
@@ -8,6 +8,6 @@ class ImageView:
 
         @app.route('/image', methods=['POST'])
         def upload_image():
-            db_connection = get_db_connection()
+            db_connection = DatabaseConnection()
             image_upload_result = services.upload_image(request, db_connection)
             return image_upload_result

@@ -1,7 +1,10 @@
-import mysql.connector, boto3
+import mysql.connector
+import boto3
 from mysql.connector.errors import InterfaceError, ProgrammingError, NotSupportedError
+from flask import jsonify
 
 from config import DATABASES, S3_CONFIG
+
 
 # make s3 connection
 def get_s3_connection():
@@ -46,21 +49,27 @@ class DatabaseConnection:
 
         except InterfaceError as e:
             print(f'INTERFACE_ERROR_WITH {e}')
-            return
 
         except ProgrammingError as e:
             print(f'PROGRAMMING_ERROR_WITH {e}')
-            return
 
         except NotSupportedError as e:
             print(f'NOT_SUPPORTED_ERROR_WITH {e}')
 
-    def __enter__(self) -> 'cursor':
-        self.cursor = self.db_connection.cursor(buffered=True, dictionary=True)
-        return self.cursor
+    def __enter__(self):
+        try:
+            self.cursor = self.db_connection.cursor(buffered=True, dictionary=True)
+            return self.cursor
+        except AttributeError as e:
+            print(e)
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 
-    def __exit__(self, exc_type, exc_value, exc_trance) -> None:
-        self.cursor.close()
+    def __exit__(self, exc_type, exc_value, exc_trance):
+        try:
+            self.cursor.close()
+        except AttributeError as e:
+            print(e)
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 
     def close(self):
         return self.db_connection.close()
