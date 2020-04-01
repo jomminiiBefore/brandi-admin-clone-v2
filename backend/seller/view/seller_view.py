@@ -1,7 +1,6 @@
 from flask import request, Blueprint, jsonify
-from connection import get_db_connection
 from seller.service.seller_service import SellerService
-
+from connection import DatabaseConnection
 
 class SellerView:
     """
@@ -31,8 +30,7 @@ class SellerView:
                 2020-03-30 (yoonhc@barndi.co.kr): database connection open & close 추가
             """
             try:
-                db_connection = get_db_connection()
-
+                db_connection = DatabaseConnection()
                 seller_service = SellerService()
                 new_seller_result = seller_service.create_new_seller(request, db_connection)
                 return new_seller_result
@@ -62,7 +60,7 @@ class SellerView:
             2020-03-27 (yoonhc@brandi.co.kr): 초기 생성
         """
 
-        db_connection = get_db_connection()
+        db_connection = DatabaseConnection()
         if db_connection:
             try:
                 seller_service = SellerService()
@@ -71,13 +69,13 @@ class SellerView:
                 return sellers
 
             except Exception as e:
-                return jsonify({'message222': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 400
 
             finally:
                 if db_connection:
                     try:
                         db_connection.close()
                     except Exception as e:
-                        return jsonify({'message111': f'{e}'}), 400
+                        return jsonify({'message': f'{e}'}), 400
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
