@@ -12,7 +12,9 @@ const Login = () => {
         <InputBox>
           <Input width="300" height="34" placeholder="셀러 아이디" />
           <Input width="300" height="34" placeholder="셀러 비밀번호" />
+          <Input width="300" height="34" placeholder="셀러 비밀번호" />
         </InputBox>
+        <></>
       </LoginBox>
     </Container>
   );
@@ -21,13 +23,13 @@ const Login = () => {
 export default Login;
 
 const Container = styled.div`
-  border: 2px dotted pink;
+  background-color: #fafafa;
 `;
 
 const BgBox = styled.div`
   display: flex;
   justify-content: center;
-  margin-top: 60px;
+  padding-top: 60px;
 `;
 
 const BgImage = styled.div`
@@ -42,7 +44,11 @@ const BgImage = styled.div`
 const LoginBox = styled.div`
   width: 360px;
   margin: 0px auto;
-  border: 1px dotted skyblue;
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #fff;
 `;
 
 const InputBox = styled.div`
