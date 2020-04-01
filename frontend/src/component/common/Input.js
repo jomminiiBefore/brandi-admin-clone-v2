@@ -3,7 +3,6 @@ import styled from "styled-components";
 
 const Input = props => {
   const [innerText, setInnerText] = useState("");
-  console.log(innerText);
 
   return (
     <Container>
@@ -11,7 +10,7 @@ const Input = props => {
         {...props}
         type="text"
         placeholder={props.placeholder}
-        onChange={e => console.log(e.target.value)}
+        onChange={e => console.log("타겟밸류::", e.target.value)}
       />
     </Container>
   );
@@ -24,8 +23,8 @@ const Container = styled.div``;
 const InputBox = styled.input`
   width: ${props => props.width}px;
   height: ${props => props.height}px;
-  margin-bottom: 15px;
-  padding: 20px;
+  margin-top: 15px;
+  padding: 10px;
   border: 1px solid #e5e5e5;
   border-radius: 4px;
   color: #333333;
