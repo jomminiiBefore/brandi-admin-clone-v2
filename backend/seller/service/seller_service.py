@@ -58,6 +58,7 @@ class SellerService:
 
         return get_all_sellers
 
+    # noinspection PyMethodMayBeStatic
     def change_password(self, account_info, db_connection):
 
         """ 계정 비밀번호 변경
@@ -75,10 +76,9 @@ class SellerService:
 
         Returns: http 응답코드
             200: SUCCESS 비밀번호 변경 완료
-            400: INVALID_KEY
-            400: INVALID_AUTH_TYPE_ID
+            400: INVALID_KEY, INVALID_AUTH_TYPE_ID
             401: INVALID_PASSWORD
-            500: SERVER ERROR
+            500: DB_CURSOR_ERROR, SERVER_ERROR
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -89,7 +89,8 @@ class SellerService:
             셀러의 경우 decorator account_no 와 parameter account_no이 일치하는 조건 추가
 
         """
-        self.seller_dao = SellerDao()
+
+        seller_dao = SellerDao()
         try:
             # Key 가 모두 들어오는지 확인하기 위해 새로운 dict 에 정보를 담음
             new_account_info = {
@@ -111,7 +112,7 @@ class SellerService:
                 new_account_info['new_password'] = crypted_password.decode('utf-8')
 
                 # 새로운 비밀번호를 담아서 seller_dao 의 비밀번호 변경 dao 를 호출 및 반환
-                changing_password_result = self.seller_dao.change_password(new_account_info, db_connection)
+                changing_password_result = seller_dao.change_password(new_account_info, db_connection)
                 return changing_password_result
 
             # 셀러 권한일 때
@@ -119,7 +120,7 @@ class SellerService:
 
                 if new_account_info['decorator_account_no'] == new_account_info['parameter_account_no']:
                     # DB 에서 기존에 저장되어있는 암호화된 비밀번호를 가져옴
-                    original_password = self.seller_dao.get_account_password(new_account_info, db_connection)
+                    original_password = seller_dao.get_account_password(new_account_info, db_connection)
 
                     # DB 에서 가져온 기존 비밀번호와 셀러가 입력한 기존 비밀번호가 일치하는지 확인
                     if bcrypt.checkpw(new_account_info['original_password'].encode('utf-8'),
@@ -130,7 +131,7 @@ class SellerService:
                         new_account_info['new_password'] = crypted_password.decode('utf-8')
 
                         # 새로운 비밀번호를 담아서 seller_dao 의 비밀번호 변경 dao 를 호출 및 반환
-                        changing_password_result = self.seller_dao.change_password(new_account_info, db_connection)
+                        changing_password_result = seller_dao.change_password(new_account_info, db_connection)
                         return changing_password_result
 
                     # 기존 비밀번호와 일치하지 않을 경우
@@ -147,3 +148,67 @@ class SellerService:
         # Key 가 잘못 들어올 경우 None TypeError 가 뜨므로 에러 처리
         except TypeError:
             return jsonify({'message': 'INVALID_KEY'}), 400
+
+    # noinspection PyMethodMayBeStatic
+    def get_seller_info(self, account_info, db_connection):
+
+        """ 계정 셀러정보 표출
+
+        account_info 에 담긴 권한 정보를 확인하고,
+        마스터 권한일 경우
+        -> 바로 parameter_account_no 의 셀러 정보를 표출해주며,
+        셀러 권한일 경우
+        -> 데코레이터에서 확인된 account_no 와 파라미터로 받은 account_no 가 일치하는지 확인하고,
+        parameter_account_no 의 셀러정보를 표출해줍니다.
+
+        Args:
+            account_info: 엔드포인트에서 전달 받은 account 정보
+            db_connection: 연결된 database connection 객체
+
+        Returns: http 응답코드
+            200: SUCCESS 비밀번호 변경 완료
+            400: INVALID_KEY
+            400: INVALID_AUTH_TYPE_ID
+            401: INVALID_PASSWORD
+            500: SERVER ERROR
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-01 (leejm3@brandi.co.kr) : 초기 생성
+
+        """
+
+        seller_dao = SellerDao()
+        try:
+            # 계정이 가진 권한 타입을 가져옴
+            account_auth_type_id = account_info['auth_type_id']
+
+            # 마스터 권한일 때
+            if account_auth_type_id == 1:
+
+                # parameter_account_no 의 셀러정보를 가져옴
+                getting_seller_info_result = seller_dao.get_seller_info(account_info, db_connection)
+                return getting_seller_info_result
+
+            # 셀러 권한일 때
+            elif account_auth_type_id == 2:
+
+                # decorator_account_no 와 parameter_account_no 가 동일한지 확인
+                if account_info['decorator_account_no'] == account_info['parameter_account_no']:
+
+                    # parameter_account_no 의 셀러정보를 가져옴
+                    getting_seller_info_result = seller_dao.get_seller_info(account_info, db_connection)
+                    return getting_seller_info_result
+
+                # decorator_account_no 와 parameter_account_no 가 다를 경우 비밀번호 변경 권한이 없음
+                else:
+                    return jsonify({'message': 'NO_AUTHORIZATION'}), 403
+
+            # 존재하지 않는 auth_type_id
+            else:
+                return jsonify({'message': 'INVALID_AUTH_TYPE_ID'}), 400
+
+        except Exception as e:
+            print(e)
