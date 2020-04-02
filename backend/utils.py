@@ -31,13 +31,13 @@ def login_required(func):
                                     'auth_type_id': account['auth_type_id']
                                 }
                                 return func(*args, **kwargs)
-                            return jsonify({'message': 'ACCOUNT_DOES_NOT_EXIST'}), 400
+                            return jsonify({'message': 'ACCOUNT_DOES_NOT_EXIST'}), 404
 
                     except Error as e:
                         print(f'DATABASE_CURSOR_ERROR_WITH {e}')
                         return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
 
-            except jwt.exceptions.DecodeError:
+            except jwt.InvalidTokenError:
                 return jsonify({'message': 'INVALID_TOKEN'}), 401
 
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
