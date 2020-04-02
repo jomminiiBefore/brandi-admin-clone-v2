@@ -1,4 +1,4 @@
-from flask import request, Blueprint, jsonify, g
+from flask import request, Blueprint, jsonify
 
 from seller.service.seller_service import SellerService
 from connection import DatabaseConnection
@@ -53,7 +53,7 @@ class SellerView:
                 try:
                     db_connection.close()
                 except Exception as e:
-                    return jsonify({'message' : f'{e}'}), 400
+                    return jsonify({'message': f'{e}'}), 400
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 

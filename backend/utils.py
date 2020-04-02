@@ -20,24 +20,26 @@ def login_required(func):
                     try:
                         with db_connection as db_cursor:
                             get_account_info_stmt = ("""
-                                SELECT (auth_type_id) FROM accounts WHERE account_no=%(account_no)s
+                                SELECT auth_type_id, is_deleted FROM accounts WHERE account_no=%(account_no)s
                             """)
                             db_cursor.execute(get_account_info_stmt, {'account_no': account_no})
                             account = db_cursor.fetchone()
-
+                            print(account)
                             if account:
-                                g.account_info = {
-                                    'account_no': account_no,
-                                    'auth_type_id': account['auth_type_id']
-                                }
-                                return func(*args, **kwargs)
-                            return jsonify({'message': 'ACCOUNT_DOES_NOT_EXIST'}), 400
+                                if account['is_deleted'] == 0:
+                                    g.account_info = {
+                                        'account_no': account_no,
+                                        'auth_type_id': account['auth_type_id']
+                                    }
+                                    return func(*args, **kwargs)
+                                return jsonify({'message': 'DELETED_ACCOUNT'}), 400
+                            return jsonify({'message': 'ACCOUNT_DOES_NOT_EXIST'}), 404
 
                     except Error as e:
                         print(f'DATABASE_CURSOR_ERROR_WITH {e}')
                         return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
 
-            except jwt.exceptions.DecodeError:
+            except jwt.InvalidTokenError:
                 return jsonify({'message': 'INVALID_TOKEN'}), 401
 
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400

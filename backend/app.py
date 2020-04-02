@@ -6,6 +6,7 @@ from flask.json import JSONEncoder
 
 from config import S3_CONFIG
 from seller.view.seller_view import SellerView
+from product.view.product_view import ProductView
 from image.view.image_view import ImageView
 
 
@@ -17,7 +18,7 @@ class CustomJSONEncoder(JSONEncoder):
     def default(self, obj):
         """
 
-        Args:
+        Args:e
             obj: json 형태로 반환하고자 하는 객체
 
         Returns: obj를 json형태로 변경하는 기능이 추가된 JSONEncoder
@@ -68,6 +69,7 @@ def create_app():
     make_config(app)
     CORS(app)
     app.register_blueprint(SellerView.seller_app)
+    app.register_blueprint(ProductView.product_app)
     app.register_blueprint(ImageView.image_app)
 
     return app
