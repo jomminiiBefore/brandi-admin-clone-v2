@@ -68,6 +68,7 @@ def create_app():
     make_config(app)
     CORS(app)
     app.register_blueprint(SellerView.seller_app)
+    app.register_blueprint(ImageView.image_app)
 
     return app
 
