@@ -1,5 +1,10 @@
 from flask import request, Blueprint, jsonify
-
+from flask_request_validator import (
+    PATH,
+    JSON,
+    Param,
+    validate_params
+)
 from product.service.product_service import ProductService
 from connection import DatabaseConnection
 from utils import login_required
@@ -34,7 +39,7 @@ class ProductView():
         if db_connection:
             try:
                 product_service = ProductService()
-                categories = product_service.get_first_categories(request, db_connection)
+                categories = product_service.get_first_categories(db_connection)
 
                 return categories
 
@@ -50,8 +55,14 @@ class ProductView():
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 
-    @product_app.route("/first_category/<int:first_category_no>/second_category", methods=["GET"])
-    def get_second_categories(first_category_no):
+    @product_app.route(
+        "/first_category/<int:first_category_no>/second_category",
+        methods=["GET"], endpoint='get_second_categories')
+    @login_required
+    @validate_params(
+        Param('first_category_no', PATH, int),
+    )
+    def get_second_categories1(first_category_no):
 
         """ 상품 2차 카테고리 목록 표출
 
@@ -78,7 +89,7 @@ class ProductView():
         if db_connection:
             try:
                 product_service = ProductService()
-                categories = product_service.get_second_categories(request, db_connection, first_category_no)
+                categories = product_service.get_second_categories(db_connection, first_category_no)
                 return categories
 
             except Exception as e:
@@ -88,6 +99,52 @@ class ProductView():
                 try:
                     db_connection.close()
 
+                except Exception as e:
+                    return jsonify({'message': f'{e}'}), 400
+        else:
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
+
+    @product_app.route("/<int:product_info_no>", methods=["GET"])
+    @validate_params(
+        Param('product_info_no', PATH, int),
+    )
+    def get_product_detail1(product_info_no):
+
+        """ 상품 등록/수정시 나타나는 개별 상품의 기존 정보 표출 엔드포인트
+
+        상품의 번호를 받아 해당하는 상품의 상세 정보를 표출.
+
+        Args:
+            product_info_no(integer): 상품 정보 번호
+
+        Returns:
+            200: 상품별 상세 정보
+            400: 데이터베이스 연결 에러
+            500: server error
+
+        Authors:
+
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+        2020-04-03 (leesh3@brandi.co.kr): 초기 생성
+
+        """
+        db_connection = DatabaseConnection()
+
+        if db_connection:
+            try:
+                product_service = ProductService()
+                product_infos = product_service.get_product_detail(product_info_no, db_connection)
+
+                return product_infos
+
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 400
+
+            finally:
+                try:
+                    db_connection.close()
                 except Exception as e:
                     return jsonify({'message': f'{e}'}), 400
         else:

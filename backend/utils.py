@@ -24,7 +24,6 @@ def login_required(func):
                             """)
                             db_cursor.execute(get_account_info_stmt, {'account_no': account_no})
                             account = db_cursor.fetchone()
-                            print(account)
                             if account:
                                 if account['is_deleted'] == 0:
                                     g.account_info = {
