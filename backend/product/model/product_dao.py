@@ -1,10 +1,11 @@
 from flask import jsonify
 from mysql.connector.errors import Error
 
+
 class ProductDao:
 
     """
-    품 모델
+    상품 모델
     """
 
     def get_first_categories(self, account_no, db_connection):
@@ -88,10 +89,51 @@ class ProductDao:
                     WHERE fc.first_category_no = %(first_category_no)s;
                 """
                 db_cursor.execute(get_stmt, {'first_category_no': first_category_no})
-
                 second_categories = db_cursor.fetchall()
 
                 return jsonify({'second_categories': second_categories}), 200
+
+        except KeyError as e:
+            print(f'KEY_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'INVALID_KEY'}), 400
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
+
+    def get_product_detail(self, product_info_no, db_connection):
+        """
+
+        Args:
+            product_info_no:
+            db_connection:
+
+        Returns:
+            200: 상품별 상세 정보
+            400: key error
+            400: database cursor error
+
+        Authors:
+
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+            2020-04-03 (leesh3@brandi.co.kr): 초기 생성
+
+        """
+        try:
+            with db_connection as db_cursor:
+                get_stmt = """
+                    SELECT * FROM product_infos WHERE product_info_no=%(product_info_no)s
+                """
+                db_cursor.execute(get_stmt, {'product_info_no': product_info_no})
+                product_information = db_cursor.fetchone()
+
+                if product_information:
+                    return jsonify({'product_information': product_information})
+                return jsonify({'message': 'PRODUCT_DOES_NOT_EXIST'})
 
         except KeyError as e:
             print(f'KEY_ERROR_WITH {e}')

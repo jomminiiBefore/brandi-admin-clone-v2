@@ -1,4 +1,5 @@
 from datetime import timedelta
+from decimal import Decimal
 
 from flask import Flask
 from flask_cors import CORS
@@ -35,6 +36,12 @@ class CustomJSONEncoder(JSONEncoder):
 
         if isinstance(obj, timedelta):
             return str(obj)
+
+        if isinstance(obj, Decimal):
+            return float(obj)
+
+        if isinstance(obj, bytes):
+            return obj.decode("utf-8")
 
         return JSONEncoder.default(self, obj)
 

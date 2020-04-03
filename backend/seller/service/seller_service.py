@@ -25,11 +25,11 @@ class SellerService:
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
-            yoonhc@barndi.co.kr (윤희철)보
+            yoonhc@barndi.co.kr (윤희철)
 
         History:
             2020-03-25 (leesh3@brandi.co.kr): 초기 생성
-            2020-03-30 (yoonhc@barndi.co.kr): db_connection 인자 추
+            2020-03-30 (yoonhc@barndi.co.kr): db_connection 인자 추가
         """
         seller_dao = SellerDao()
         new_seller = request.json
