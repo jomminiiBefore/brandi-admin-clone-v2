@@ -213,3 +213,49 @@ class SellerService:
 
         except Exception as e:
             print(e)
+
+    def get_seller_list(self, user, db_connection):
+
+        """ Args:
+             user: 유저 정보
+             db_connection: 데이터베이스 커넥션 객체
+
+         Returns:
+             200: 가입된 모든 셀러 정보 리스트
+
+         Authors:
+             yoonhc@brandi.co.kr (윤희철)
+
+         History:
+             2020-04-03 (yoonhc@brandi.co.kr): 초기 생성
+
+         """
+
+        seller_dao = SellerDao()
+
+        # 유저 정보에서 권한 정보를 확인
+        try:
+            with db_connection as db_cursor:
+                sql_command = '''
+                SELECT
+                name 
+                FROM 
+                authorization_types 
+                WHERE 
+                auth_type_no = %(auth_type_id)s
+                '''
+                db_cursor.execute(sql_command, {'auth_type_id' : user['auth_type_id']})
+                auth_type_name = db_cursor.fetchone()['name']
+
+                # 마스터 유저이면 dao에 db_connection 전달
+                if auth_type_name == '마스터':
+                    seller_list_result = seller_dao.get_seller_list(db_connection)
+                    return seller_list_result
+
+                return jsonify({'message' : 'AUTHORIZATION_REQUIRED'}), 403
+
+        except Exception as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            return jsonify({'message' : 'DB_CURSOR_ERROR'})
+
+

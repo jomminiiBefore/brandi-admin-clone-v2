@@ -1,4 +1,4 @@
-from flask import request, Blueprint, jsonify
+from flask import request, Blueprint, jsonify, g
 
 from seller.service.seller_service import SellerService
 from connection import DatabaseConnection
@@ -58,7 +58,6 @@ class SellerView:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 
     @seller_app.route('', methods=['GET'])
-    @login_required
     def get_all_sellers():
         """ 가입된 모든 셀러 표출 엔드포인트
 
@@ -231,3 +230,26 @@ class SellerView:
 
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
+
+    @seller_app.route('/list', methods=['GET'])
+    @login_required
+    def get_seller_list():
+
+        """ 가입된 모든 셀러 정보 리스트를 표출
+
+        Returns:
+            200: 가입된 모든 셀러 및 셀러 세부 정보 리스트로 표출
+
+        Authors:
+            yoonhc@barndi.co.kr (윤희철)
+
+        History:
+            2020-04-03 (yoonhc@brandi.co.kr): 초기 생성
+        """
+        db_connection = DatabaseConnection()
+
+        # 유저 정보를 g에서 읽어와서 service에 전달
+        user = g.account_info
+        seller_service = SellerService()
+        seller_list_result = seller_service.get_seller_list(user, db_connection)
+        return seller_list_result

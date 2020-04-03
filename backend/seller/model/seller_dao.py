@@ -473,3 +473,62 @@ class SellerDao:
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
+
+    def get_seller_list(self, db_connection):
+
+        """ GET 셀러 리스트 표
+
+        Args:
+            db_connection: 연결된 database connection 객체
+
+        Returns: http 응답코드
+            200: 셀러 리스트 표출
+            500: SERVER ERROR
+
+        Authors:
+            heechul@brandi.co.kr (윤희)
+
+        History:
+            2020-04-03(heechul@brandi.co.kr): 초기 생성
+        """
+
+        try:
+            with db_connection as db_cursor:
+                # 셀러 리스트 표출
+                sql_command = '''
+                    SELECT 
+                    seller_accounts.seller_account_no, 
+                    accounts.login_id,
+                    name_kr,
+                    name_en,
+                    product_infos.product_info_no, 
+                    seller_infos.seller_info_no, 
+                    seller_infos.seller_account_id,
+                    brandi_app_user_id,
+                    manager_infos.name,
+                    manager_infos.contact_number,
+                    manager_infos.email,
+                    seller_status_id,
+                    seller_types.name,
+                    COUNT(products.product_no) as product_count,
+                    site_url,
+                    seller_accounts.created_at
+                    FROM seller_infos
+                    RIGHT JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
+                    LEFT JOIN accounts ON seller_accounts.account_id = accounts.account_no
+                    LEFT JOIN product_infos ON seller_infos.seller_account_id = product_infos.seller_id
+                    LEFT JOIN seller_statuses ON seller_infos.seller_status_id = seller_statuses.status_no
+                    LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no 
+                    LEFT JOIN products ON product_infos.product_id = products.product_no 
+                    LEFT JOIN manager_infos ON manager_infos.seller_info_id = seller_infos.seller_info_no 
+                    GROUP BY seller_accounts.seller_account_no
+                '''
+                db_cursor.execute(sql_command)
+                seller_list = db_cursor.fetchall()
+                return jsonify({'data': seller_list}), 200
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
+
+

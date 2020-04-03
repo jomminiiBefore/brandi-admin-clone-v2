@@ -94,7 +94,7 @@ class ImageService:
             return None
 
     # 요청받은 이미지를 리사이즈 하고 s3에 업로드
-    def upload_resized_image(self, request):
+    def upload_product_image(self, request):
         """
         Args:
             request: 요청 값
@@ -112,6 +112,18 @@ class ImageService:
 
         data = {}
         image_file = request.files['imagefile']
+
+        # 500MB 이하만 업로드 가능
+        try:
+            with Image.open(image_file) as pillow_obj:
+                buffer = io.BytesIO()
+                pillow_obj.save(buffer, pillow_obj.format)
+                print(buffer.tell()/1000)
+                if buffer.tell()/1000 > 500000:
+                    return jsonify({'message' : f'{buffer}'}), 400
+        except:
+            return jsonify({'message' : 'INVALID_IMAGE1'}), 400
+
         s3 = get_s3_connection()
 
         # big_size 업로드
@@ -140,8 +152,8 @@ class ImageService:
 
         return data
 
-    # 요청받은 이미지를 s3에 업로드
-    def upload_image(self, request):
+    # 요청받은 셀러 이미지를 s3에 업로드
+    def upload_seller_image(self, request):
         """
         Args:
             request: 요청 값
@@ -158,6 +170,56 @@ class ImageService:
 
         data = {}
         image_file = request.files['imagefile']
+
+        # 5MB 이하만 업로드 가능
+        try:
+            with Image.open(image_file) as pillow_obj:
+                buffer = io.BytesIO()
+                pillow_obj.save(buffer, pillow_obj.format)
+                print(buffer.tell()/1000)
+                if buffer.tell()/1000 > 5000:
+                    return jsonify({'message' : f'{buffer}'}), 400
+        except:
+            return jsonify({'message' : 'INVALID_IMAGE1'}), 400
+
+        uploaded_image_name = str(uuid.uuid4())
+        s3 = get_s3_connection()
+        s3.put_object(Body = image_file, Bucket = "brandi-intern", Key = uploaded_image_name)
+        uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
+        data["uploaded_image_url"] = uploaded_image_url
+
+        return data
+
+    # 요청받은 기획전 이미지를 s3에 업로드
+    def upload_event_image(self, request):
+        """
+        Args:
+            request: 요청 값
+
+        Returns:
+            s3 버킷에 올라간 이미지 파일의 url(dictionary)
+
+        Authors:
+            yoonhc@brandi.co.kr (윤희철)
+
+        History:
+            2020-04-02 (yoonhc@brandi.co.kr): 초기 생성
+        """
+
+        data = {}
+        image_file = request.files['imagefile']
+
+        # 500MB 이하만 업로드 가능
+        try:
+            with Image.open(image_file) as pillow_obj:
+                buffer = io.BytesIO()
+                pillow_obj.save(buffer, pillow_obj.format)
+                print(buffer.tell()/1000)
+                if buffer.tell()/1000 > 500000:
+                    return jsonify({'message' : f'{buffer}'}), 400
+        except:
+            return jsonify({'message' : 'INVALID_IMAGE1'}), 400
+
         uploaded_image_name = str(uuid.uuid4())
         s3 = get_s3_connection()
         s3.put_object(Body = image_file, Bucket = "brandi-intern", Key = uploaded_image_name)
