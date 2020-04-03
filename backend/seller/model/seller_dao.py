@@ -474,12 +474,12 @@ class SellerDao:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
-    def get_seller_list(self, db_connection):
-
-        """ GET 셀러 리스트 표
+    def get_seller_list(self, request, db_connection):
+        """ GET 셀러 리스트를 표출하고, 검색 키워드가 오면 필터링 쿼리가 추가됨.
 
         Args:
             db_connection: 연결된 database connection 객체
+            request: 쿼리파라미터를 가져
 
         Returns: http 응답코드
             200: 셀러 리스트 표출
@@ -491,40 +491,112 @@ class SellerDao:
         History:
             2020-04-03(heechul@brandi.co.kr): 초기 생성
         """
+        # offset과 limit에 음수가 들어오면  default값 지정
+        offset = 0 if int(request.args.get('offset', 0)) < 0 else int(request.args.get('offset', 0))
+        limit = 10 if int(request.args.get('limit', 10)) < 0 else int(request.args.get('limit', 10))
+
+        filter_query = ''
+
+        # request에 쿼리파라미터가 들어오고 값이 존재하면 filter_query에 조건 쿼리문을 추가해줌.
+        seller_account_no = request.args.get('seller_account_no', None)
+        if seller_account_no:
+            filter_query += f" AND seller_accounts.seller_account_no = {seller_account_no}"
+
+        login_id = request.args.get('login_id', None)
+        if login_id:
+            filter_query += f" AND accounts.login_id = '{login_id}'"
+
+        name_kr = request.args.get('name_kr', None)
+        if name_kr:
+            filter_query += f" AND name_kr = '{name_kr}'"
+
+        name_en = request.args.get('name_en', None)
+        if name_en:
+            filter_query += f" AND name_en = '{name_en}'"
+
+        brandi_app_user_id = request.args.get('brandi_app_user_id', None)
+        if brandi_app_user_id:
+            filter_query += f" AND brandi_app_user_id = {brandi_app_user_id}"
+
+        manager_name = request.args.get('manager_name', None)
+        if manager_name:
+            filter_query += f" AND manager_infos.name = '{manager_name}'"
+
+        seller_status = request.args.get('seller_status', None)
+        if seller_status:
+            filter_query += f" AND seller_statuses.name = '{seller_status}'"
+
+        manager_contact_number = request.args.get('manager_contact_number', None)
+        if manager_contact_number:
+            filter_query += f" AND manager_infos.contact_number LIKE '%{manager_contact_number}%'"
+
+        manager_email = request.args.get('manager_email', None)
+        if manager_email:
+            filter_query += f" AND manager_infos.email = '{manager_email}'"
+
+        seller_type_name = request.args.get('seller_type_name', None)
+        if seller_type_name:
+            filter_query += f" AND seller_types.name = '{seller_type_name}'"
+
+        start_date = str(request.args.get('start_time', None))+' 00:00:00'
+        end_date = str(request.args.get('close_time', None))+' 23:59:59'
+        if start_date and end_date:
+            filter_query += f" AND seller_accounts.created_at > '{start_date}' AND seller_accounts.created_at < '{end_date}'"
 
         try:
             with db_connection as db_cursor:
-                # 셀러 리스트 표출
-                sql_command = '''
+
+                # 상품 개수
+                select_product_count_statement = '''
+                    SELECT 
+                    COUNT(products.product_no) as product_count
+                    FROM seller_infos
+                    right JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
+                    LEFT JOIN product_infos ON seller_infos.seller_account_id = product_infos.seller_id
+                    LEFT JOIN products ON product_infos.product_id = products.product_no 
+                    GROUP BY seller_accounts.seller_account_no
+                '''
+                db_cursor.execute(select_product_count_statement)
+                product_count = db_cursor.fetchall()
+
+
+                # 셀러 리스트 표출, 쿼리가 들어오면 쿼리문을 포메팅해서 검색 실행
+                select_seller_list_statement = f'''
                     SELECT 
                     seller_accounts.seller_account_no, 
                     accounts.login_id,
-                    name_kr,
                     name_en,
-                    product_infos.product_info_no, 
-                    seller_infos.seller_info_no, 
-                    seller_infos.seller_account_id,
+                    name_kr,
                     brandi_app_user_id,
-                    manager_infos.name,
-                    manager_infos.contact_number,
-                    manager_infos.email,
-                    seller_status_id,
-                    seller_types.name,
-                    COUNT(products.product_no) as product_count,
+                    seller_statuses.name as seller_status,
+                    seller_types.name as seller_type_name,
                     site_url,
-                    seller_accounts.created_at
+                    seller_accounts.created_at,
+                    manager_infos.name as manager_name,
+                    manager_infos.contact_number as manager_contact_number,
+                    manager_infos.email as manager_email
                     FROM seller_infos
-                    RIGHT JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
+                    right JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
                     LEFT JOIN accounts ON seller_accounts.account_id = accounts.account_no
-                    LEFT JOIN product_infos ON seller_infos.seller_account_id = product_infos.seller_id
                     LEFT JOIN seller_statuses ON seller_infos.seller_status_id = seller_statuses.status_no
-                    LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no 
-                    LEFT JOIN products ON product_infos.product_id = products.product_no 
-                    LEFT JOIN manager_infos ON manager_infos.seller_info_id = seller_infos.seller_info_no 
-                    GROUP BY seller_accounts.seller_account_no
+                    LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
+                    LEFT JOIN manager_infos on manager_infos.seller_info_id = seller_infos.seller_info_no 
+                    WHERE seller_infos.close_time = '2037-12-31 23:59:59.0' 
+                    AND manager_infos.ranking = 1{filter_query}
+                    LIMIT %(limit)s OFFSET %(offset)s                   
                 '''
-                db_cursor.execute(sql_command)
-                seller_list = db_cursor.fetchall()
+                parameter = {
+                    'limit' : limit,
+                    'offset' : offset,
+                }
+
+
+                db_cursor.execute(select_seller_list_statement, parameter)
+                seller_info = db_cursor.fetchall()
+
+                # 데이터 베이스에서 가져온 셀러, 매니저, 상품 개수 정보 리스트화
+                seller_list = [{**seller_info[i], **product_count[i]} for i in range(0, len(seller_info))]
+
                 return jsonify({'data': seller_list}), 200
 
         except Error as e:

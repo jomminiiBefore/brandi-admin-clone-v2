@@ -2041,7 +2041,7 @@ CREATE TABLE product_images
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '상품 이미지';
 
 ALTER TABLE product_images
-    ADD CONSTRAINT FK_product_images_product_info_id FOREIGN KEY (product_info_id)
+    ADD CONSTRAINT FK_product_images__no_id FOREIGN KEY (product_info_id)
         REFERENCES product_infos (product_info_no);
 
 ALTER TABLE product_images
