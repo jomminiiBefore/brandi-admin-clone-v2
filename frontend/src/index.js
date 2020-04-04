@@ -1,18 +1,21 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-// import { createStore } from 'redux';
+import { createStore } from 'redux';
 import { Provider } from 'react-redux';
-// import rootReducer from 'src/store/RootReducer';
+import rootReducer from 'src/store/reducers';
 import Routes from 'src/Routes';
 
 const wrapper = document.getElementById('container');
-// const store = createStore(rootReducer);
+const store = createStore(
+  rootReducer,
+  window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
+);
 
 wrapper
   ? ReactDOM.render(
-      // <Provider store={store}>
-      <Routes />,
-      // </Provider>,
+      <Provider store={store}>
+        <Routes />,
+      </Provider>,
       wrapper
     )
   : false;

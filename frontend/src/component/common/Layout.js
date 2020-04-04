@@ -9,7 +9,7 @@ const Layout = props => {
       <Header />
       <MainContentWrapper>
         <SideBar />
-        {props.children}
+        <PageContainer>{props.children}</PageContainer>
       </MainContentWrapper>
     </>
   );
@@ -19,4 +19,9 @@ export default Layout;
 
 const MainContentWrapper = styled.div`
   display: flex;
+  width: 100vw;
+`;
+
+const PageContainer = styled.div`
+  width: calc(100% - 215px);
 `;

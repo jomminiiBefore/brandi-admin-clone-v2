@@ -7,10 +7,10 @@ const styles = {
     buttonBlue: '#428bca',
     bgGray: '#fafafa',
     titleGray: '#eeeeee',
-    essentialRed: '#ff0000'
+    requiredRed: '#ff0000'
   },
   filter: {
-    brightness: 'brightness(25%)'
+    brightness: 'brightness(75%)'
   },
   fontSize: {
     generalFont: '14px',
