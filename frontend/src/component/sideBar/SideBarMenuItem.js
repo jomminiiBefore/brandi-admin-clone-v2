@@ -8,7 +8,7 @@ const SideBarMenuItem = props => {
   // name: 메뉴 이름, list: 메뉴 상세 리스트
   const { name, list } = props;
 
-  console.log('list:', list);
+  // console.log('list:', list);
   return (
     <Container>
       {isClicked ? (
@@ -50,7 +50,7 @@ const Container = styled.li`
 `;
 
 const SubMenuTitleWrapper = styled.div`
-  width: 100%;
+  width: 215px;
   display: flex;
   flex-direction: row;
   justify-content: space-between;

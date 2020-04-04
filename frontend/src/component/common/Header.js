@@ -14,9 +14,9 @@ export default Header;
 const Container = styled.div`
   display: flex;
   align-items: center;
-  width: 100vw;
   height: 45px;
-  background-color: #873a52;
+  background-color: #81007f;
+  width: 100vw;
 `;
 
 const LogoImage = styled.img`

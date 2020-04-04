@@ -1,11 +1,10 @@
-import React, { useState } from "react";
-import styled from "styled-components";
-import TitleText from "src/component/common/TitleText";
-import Input from "src/component/common/Input";
-import Validation from "src/component/common/Validation";
+import React, { useState } from 'react';
+import styled from 'styled-components';
+import Input from 'src/component/common/Input';
+import Validation from 'src/component/common/Validation';
 
 const SignUp = () => {
-  const [vali, setVali] = useState("");
+  const [vali, setVali] = useState('');
 
   return (
     <Container>
@@ -20,7 +19,7 @@ const SignUp = () => {
           <TitleText
             title="가입 정보"
             fontSize="18"
-            style={{ marginRight: "330px" }}
+            style={{ marginRight: '330px' }}
           />
           <div>
             <Input
@@ -42,20 +41,20 @@ const SignUp = () => {
           <TitleText
             title="담당자 정보"
             fontSize="18"
-            style={{ marginRight: "320px" }}
+            style={{ marginRight: '320px' }}
           />
           <div>
             <Input width="410" height="34" placeholder="핸드폰번호" />
             <Validation ValidationText="올바른 정보를 입력해주세요." />
             <Validation
               ValidationText=" 입점 신청 후 브랜디 담당자가 연락을 드릴 수 있으니 정확한 정보를 기입해주세요."
-              style={{ color: "#1e8fff", fontSize: "12px" }}
+              style={{ color: '#1e8fff', fontSize: '12px' }}
             />
           </div>
           <TitleText
             title="셀러 정보"
             fontSize="18"
-            style={{ marginRight: "330px" }}
+            style={{ marginRight: '330px' }}
           />
           <div>
             <Input width="410" height="34" placeholder="샐러명 (상호)" />
@@ -106,7 +105,7 @@ const BgImage = styled.div`
   width: 130px;
   height: 52px;
   margin-bottom: 15px;
-  background-image: url("http://sadmin.brandi.co.kr/include/img/logo_seller_admin_1.png");
+  background-image: url('http://sadmin.brandi.co.kr/include/img/logo_seller_admin_1.png');
   background-size: cover;
   background-repeat: no-repeat;
 `;
@@ -131,7 +130,7 @@ const Img = styled.img`
   width: 408px;
   height: 45px;
   margin-top: 20px;
-  background-image: url("http://sadmin.brandi.co.kr/include/img/seller_join_top_2.png");
+  background-image: url('http://sadmin.brandi.co.kr/include/img/seller_join_top_2.png');
 `;
 
 const InputBox = styled.div`

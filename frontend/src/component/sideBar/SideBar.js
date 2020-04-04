@@ -18,7 +18,6 @@ const SideBar = () => {
 export default SideBar;
 
 const Container = styled.div`
-  width: 215px;
   height: 100vh;
   background-color: #35353a;
 `;

@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import Layout from 'src/component/common/Layout';
-import cc from 'src/utils/styles';
+import style from 'src/utils/styles';
 
 const SellerAccountManagement = () => {
   return (
@@ -23,6 +23,6 @@ const Container = styled.div`
 const Title = styled.div`
   font-size: 30px;
   font-weight: 600;
-  color: ${cc.color.infoColor};
-  filter: ${cc.filter.brightness};
+  color: ${style.color.infoColor};
+  filter: ${style.filter.brightness};
 `;
