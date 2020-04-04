@@ -8,10 +8,13 @@ export const lower_case = /[a-z]/;
 export const number_case = /\d/;
 // 3자리
 export const numberFormat = x => {
-  x = x.replace(/^[0]|[^0-9,]/g, ''); // 입력값이 숫자 및 0으로 시작하는 것이 아니면 공백
-  x = x.replace(/,/g, ''); // ,값 공백처리
-  return x.replace(/\B(?=(\d{3})+(?!\d))/g, ','); // 정규식을 이용해서 3자리 마다 , 추가
+  x = x.replace(/^[0]|[^0-9,]/g, ""); // 입력값이 숫자 및 0으로 시작하는 것이 아니면 공백
+  x = x.replace(/,/g, ""); // ,값 공백처리
+  return x.replace(/\B(?=(\d{3})+(?!\d))/g, ","); // 정규식을 이용해서 3자리 마다 , 추가
 };
 export const removeComma = str => {
-  return parseInt(str.replace(/,/g, ''));
+  return parseInt(str.replace(/,/g, ""));
 };
+
+// id 시작글자
+export const id_start = /^[a-z]+[a-z0-9]/;

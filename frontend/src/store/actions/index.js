@@ -1,6 +1,7 @@
-export const actionName = a => {
+export const sendValue = value => {
+  console.log("value:", value);
   return {
-    type: 'ACTION_NAME',
-    payload: 'a'
+    type: "SEND_VALUE",
+    value: value
   };
 };

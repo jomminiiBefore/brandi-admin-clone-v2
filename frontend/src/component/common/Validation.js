@@ -2,13 +2,13 @@ import React from "react";
 import styled from "styled-components";
 
 const Validation = props => {
+  console.log(props);
   return (
     <Container>
-      <ValidationBox {...props}>{props.ValidationText}</ValidationBox>
+      <ValidationBox>{props.validationText}</ValidationBox>
     </Container>
   );
 };
-
 export default Validation;
 
 const Container = styled.div``;

@@ -1,6 +1,3 @@
-import { combineReducers } from "redux";
-// import inputValidation from "src/store/reducers/inputValidation";
-
 const inputValidation = (state = "", action) => {
   switch (action.type) {
     case "SEND_VALUE":
@@ -10,4 +7,4 @@ const inputValidation = (state = "", action) => {
   }
 };
 
-export default combineReducers({ inputValidation });
+export default inputValidation;
