@@ -1,16 +1,15 @@
-import React, { useState } from "react";
+import React from "react";
 import styled from "styled-components";
 
-const Input = props => {
-  const [innerText, setInnerText] = useState("");
-
+const Input = ({ placeholder, width, height }) => {
   return (
     <Container>
       <InputBox
-        {...props}
         type="text"
-        placeholder={props.placeholder}
-        onChange={e => console.log("타겟밸류::", e.target.value)}
+        placeholder={placeholder}
+        onChange={e => props.setText(e.target.value)}
+        width={width}
+        height={height}
       />
     </Container>
   );

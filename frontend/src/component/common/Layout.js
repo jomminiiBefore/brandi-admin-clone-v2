@@ -1,7 +1,8 @@
-import React from 'react';
-import SideBar from 'src/component/sideBar/SideBar';
-import Header from 'src/component/common/Header';
-import styled from 'styled-components';
+import React from "react";
+import Header from "src/component/common/Header";
+import SideBar from "src/component/sideBar/SideBar";
+import Footer from "src/component/common/Footer";
+import styled from "styled-components";
 
 const Layout = props => {
   return (
@@ -11,6 +12,7 @@ const Layout = props => {
         <SideBar />
         <PageContainer>{props.children}</PageContainer>
       </MainContentWrapper>
+      <Footer />
     </>
   );
 };
