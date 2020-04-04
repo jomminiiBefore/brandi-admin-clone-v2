@@ -214,7 +214,7 @@ class SellerService:
         except Exception as e:
             print(e)
 
-    def get_seller_list(self, user, db_connection):
+    def get_seller_list(self, request, user, db_connection):
 
         """ Args:
              user: 유저 정보
@@ -249,13 +249,13 @@ class SellerService:
 
                 # 마스터 유저이면 dao에 db_connection 전달
                 if auth_type_name == '마스터':
-                    seller_list_result = seller_dao.get_seller_list(db_connection)
+                    seller_list_result = seller_dao.get_seller_list(request, db_connection)
                     return seller_list_result
 
                 return jsonify({'message' : 'AUTHORIZATION_REQUIRED'}), 403
 
         except Exception as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
-            return jsonify({'message' : 'DB_CURSOR_ERROR'})
+            return jsonify({'message' : 'DB_CURSOR_ERROR'}), 500
 
 

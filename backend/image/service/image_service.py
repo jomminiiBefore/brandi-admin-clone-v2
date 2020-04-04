@@ -130,7 +130,7 @@ class ImageService:
         big_size_buffer = self.resize_to_big(image_file)
         if not big_size_buffer:
             return jsonify({"message" : "INVALID_IMAGE"}), 400
-        s3.put_object(Body = big_size_buffer[0], Bucket = "brandi-intern", Key = big_size_buffer[1])
+        s3.put_object(Body = big_size_buffer[0], Bucket = "brandi-intern", Key = big_size_buffer[1], ContentType = 'image/jpeg')
         big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
         data['big_size_url'] = big_size_url
 
@@ -138,7 +138,7 @@ class ImageService:
         medium_size_buffer = self.resize_to_medium(image_file)
         if not medium_size_buffer:
             return jsonify({"message" : "INVALID_IMAGE"}), 400
-        s3.put_object(Body = medium_size_buffer[0], Bucket = "brandi-intern", Key = medium_size_buffer[1])
+        s3.put_object(Body = medium_size_buffer[0], Bucket = "brandi-intern", Key = medium_size_buffer[1], ContentType = 'image/jpeg')
         medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
         data['medium_size_url'] = medium_size_url
 
@@ -146,7 +146,7 @@ class ImageService:
         small_size_buffer = self.resize_to_small(image_file)
         if not small_size_buffer:
             return jsonify({"message" : "INVALID_IMAGE"}), 400
-        s3.put_object(Body = small_size_buffer[0], Bucket = "brandi-intern", Key = small_size_buffer[1])
+        s3.put_object(Body = small_size_buffer[0], Bucket = "brandi-intern", Key = small_size_buffer[1], ContentType = 'image/jpeg')
         small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
         data['small_size_url'] = small_size_url
 

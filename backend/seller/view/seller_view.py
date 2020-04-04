@@ -233,6 +233,20 @@ class SellerView:
 
     @seller_app.route('/list', methods=['GET'])
     @login_required
+    # @validate_params(
+    #     Param('seller_account_no', PATH, int),
+    #     Param('login_id', PATH, int),
+    #     Param('name_en', PATH, str),
+    #     Param('name_kr', PATH, str),
+    #     Param('brandi_app_user_id', PATH, int),
+    #     Param('manager_name', PATH, str),
+    #     Param('seller_status', PATH, str),
+    #     Param('manager_contact_number', PATH, str),
+    #     Param('seller_type_name', PATH, str),
+    #     Param('start_time', PATH, str),
+    #     Param('close_time', PATH, str)
+    #
+    # )
     def get_seller_list():
 
         """ 가입된 모든 셀러 정보 리스트를 표출
@@ -251,5 +265,6 @@ class SellerView:
         # 유저 정보를 g에서 읽어와서 service에 전달
         user = g.account_info
         seller_service = SellerService()
-        seller_list_result = seller_service.get_seller_list(user, db_connection)
+        seller_list_result = seller_service.get_seller_list(request, user, db_connection)
         return seller_list_result
+
