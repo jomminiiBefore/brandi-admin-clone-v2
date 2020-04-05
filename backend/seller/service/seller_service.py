@@ -1,6 +1,8 @@
 import bcrypt
+import jwt
 from flask import jsonify, g
-
+from datetime import datetime, timedelta
+from config import SECRET
 from connection import DatabaseConnection
 
 from seller.model.seller_dao import SellerDao
@@ -266,7 +268,7 @@ class SellerService:
 
         Returns:
             200: 가입된 모든 셀러 정보 리스트
-            403: 열람 권한 없음
+           403: 열람 권한 없음
 
         Authors:
             yoonhc@brandi.co.kr (윤희철)
@@ -355,3 +357,62 @@ class SellerService:
             return seller_name_list_result
 
         return jsonify({'message': 'AUTHORIZATION_REQUIRED'}), 403
+
+    def login(self, account_info, db_connection):
+
+        """ 로그인 로직 처리
+
+        유효성 검사를 통과한 로그인 정보를 view 에서 받아와 DAO 에 전달하고
+        DAO 에서 받은 return 값에 따라 로직을 처리
+        - true: password 가 맞는지 확인 및 jwt 로 토큰 발급
+        - false: return invalid login id
+
+        Args:
+            account_info: 유효성 검사를 통과한 account 정보 (login_id, password)
+            db_connection: 연결된 database connection 객체
+
+        Returns:
+            200: SUCCESS 로그인 성공
+            400: INVALID_LOGIN_ID
+            401: INVALID_PASSWORD
+
+        Authors:
+            choiyj@brandi.co.kr (최예지)
+
+        History:
+            2020-04-05 (choiyj@brandi.co.kr): 초기 생성
+            2020-04-05 (choiyj@brandi.co.kr): 로그인 로직을 처리하는 함수 작성, login_id 존재여부에 따라 token 발행 함수 구현
+        """
+
+        # SellerDao 에서 가져온 정보를 담는 seller_dao 인스턴스 생성
+        seller_dao = SellerDao()
+        try:
+            # seller_dao 에 있는 get_account_info 함수로 account_info 와 db_connection 을 인자로 넘겨줌
+            account_info_result = seller_dao.get_account_info(account_info, db_connection)
+
+            # 만약 DB 에 login_id 가 존재하면
+            if account_info_result:
+
+                # bcrypt.checkpw 를 통해 암호화 된 password 와 인자로 받아 온 password 를 비교
+                if bcrypt.checkpw(account_info['password'].encode('utf-8'),
+                                  account_info_result['password'].encode('utf-8')):
+
+                    # 두 password 가 일치하면 token 을 발급하는데 현재시간 + 3일 만큼 유효하도록 지정해 줌
+                    token = jwt.encode({'account_no': account_info_result['account_no'],
+                                        'exp': datetime.utcnow() + timedelta(days=3)},
+                                       SECRET['secret_key'], algorithm=SECRET['algorithm'])
+
+                    # 발급 된 token 을 return
+                    return jsonify({'token': token}), 200
+
+                else:
+                    # 만약 두 password 가 불일치하면 에러 메세지 return
+                    return jsonify({'message': 'INVALID_PASSWORD'}), 401
+
+            else:
+                # DB에 login_id 가 존재하지 않으면 에러 메세지 return
+                return jsonify({'message': 'INVALID_LOGIN_ID'}), 400
+
+        # 명시하지 않은 모든 에러를 잡아서 return
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
