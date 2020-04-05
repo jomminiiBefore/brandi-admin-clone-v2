@@ -105,9 +105,7 @@ class ProductView():
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 
     @product_app.route("/<int:product_info_no>", methods=["GET"])
-    @validate_params(
-        Param('product_info_no', PATH, int),
-    )
+    @validate_params(Param('product_info_no', PATH, int))
     def get_product_detail1(product_info_no):
 
         """ 상품 등록/수정시 나타나는 개별 상품의 기존 정보 표출 엔드포인트
@@ -127,8 +125,7 @@ class ProductView():
             leesh3@brandi.co.kr (이소헌)
 
         History:
-        2020-04-03 (leesh3@brandi.co.kr): 초기 생성
-
+            2020-04-03 (leesh3@brandi.co.kr): 초기 생성
         """
         db_connection = DatabaseConnection()
 

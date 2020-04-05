@@ -1,6 +1,8 @@
 from flask import jsonify
 from mysql.connector.errors import Error
 
+from connection import DatabaseConnection
+
 
 class SellerDao:
 
@@ -839,3 +841,48 @@ class SellerDao:
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
+    def get_seller_name_list(self, keyword, db_connection):
+
+        """
+
+        Args:
+            keyword(string):
+            db_connection(DatabaseConnection):
+
+        Returns:
+            200: 검색된 셀러 10개
+            400: key error
+            500: server error
+
+        Authors:
+
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+            2020-04-05 (leesh3@brandi.co.kr): 초기 생성
+        """
+        try:
+            with db_connection as db_cursor:
+                get_stmt = """
+                    SELECT seller_info_no, profile_image_url, name_kr
+                    FROM seller_infos 
+                    WHERE name_kr 
+                    LIKE '%"""+keyword+"""%'
+                """
+                db_cursor.execute(get_stmt)
+
+                names = db_cursor.fetchmany(10)
+
+                if names:
+                    return jsonify({'search_results': names}), 200
+                return jsonify({'message': 'SELLER_DOES_NOT_EXISTS'}), 404
+
+        except KeyError as e:
+            print(f'KEY_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'INVALID_KEY'}), 400
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500

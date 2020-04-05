@@ -132,8 +132,8 @@ class ProductDao:
                 product_information = db_cursor.fetchone()
 
                 if product_information:
-                    return jsonify({'product_information': product_information})
-                return jsonify({'message': 'PRODUCT_DOES_NOT_EXIST'})
+                    return jsonify({'product_information': product_information}), 200
+                return jsonify({'message': 'PRODUCT_DOES_NOT_EXIST'}), 404
 
         except KeyError as e:
             print(f'KEY_ERROR_WITH {e}')
@@ -143,4 +143,4 @@ class ProductDao:
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
-            return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
