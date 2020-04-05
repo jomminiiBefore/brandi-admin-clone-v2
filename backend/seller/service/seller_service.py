@@ -39,28 +39,6 @@ class SellerService:
 
         return new_seller_result 
 
-    def get_all_sellers(self, request, db_connection):
-
-        """
-
-        Args:
-            request: 회원 조회 GET 요청 및 권한 정보 (authorization)
-            db_connection: 데이터베이스 커넥션 객체
-
-        Returns:
-            200: 가입된 모든 셀러 정보 표
-
-        Authors:
-            yoonhc@brandi.co.kr (윤희철)
-
-        History:
-            2020-03-27 (yoonhc@brandi.co.kr): 초기 생성
-        """
-        seller_dao = SellerDao()
-        get_all_sellers = seller_dao.select_seller_info(db_connection)
-
-        return get_all_sellers
-
     # noinspection PyMethodMayBeStatic
     def change_password(self, account_info, db_connection):
 
@@ -280,47 +258,72 @@ class SellerService:
 
     def get_seller_list(self, request, user, db_connection):
 
-        """ Args:
-             user: 유저 정보
-             db_connection: 데이터베이스 커넥션 객체
+        """ 가입된 모든 셀러 정보 리스트 표출
+        Args:
+            request: 클라이언트에서 온 요청
+            user: 유저 정보
+            db_connection: 데이터베이스 커넥션 객체
 
-         Returns:
-             200: 가입된 모든 셀러 정보 리스트
+        Returns:
+            200: 가입된 모든 셀러 정보 리스트
+            403: 열람 권한 없음
 
-         Authors:
-             yoonhc@brandi.co.kr (윤희철)
+        Authors:
+            yoonhc@brandi.co.kr (윤희철)
 
-         History:
-             2020-04-03 (yoonhc@brandi.co.kr): 초기 생성
+        History:
+            2020-04-03 (yoonhc@brandi.co.kr): 초기 생성
 
-         """
+        """
 
         seller_dao = SellerDao()
+        auth_type_id = user.get('auth_type_id', None)
 
-        # 유저 정보에서 권한 정보를 확인
-        try:
-            with db_connection as db_cursor:
-                sql_command = '''
-                SELECT
-                name 
-                FROM 
-                authorization_types 
-                WHERE 
-                auth_type_no = %(auth_type_id)s
-                '''
-                db_cursor.execute(sql_command, {'auth_type_id' : user['auth_type_id']})
-                auth_type_name = db_cursor.fetchone()['name']
+        # 마스터 유저이면 dao에 db_connection 전달
+        if auth_type_id == 1:
+            seller_list_result = seller_dao.get_seller_list(request, db_connection)
+            return seller_list_result
 
-                # 마스터 유저이면 dao에 db_connection 전달
-                if auth_type_name == '마스터':
-                    seller_list_result = seller_dao.get_seller_list(request, db_connection)
-                    return seller_list_result
+        return jsonify({'message' : 'AUTHORIZATION_REQUIRED'}), 403
 
-                return jsonify({'message' : 'AUTHORIZATION_REQUIRED'}), 403
+    def change_seller_status(self, request, user, db_connection):
 
-        except Exception as e:
-            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
-            return jsonify({'message' : 'DB_CURSOR_ERROR'}), 500
+        """ 마스터 권한 셀러 상태 변경
+            Args:
+                request: 클라이언트에서 온 요청
+                user: 유저 정보
+                db_connection: 데이터베이스 커넥션 객체
+
+            Returns:
+                200: 수정 성공
+                400: value값이 정확하게 안들어 온 경우
+                403: 수정 권한 없음
+
+            Authors:
+                yoonhc@brandi.co.kr (윤희철)
+
+            History:
+                2020-04-03 (yoonhc@brandi.co.kr): 초기 생성
+
+        """
+        seller_dao = SellerDao()
+        auth_type_id = user.get('auth_type_id', None)
+
+        # 마스터 유저이면 dao에 db_connection 전달
+        if auth_type_id == 1:
+            data = request.json
+            seller_status_id = data.get('seller_status_id', None)
+            seller_account_id = data.get('seller_account_id', None)
+            print(data)
+
+            # 셀러 상태 번호와 셀러 계정 번호가 둘다 들어오지 않으면 400 리턴
+            if not seller_status_id or not seller_account_id:
+                return jsonify({'message' : 'INVALID_VALUE'}), 400
+
+            seller_list_result = seller_dao.change_seller_status(seller_status_id, seller_account_id, db_connection)
+            return seller_list_result
+
+        return jsonify({'message' : 'AUTHORIZATION_REQUIRED'}), 403
 
     def get_seller_name_list(self, keyword, db_connection):
 

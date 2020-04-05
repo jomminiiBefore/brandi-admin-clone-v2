@@ -102,41 +102,6 @@ class SellerDao:
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
 
-    def select_seller_info(self, db_connection):
-
-        """ 가입된 모든 셀러 표출
-
-        Args:
-            db_connection: 데이터베이스 커넥션 객체
-
-        Returns:
-            200: 가입된 모든 셀러 세부 정보
-
-        Authors:
-            yoonhc@brandi.co.kr (윤희철)
-
-        History:
-            2020-03-27 (yoonhc@brandi.co.kr): 초기 생성
-        """
-
-        try:
-            with db_connection as db_cursor:
-                seller_info = ("""
-                        SELECT * FROM seller_infos
-                """)
-                db_cursor.execute(seller_info)
-                sellers = db_cursor.fetchall()
-
-                return jsonify({'sellers': sellers}), 200
-
-        except Error as e:
-            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
-            db_connection.rollback()
-            return jsonify({'message': 'DB_CURSOR_ERROR'})
-
-        except Exception as e:
-            print(e)
-
     # noinspection PyMethodMayBeStatic
     def get_account_password(self, account_info, db_connection):
 
@@ -481,18 +446,18 @@ class SellerDao:
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
     def get_seller_list(self, request, db_connection):
-        """ GET 셀러 리스트를 표출하고, 검색 키워드가 오면 필터링 쿼리가 추가됨.
+        """ GET 셀러 리스트를 표출하고, 검색 키워드가 오면 키워드 별 검색 가능.
 
         Args:
             db_connection: 연결된 database connection 객체
-            request: 쿼리파라미터를 가져
+            request: 쿼리파라미터를 가져옴
 
         Returns: http 응답코드
-            200: 셀러 리스트 표출
+            200: 셀러 리스트 표출(검색기능 포함)
             500: SERVER ERROR
 
         Authors:
-            heechul@brandi.co.kr (윤희)
+            heechul@brandi.co.kr (윤희철)
 
         History:
             2020-04-03(heechul@brandi.co.kr): 초기 생성
@@ -501,6 +466,7 @@ class SellerDao:
         offset = 0 if int(request.args.get('offset', 0)) < 0 else int(request.args.get('offset', 0))
         limit = 10 if int(request.args.get('limit', 10)) < 0 else int(request.args.get('limit', 10))
 
+        # sql에서 where 조건문에 들어갈 필터 문자열
         filter_query = ''
 
         # request에 쿼리파라미터가 들어오고 값이 존재하면 filter_query에 조건 쿼리문을 추가해줌.
@@ -544,15 +510,19 @@ class SellerDao:
         if seller_type_name:
             filter_query += f" AND seller_types.name = '{seller_type_name}'"
 
-        start_date = str(request.args.get('start_time', None))+' 00:00:00'
-        end_date = str(request.args.get('close_time', None))+' 23:59:59'
+        start_date = request.args.get('start_time', None)
+        end_date = request.args.get('close_time', None)
         if start_date and end_date:
+            start_date = str(request.args.get('start_time', None)) + ' 00:00:00'
+            end_date = str(request.args.get('close_time', None)) + ' 23:59:59'
             filter_query += f" AND seller_accounts.created_at > '{start_date}' AND seller_accounts.created_at < '{end_date}'"
+
+        print(filter_query)
 
         try:
             with db_connection as db_cursor:
 
-                # 상품 개수
+                # 상품 개수를 가져오는 sql 명령문
                 select_product_count_statement = '''
                     SELECT 
                     COUNT(products.product_no) as product_count
@@ -565,15 +535,16 @@ class SellerDao:
                 db_cursor.execute(select_product_count_statement)
                 product_count = db_cursor.fetchall()
 
-                # 셀러 리스트 표출, 쿼리가 들어오면 쿼리문을 포메팅해서 검색 실행
+                # 셀러 리스트를 가져오는 sql 명령문, 쿼리가 들어오면 쿼리문을 포메팅해서 검색 실행
                 select_seller_list_statement = f'''
                     SELECT 
-                    seller_accounts.seller_account_no, 
+                    seller_account_id, 
                     accounts.login_id,
                     name_en,
                     name_kr,
                     brandi_app_user_id,
                     seller_statuses.name as seller_status,
+                    seller_status_id,
                     seller_types.name as seller_type_name,
                     site_url,
                     seller_accounts.created_at,
@@ -595,15 +566,28 @@ class SellerDao:
                     'offset' : offset,
                 }
 
+                # sql 쿼리와 pagination 데이터 바인딩
                 db_cursor.execute(select_seller_list_statement, parameter)
                 seller_info = db_cursor.fetchall()
 
                 # 데이터 베이스에서 가져온 셀러, 매니저, 상품 개수 정보 리스트화
                 seller_list = [{**seller_info[i], **product_count[i]} for i in range(0, len(seller_info))]
+                print(seller_list)
+                for seller in seller_list:
+                    if seller['seller_status'] == '입점':
+                        seller['action'] = ['휴점 신청', '퇴점 신청 처리']
+                    elif seller['seller_status'] == '입점대기':
+                        seller['action'] = ['입점 승인', '입점 거절']
+                    elif seller['seller_status'] == '휴점':
+                        seller['action'] = ['휴점 해제', '퇴점 신청 처리']
+                    elif seller['seller_status'] == '퇴점대기':
+                        seller['action'] = ['휴점 신청', '퇴점 확정 처리', '퇴점 철회 처리']
+                print(seller_list)
 
                 return jsonify({'data': seller_list}), 200
 
-        except Error as e:
+        # 데이터베이스 error
+        except Exception as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
 
@@ -886,3 +870,53 @@ class SellerDao:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
+
+    def change_seller_status(self, seller_status_id, seller_account_id, db_connection):
+
+        """ 마스터 권한 셀러 상태 변경
+            Args:
+                seller_status_id: 셀러 상태 아이디
+                seller_account_id: 셀러 정보 아이디
+                db_connection: 데이터베이스 커넥션 객체
+
+            Returns:
+                200: 셀러 상태 정보 수정 성공
+                500: 데이터베이스 error
+
+            Authors:
+                yoonhc@brandi.co.kr (윤희철)
+
+            History:
+                2020-04-05 (yoonhc@brandi.co.kr): 초기 생성
+
+        """
+
+        # 데이터베이스 커서 실행
+        try:
+            with db_connection as db_cursor:
+
+                # 셀러 상태 변경 sql 명령문
+                update_seller_status_statement = """
+                    UPDATE
+                    seller_infos
+                    SET
+                    seller_status_id = %(seller_status_id)s
+                    WHERE
+                    seller_account_id = %(seller_account_id)s
+                """
+
+                # service에서 넘어온 셀러 데이터
+                seller_status_data = {
+                    'seller_status_id' : seller_status_id,
+                    'seller_account_id' : seller_account_id
+                }
+
+                # 데이터 sql명령문과 셀러 데이터 바인딩
+                db_cursor.execute(update_seller_status_statement, seller_status_data)
+                db_connection.commit()
+                return jsonify({'message' : 'SUCCESS'}), 200
+
+        # 데이터베이스 error
+        except Exception as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            return jsonify({'error': 'DB_CURSOR_ERROR'}), 500

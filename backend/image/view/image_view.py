@@ -22,3 +22,6 @@ class ImageView:
         image_service = ImageService()
         image_upload_result = image_service.upload_event_image(request)
         return image_upload_result
+
+
+
