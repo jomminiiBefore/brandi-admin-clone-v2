@@ -1,5 +1,7 @@
 import bcrypt
-from flask import jsonify
+from flask import jsonify, g
+
+from connection import DatabaseConnection
 
 from seller.model.seller_dao import SellerDao
 
@@ -320,4 +322,33 @@ class SellerService:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'message' : 'DB_CURSOR_ERROR'}), 500
 
+    def get_seller_name_list(self, keyword, db_connection):
 
+        """ 마스터 권한으로 상품 등록시 셀러를 검색
+
+        마스터 권한으로 접속하여 상품을 등록할 경우,
+        셀러를 한글 이름으로 검색하여 선택할 수 있음
+
+        Args:
+            keyword(string): 한글 이름 검색어
+            db_connection(DatabaseConnection): 데이터베이스 커넥션 객체
+
+        Returns:
+            200: 검색된 셀러 10개
+            403: 마스터 권한이 없음
+            
+         Authors:
+
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+            2020-04-04 (leesh3@brandi.co.kr): 초기 생성
+
+        """
+        seller_dao = SellerDao()
+
+        if g.account_info['auth_type_id'] == 1:
+            seller_name_list_result = seller_dao.get_seller_name_list(keyword, db_connection)
+            return seller_name_list_result
+
+        return jsonify({'message': 'AUTHORIZATION_REQUIRED'}), 403

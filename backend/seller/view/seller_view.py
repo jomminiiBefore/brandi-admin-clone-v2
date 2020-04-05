@@ -2,6 +2,7 @@ import re
 
 from flask import request, Blueprint, jsonify, g
 from flask_request_validator import (
+    GET,
     PATH,
     JSON,
     Param,
@@ -544,7 +545,52 @@ class SellerView:
                     db_connection.close()
                 except Exception as e:
                     return jsonify({'message': f'{e}'}), 400
-
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+    @seller_app.route('/name', methods=['GET'], endpoint='get_seller_name_list')
+    @login_required
+    @validate_params(Param('keyword', GET, str))
+    def get_seller_name_list(keyword):
+
+        """ 마스터 권한으로 상품 등록시 셀러를 검색하는 엔드포인트
+
+        마스터 권한으로 접속하여 상품을 등록할 경우,
+        셀러를 한글 이름으로 검색하여 선택할 수 있음
+
+        Args:
+            keyword: 셀러 한글 이름으로 검색할 키워드
+
+        Returns:
+            200: 검색된 셀러 10개 반환
+            400: 데이터베이스 연결 에러
+            500: server error
+
+        Authors:
+
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+            2020-04-04 (leesh3@brandi.co.kr): 초기 생성
+        """
+
+
+        db_connection = DatabaseConnection()
+        if db_connection:
+            try:
+                seller_service = SellerService()
+                seller_name_list_result = seller_service.get_seller_name_list(keyword, db_connection)
+
+                return seller_name_list_result
+
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 400
+
+            finally:
+                try:
+                    db_connection.close()
+                except Exception as e:
+                    return jsonify({'message': f'{e}'}), 400
+
+        return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 
