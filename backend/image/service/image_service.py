@@ -119,7 +119,7 @@ class ImageService:
                 buffer = io.BytesIO()
                 pillow_obj.save(buffer, pillow_obj.format)
                 print(buffer.tell()/1000)
-                if buffer.tell()/1000 > 500000:
+                if buffer.tell()/1000 > 5000000:
                     return jsonify({'message' : f'{buffer}'}), 400
         except:
             return jsonify({'message' : 'INVALID_IMAGE1'}), 400
@@ -133,6 +133,7 @@ class ImageService:
         s3.put_object(Body = big_size_buffer[0], Bucket = "brandi-intern", Key = big_size_buffer[1], ContentType = 'image/jpeg')
         big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
         data['big_size_url'] = big_size_url
+        data['big_image_size_id'] = 1
 
         # medium_size 업로드
         medium_size_buffer = self.resize_to_medium(image_file)
@@ -141,6 +142,7 @@ class ImageService:
         s3.put_object(Body = medium_size_buffer[0], Bucket = "brandi-intern", Key = medium_size_buffer[1], ContentType = 'image/jpeg')
         medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
         data['medium_size_url'] = medium_size_url
+        data['medium_image_size_id'] = 2
 
         # small_size 업로드
         small_size_buffer = self.resize_to_small(image_file)
@@ -149,6 +151,7 @@ class ImageService:
         s3.put_object(Body = small_size_buffer[0], Bucket = "brandi-intern", Key = small_size_buffer[1], ContentType = 'image/jpeg')
         small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
         data['small_size_url'] = small_size_url
+        data['small_image_size_id'] = 3
 
         return data
 
