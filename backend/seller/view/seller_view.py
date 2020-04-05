@@ -1,15 +1,20 @@
+import re
+
 from flask import request, Blueprint, jsonify, g
+from flask_request_validator import (
+    PATH,
+    JSON,
+    Param,
+    Pattern,
+    MinLength,
+    MaxLength,
+    validate_params
+)
 
 from seller.service.seller_service import SellerService
 from connection import DatabaseConnection
 from utils import login_required
 
-from flask_request_validator import (
-    PATH,
-    JSON,
-    Param,
-    validate_params
-)
 
 class SellerView:
     """
@@ -166,7 +171,8 @@ class SellerView:
     @login_required
     @validate_params(
         Param('parameter_account_no', PATH, int),
-     )
+        Param('parameter_account_no', PATH, rules=[MaxLength(6)]),
+    )
     def get_seller_info(*args):
 
         """ 계정 셀러정보 표출 엔드포인트
@@ -267,4 +273,266 @@ class SellerView:
         seller_service = SellerService()
         seller_list_result = seller_service.get_seller_list(request, user, db_connection)
         return seller_list_result
+
+    @seller_app.route('/<int:parameter_account_no>/info', methods=['PUT'], endpoint='change_seller_info')
+    @login_required
+    @validate_params(
+        Param('parameter_account_no', PATH, int),
+        Param('profile_image_url', JSON, str,
+              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
+        Param('profile_image_url', JSON, str,
+              rules=[MaxLength(200)]),
+        Param('seller_status_no', JSON, int),
+        Param('seller_type_no', JSON, int),
+        Param('name_kr', JSON, str,
+              rules=[Pattern(r'^[가-힣a-zA-Z0-9\ ]{1,45}$')]),
+        Param('name_en', JSON, str, required=False,
+              rules=[Pattern(r'^[a-z\ ]{1,45}$')]),
+        Param('account_no', JSON, int),
+        Param('brandi_app_user_app_id', JSON, str,
+              rules=[Pattern(r'^[가-힣a-zA-Z0-9]{1,45}$')]),
+        Param('ceo_name', JSON, str,
+              rules=[Pattern(r'^[가-힣a-zA-Z0-9]{1,45}$')]),
+        Param('company_name', JSON, str,
+              rules=[Pattern(r'^[가-힣a-zA-Z0-9]{1,45}$')]),
+        Param('business_number', JSON, str,
+              rules=[Pattern(r'^[0-9]{3}-{1}[0-9]{2}-{1}[0-9]{5}$')]),
+        Param('certificate_image_url', JSON, str,
+              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
+        Param('certificate_image_url', JSON, str,
+              rules=[MaxLength(200)]),
+        Param('online_business_number', JSON, str,
+              rules=[MaxLength(45)]),
+        Param('online_business_image_url', JSON, str,
+              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
+        Param('online_business_image_url', JSON, str,
+              rules=[MaxLength(200)]),
+        Param('background_image_url', JSON, str, required=False,
+              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
+        Param('background_image_url', JSON, str,
+              rules=[MaxLength(200)]),
+        Param('short_description', JSON, str,
+              rules=[MaxLength(100)]),
+        Param('long_description', JSON, str, required=False,
+              rules=[MaxLength(200)]),
+        Param('long_description', JSON, str, required=False,
+              rules=[MinLength(10)]),
+        Param('site_url', JSON, str,
+              rules=[MaxLength(200)]),
+        Param('site_url', JSON, str,
+              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
+        Param('manager_infos', JSON, list),
+        Param('insta_id', JSON, str,
+              rules=[Pattern(r"^[a-z0-9_\.]{1,45}$")]),
+        Param('center_number', JSON, str,
+              rules=[Pattern(r"^[0-9-]{1,14}$")]),
+        Param('kakao_id', JSON, str, required=False,
+              rules=[Pattern(r"^[가-힣a-zA-Z0-9_\.]{1,45}$")]),
+        Param('yellow_id', JSON, str, required=False,
+              rules=[Pattern(r"^[가-힣a-zA-Z0-9_\.]{1,45}$")]),
+        Param('zip_code', JSON, str,
+              rules=[Pattern(r"^[0-9]{5}$")]),
+        Param('address', JSON, str,
+              rules=[MaxLength(100)]),
+        Param('detail_address', JSON, str,
+              rules=[MaxLength(100)]),
+        Param('weekday_start_time', JSON, str,
+              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}$")]),
+        Param('weekday_end_time', JSON, str,
+              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}$")]),
+        Param('weekend_start_time', JSON, str, required=False,
+              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}$")]),
+        Param('weekend_end_time', JSON, str, required=False,
+              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}$")]),
+        Param('bank_name', JSON, str,
+              rules=[MaxLength(45)]),
+        Param('bank_holder_name', JSON, str,
+              rules=[MaxLength(45)]),
+        Param('account_number', JSON, str,
+              rules=[MaxLength(45)]),
+        Param('seller_account_id', JSON, int),
+        Param('previous_seller_info_no', JSON, int),
+        Param('previous_seller_status_no', JSON, int),
+
+        # int 를 str 로 인식해서 정규식 유효성 확인
+        Param('seller_status_no', JSON, str,
+              rules=[Pattern(r"^[1-5]{1}$")]),
+        Param('seller_type_no', JSON, str,
+              rules=[Pattern(r"^[1-7]{1}$")]),
+        Param('previous_seller_status_no', JSON, str,
+              rules=[Pattern(r"^[1-5]{1}$")])
+    )
+    def change_seller_info(*args):
+
+        """ 계정 셀러정보 수정 엔드포인트
+
+        셀러정보를 수정하는 엔드포인트 입니다.
+        url 로 셀러정보를 수정하고 싶은 계정 번호를 받습니다.
+        셀러정보 수정을 수행하려는 계정의 정보를 데코레이터로부터 받습니다.
+        수정하려는 내용은 request.body 로 받습니다.
+
+        받은 정보를 유효성 검사를 거친 후 account_info 로 저장해 service 로 넘겨줍니다.
+
+        Args:
+            *args: 유효성 검사를 통과한 파라미터
+
+        url parameter:
+            parameter_account_no: 저장할 셀러정보의 계정 번호
+
+        g.account_info: 데코레이터에서 넘겨받은 수정을 수행하는 계정 정보
+            auth_type_id: 계정의 권한정보
+            account_no: 데코레이터에서 확인된 계정번호
+
+        request.body:
+            profile_image_url 프로필 이미지 URL str 200자
+            seller_status_no 셀러 상태번호 int
+            seller_type_no 셀러 속성번호 int
+            name_kr 셀러 한글명 str 한글,영문,숫자
+            name_en 셀러 영문명 str required False 영문 소문자
+            account_no 계정번호 int
+            seller_account_id 셀러 계정번호 int
+            brandi_app_user_app_id 브랜디앱 유저 아이디 str
+            ceo_name 대표자명 str
+            company_name 사업자명 str
+            business_number 사업자번호 str 12자리
+            certificate_image_url 사업자등록증 이미지 URL
+            online_business_number 통신판매업번호 str
+            online_business_image_url 통신판매업신고필증 이미지 URL str
+            background_image_url 셀러페이지 배경이미지 URL str required False
+            short_description 셀러 한줄 소개 str
+            long_description 셀러 상세 소개 str required False 10글자 이상
+            site_url 사이트 URL str
+            manager_info: 담당자 정보 list
+            [
+                {
+                    name 담당자명 str
+                    contact_number 담당자 핸드폰번호 str
+                    email 담당자 이메일 str
+                }
+            ]
+            insta_id 인스타그램 아이디 str
+            center_number 고객센터 전화번호 str
+            kakao_id 카카오톡 아이디 str required False
+            yellow_id 옐로우 아이디 str required False
+            zip_code 우편번호 str
+            address 주소 int
+            detail_address 상세주소 str
+            weekday_start_time 고객센터 운영 시작시간(주중) str
+            weekday_end_time 고객센터 운영 종료시간(주중) str
+            weekend_start_time 고객센터 운영 시작시간(주말) str required False
+            weekend_end_time 고객센터 운영 종료시간(주말) str required False
+            bank_name 정산은행 str
+            bank_holder_name 계좌주 str
+            account_number 계좌번호 str
+            previous_seller_info_no 이전 셀러 정보번호(수정하려고 하는) int
+            previous_seller_status_no 이전 셀러정보의 상태번호 int (상태변경이력 체크용)
+
+        Returns: http 응답코드
+            200: SUCCESS 셀러정보 수정(새로운 이력 생성) 완료
+            400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
+            400: VALIDATION_ERROR_MANAGER_INFO, NO_SPECIFIC_MANAGER_INFO,
+                 DB_CURSOR_ERROR, INVALID_AUTH_TYPE_ID
+            403: NO_AUTHORIZATION
+            500: SERVER_ERROR
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:들
+            2020-04-03 (leejm3@brandi.co.kr): 초기 생성
+            2020-04-04 (leejm4@brandi.co.kr): 이전 셀러 정보번호, 이전 셀러 정보 상태정보, 셀러 계정번호 추가
+        """
+
+        # manager_infos 유효성 확인
+        manager_info_list = args[24]
+
+        # manger_infos 리스트를 돌면서 각각의 유효성을 충족하는지 체크
+        for info in manager_info_list:
+            name_validation = r'^[가-힣a-zA-Z0-9\ ]{1,45}$'
+            contact_number_validation = r'^[0-9-]{1,14}$'
+            email_validation = r'^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}$'
+            ranking_validation = r'^[1-3]{1}$'
+
+            # 각 키가 들어왔는지 먼저 확인
+            if (info.get('name', None) and
+                    info.get('contact_number', None) and
+                    info.get('email', None) and
+                    info.get('ranking', None)):
+
+                # 키가 모두 들어왔으면, 유효성을 만족하는지 확인
+                if (re.match(name_validation, info['name']) and
+                        re.match(contact_number_validation, info['contact_number']) and
+                        re.match(email_validation, info['email']) and
+                        re.match(ranking_validation, info['ranking'])):
+                    pass
+
+                # 유효성을 만족시키지 못하면 에러 반환
+                else:
+                    return jsonify({"message": "VALIDATION_ERROR_MANAGER_INFO"}), 400
+            # 키가 안들어오면 에러 반환
+            else:
+                return jsonify({"message": "NO_SPECIFIC_MANAGER_INFO"}), 400
+
+        # validation 확인이 된 data 를 account_info 로 재정의
+        account_info = {
+            'auth_type_id': g.account_info['auth_type_id'],
+            'decorator_account_no': g.account_info['account_no'],
+            'parameter_account_no': args[0],
+            'profile_image_url': args[1],
+            'seller_status_no': args[3],
+            'seller_type_no': args[4],
+            'name_kr': args[5],
+            'name_en': args[6],
+            'account_no': args[7],
+            'brandi_app_user_app_id': args[8],
+            'ceo_name': args[9],
+            'company_name': args[10],
+            'business_number': args[11],
+            'certificate_image_url': args[12],
+            'online_business_number': args[14],
+            'online_business_image_url': args[15],
+            'background_image_url': args[17],
+            'short_description': args[19],
+            'long_description': args[20],
+            'site_url': args[22],
+            'manager_infos': args[24],
+            'insta_id': args[25],
+            'center_number': args[26],
+            'kakao_id': args[27],
+            'yellow_id': args[28],
+            'zip_code': args[29],
+            'address': args[30],
+            'detail_address': args[31],
+            'weekday_start_time': args[32],
+            'weekday_end_time': args[33],
+            'weekend_start_time': args[34],
+            'weekend_end_time': args[35],
+            'bank_name': args[36],
+            'bank_holder_name': args[37],
+            'account_number': args[38],
+            'seller_account_id': args[39],
+            'previous_seller_info_no': args[40],
+            'previous_seller_status_no': args[41]
+        }
+
+        # 데이터베이스 연결
+        db_connection = DatabaseConnection()
+        if db_connection:
+            try:
+                seller_service = SellerService()
+
+                changing_seller_info_result = seller_service.change_seller_info(account_info, db_connection)
+                return changing_seller_info_result
+
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 400
+
+            finally:
+                try:
+                    db_connection.close()
+                except Exception as e:
+                    return jsonify({'message': f'{e}'}), 400
+
+        else:
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 

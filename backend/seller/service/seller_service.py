@@ -203,7 +203,71 @@ class SellerService:
                     getting_seller_info_result = seller_dao.get_seller_info(account_info, db_connection)
                     return getting_seller_info_result
 
-                # decorator_account_no 와 parameter_account_no 가 다를 경우 비밀번호 변경 권한이 없음
+                # decorator_account_no 와 parameter_account_no 가 다를 경우 셀러정보 열람 권한이 없음
+                else:
+                    return jsonify({'message': 'NO_AUTHORIZATION'}), 403
+
+            # 존재하지 않는 auth_type_id
+            else:
+                return jsonify({'message': 'INVALID_AUTH_TYPE_ID'}), 400
+
+        except Exception as e:
+            print(e)
+
+    # noinspection PyMethodMayBeStatic
+    def change_seller_info(self, account_info, db_connection):
+
+        """ 계정 셀러정보 수정 로직(새로운 셀러정보 이력 생성)
+
+        account_info 에 담긴 권한 정보를 확인하고,
+        마스터 권한일 경우
+        -> 바로 parameter_account_no 의 셀러 정보를 수정해주며,
+        셀러 권한일 경우
+        -> 데코레이터에서 확인된 수정 진행자의 account_no 와 파라미터로 받은 수정될 셀러의 account_no 가 일치하는지 확인하고,
+        parameter_account_no 의 셀러정보를 수정해줍니다.
+
+        Args:
+            account_info: 엔드포인트에서 전달 받은 account 정보
+            db_connection: 연결된 database connection 객체
+
+        Returns: http 응답코드
+            200: SUCCESS 셀러정보 수정(새로운 이력 생성) 완료
+            400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
+            400: INVALID_AUTH_TYPE_ID, DB_CURSOR_ERROR
+            403: NO_AUTHORIZATION
+            500: SERVER_ERROR
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-03 (leejm3@brandi.co.kr) : 초기 생성
+
+        """
+
+        seller_dao = SellerDao()
+        try:
+            # 계정이 가진 권한 타입을 가져옴
+            account_auth_type_id = account_info['auth_type_id']
+
+            # 마스터 권한일 때
+            if account_auth_type_id == 1:
+
+                # parameter_account_no 의 셀러정보를 수정함(새로운 이력 생성)
+                changing_seller_info_result = seller_dao.change_seller_info(account_info, db_connection)
+                return changing_seller_info_result
+
+            # 셀러 권한일 때
+            elif account_auth_type_id == 2:
+
+                # decorator_account_no 와 parameter_account_no 가 동일한지 확인
+                if account_info['decorator_account_no'] == account_info['parameter_account_no']:
+
+                    # parameter_account_no 의 셀러정보를 수정함(새로운 이력 생성)
+                    changing_seller_info_result = seller_dao.change_seller_info(account_info, db_connection)
+                    return changing_seller_info_result
+
+                # decorator_account_no 와 parameter_account_no 가 다를 경우 셀러정보 수정 권한이 없음
                 else:
                     return jsonify({'message': 'NO_AUTHORIZATION'}), 403
 
