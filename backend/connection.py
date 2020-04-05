@@ -1,3 +1,4 @@
+import pymysql
 import mysql.connector
 import boto3
 from mysql.connector.errors import InterfaceError, ProgrammingError, NotSupportedError
@@ -79,3 +80,17 @@ class DatabaseConnection:
 
     def rollback(self):
         return self.db_connection.rollback()
+
+
+def get_db_connection():
+    db_config = {
+        'database': DATABASES['database'],
+        'user': DATABASES['user'],
+        'password': DATABASES['password'],
+        'host': DATABASES['host'],
+        'port': DATABASES['port'],
+        'charset': DATABASES['charset'],
+        'cursorclass': pymysql.cursors.DictCursor,
+    }
+    db = pymysql.connect(**db_config)
+    return db
