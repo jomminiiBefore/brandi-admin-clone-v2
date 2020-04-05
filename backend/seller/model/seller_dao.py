@@ -656,6 +656,7 @@ class SellerDao:
                     FROM
                     brandi_app_users
                     WHERE app_id = %(app_id)s
+                    AND is_deleted = 0
                 """
 
                 db_cursor.execute(select_app_id_statement, brandi_app_user_data)
