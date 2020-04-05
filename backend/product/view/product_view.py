@@ -1,13 +1,18 @@
-from flask import request, Blueprint, jsonify
+import re
+
+from flask import request, Blueprint, jsonify, g
 from flask_request_validator import (
+    GET,
     PATH,
     JSON,
     Param,
+    Pattern,
     validate_params
 )
 from product.service.product_service import ProductService
-from connection import DatabaseConnection
 from utils import login_required
+
+from connection import get_db_connection
 
 
 class ProductView():
@@ -34,8 +39,7 @@ class ProductView():
             2020-04-02 (leesh3@brandi.co.kr): 초기 생성
 
         """
-
-        db_connection = DatabaseConnection()
+        db_connection = get_db_connection()
         if db_connection:
             try:
                 product_service = ProductService()
@@ -85,7 +89,9 @@ class ProductView():
 
         """
 
-        db_connection = DatabaseConnection()
+        # db_connection = DatabaseConnection()
+        db_connection = get_db_connection()
+
         if db_connection:
             try:
                 product_service = ProductService()
@@ -110,10 +116,10 @@ class ProductView():
 
         """ 상품 등록/수정시 나타나는 개별 상품의 기존 정보 표출 엔드포인트
 
-        상품의 번호를 받아 해당하는 상품의 상세 정보를 표출.
+        상품의 번호를 path parameter 로 받아 해당하는 상품의 기존 상세 정보를 표출.
 
         Args:
-            product_info_no(integer): 상품 정보 번호
+            product_info_no(integer): 해당하는 상품 변경 이력의 가장 최신 버전 인덱스 번호
 
         Returns:
             200: 상품별 상세 정보
@@ -121,14 +127,12 @@ class ProductView():
             500: server error
 
         Authors:
-
             leesh3@brandi.co.kr (이소헌)
 
         History:
             2020-04-03 (leesh3@brandi.co.kr): 초기 생성
         """
-        db_connection = DatabaseConnection()
-
+        db_connection = get_db_connection()
         if db_connection:
             try:
                 product_service = ProductService()

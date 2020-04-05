@@ -14,6 +14,7 @@ from flask_request_validator import (
 
 from seller.service.seller_service import SellerService
 from connection import DatabaseConnection
+from connection import get_db_connection
 from utils import login_required
 
 
@@ -540,8 +541,6 @@ class SellerView:
         History:
             2020-04-04 (leesh3@brandi.co.kr): 초기 생성
         """
-
-
         db_connection = DatabaseConnection()
         if db_connection:
             try:

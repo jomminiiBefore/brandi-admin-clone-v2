@@ -157,9 +157,6 @@ class SellerDao:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
-        finally:
-            db_cursor.close()
-
     # noinspection PyMethodMayBeStatic
     def change_password(self, account_info, db_connection):
 
@@ -445,6 +442,7 @@ class SellerDao:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
+    # noinspection PyMethodMayBeStatic
     def get_seller_list(self, request, db_connection):
         """ GET 셀러 리스트를 표출하고, 검색 키워드가 오면 키워드 별 검색 가능.
 

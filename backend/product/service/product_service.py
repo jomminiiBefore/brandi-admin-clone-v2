@@ -8,6 +8,7 @@ class ProductService:
     """
     상품 서비스
     """
+    # noinspection PyMethodMayBeStatic
     def get_first_categories(self, db_connection):
 
         """ 상품 1차 카테고리 목록 표출
@@ -21,12 +22,10 @@ class ProductService:
             200: 셀러에 따른 상품 1차 카테고리 목록
 
         Authors:
-
             leesh3@brandi.co.kr (이소헌)
 
         History:
             2020-04-02 (leesh3@brandi.co.kr): 초기 생성
-
         """
         product_dao = ProductDao()
         account_no = g.account_info['account_no']
@@ -34,6 +33,7 @@ class ProductService:
 
         return categories
 
+    # noinspection PyMethodMayBeStatic
     def get_second_categories(self, db_connection, first_category_no):
 
         """ 상품 2차 카테고리 목록 표출
@@ -48,7 +48,6 @@ class ProductService:
             200: 1차 카테고리에 해당하는 상품 2차 카테고리 목록
 
         Authors:
-
             leesh3@brandi.co.kr (이소헌)
 
         History:
@@ -60,15 +59,16 @@ class ProductService:
 
         return categories
 
+    # noinspection PyMethodMayBeStatic
     def get_product_detail(self, product_info_no, db_connection):
 
-        """ 상품 등록/수정시 나타나는 개별 상품의 기존 정보 표출 엔드포인트
+        """ 상품 등록/수정시 나타나는 개별 상품의 기존 정보 표출
 
         상품의 번호를 받아 해당하는 상품의 상세 정보를 표출.
 
         Args:
-            product_info_no(integer): 1차 카테고리 인덱스 번호
-            db_connection: 데이터베이스 커넥션 객체
+            product_info_no(integer): 동일 상품 변경 이력의 가장 최신 버전 인덱스 번호
+            db_connection(DatabaseConnection): 데이터베이스 커넥션 객체
 
         Returns:
             200: 상품별 상세 정보
