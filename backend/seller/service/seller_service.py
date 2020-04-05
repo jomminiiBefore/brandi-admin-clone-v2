@@ -77,7 +77,7 @@ class SellerService:
 
         Returns: http 응답코드
             200: SUCCESS 비밀번호 변경 완료
-            400: INVALID_KEY, INVALID_AUTH_TYPE_ID
+            400: INVALID_AUTH_TYPE_ID
             401: INVALID_PASSWORD
             500: DB_CURSOR_ERROR, SERVER_ERROR
 
@@ -146,9 +146,8 @@ class SellerService:
             else:
                 return jsonify({'message': 'INVALID_AUTH_TYPE_ID'}), 400
 
-        # Key 가 잘못 들어올 경우 None TypeError 가 뜨므로 에러 처리
-        except TypeError:
-            return jsonify({'message': 'INVALID_KEY'}), 400
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
 
     # noinspection PyMethodMayBeStatic
     def get_seller_info(self, account_info, db_connection):
@@ -168,10 +167,9 @@ class SellerService:
 
         Returns: http 응답코드
             200: SUCCESS 비밀번호 변경 완료
-            400: INVALID_KEY
             400: INVALID_AUTH_TYPE_ID
             401: INVALID_PASSWORD
-            500: SERVER ERROR
+            500: SERVER ERROR, DB_CURSOR_ERROR
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -212,7 +210,7 @@ class SellerService:
                 return jsonify({'message': 'INVALID_AUTH_TYPE_ID'}), 400
 
         except Exception as e:
-            print(e)
+            return jsonify({'message': f'{e}'}), 400
 
     # noinspection PyMethodMayBeStatic
     def change_seller_info(self, account_info, db_connection):
@@ -233,9 +231,9 @@ class SellerService:
         Returns: http 응답코드
             200: SUCCESS 셀러정보 수정(새로운 이력 생성) 완료
             400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
-            400: INVALID_AUTH_TYPE_ID, DB_CURSOR_ERROR
+            400: INVALID_AUTH_TYPE_ID
             403: NO_AUTHORIZATION
-            500: SERVER_ERROR
+            500: SERVER_ERROR, DB_CURSOR_ERROR
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -276,7 +274,7 @@ class SellerService:
                 return jsonify({'message': 'INVALID_AUTH_TYPE_ID'}), 400
 
         except Exception as e:
-            print(e)
+            return jsonify({'message': f'{e}'}), 400
 
     def get_seller_list(self, request, user, db_connection):
 
