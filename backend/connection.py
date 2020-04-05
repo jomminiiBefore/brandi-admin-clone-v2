@@ -76,3 +76,6 @@ class DatabaseConnection:
 
     def commit(self):
         return self.db_connection.commit()
+
+    def rollback(self):
+        return self.db_connection.rollback()

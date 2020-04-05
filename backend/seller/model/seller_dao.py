@@ -50,12 +50,10 @@ class SellerDao:
                     'is_deleted': new_seller['is_deleted']
                 }
 
-
                 # 트랜잭션 시작
                 db_cursor.execute("START TRANSACTION")
                 # 자동 커밋 비활성화
                 db_cursor.execute("SET AUTOCOMMIT=0")
-
 
                 # seller_infos 테이블 INSERT INTO
                 insert_seller_info_statement = ("""
@@ -274,6 +272,7 @@ class SellerDao:
             2020-03-31 (leejm3@brandi.co.kr): 초기 생성
             2020-04-01 (leejm3@brandi.co.kr): seller_info 기본 정보 표출
             2020-04-02 (leejm3@brandi.co.kr): 외래키 관련 정보 표출
+            2020-04-03 (leejm3@brandi.co.kr): 표출 정보에 외래키 id 값 추가
         """
         try:
             with db_connection as db_cursor:
@@ -290,10 +289,14 @@ class SellerDao:
                     seller_info_no,
                     seller_account_id,
                     profile_image_url,
-                    c.name as seller_status,
-                    d.name as seller_type,
-                    e.login_id,
-                    f.app_id as brandi_app_id,
+                    c.status_no as seller_status_no,
+                    c.name as seller_status_name,
+                    d.seller_type_no as seller_type_no,
+                    d.name as seller_type_name,
+                    e.account_no as account_no,
+                    e.login_id as account_login_id,
+                    f.app_user_no as brandi_app_user_no,
+                    f.app_id as brandi_app_user_app_id,
                     name_kr,
                     name_en,
                     brandi_app_user_id,
@@ -305,6 +308,7 @@ class SellerDao:
                     online_business_image_url,
                     background_image_url,
                     short_description,
+                    long_description,
                     site_url,
                     insta_id,
                     center_number,
@@ -330,11 +334,11 @@ class SellerDao:
                     -- 셀러 상태명
                     INNER JOIN seller_statuses as c
                     ON b.seller_status_id = c.status_no
-                    
+
                     -- 셀러 속성명
                     INNER JOIN seller_types as d
-                    ON b.seller_type_id = d.seller_type_no                  
-                    
+                    ON b.seller_type_id = d.seller_type_no
+
                     -- 셀러계정 로그인 아이디
                     LEFT JOIN accounts as e
                     ON e.account_no = a.account_id
@@ -342,12 +346,11 @@ class SellerDao:
 
                     -- 브랜디 앱 아이디
                     LEFT JOIN brandi_app_users as f
-                    ON b.brandi_app_user_id = f.app_user_no 
+                    ON b.brandi_app_user_id = f.app_user_no
                     AND f.is_deleted = 0
-                                                            
-                    WHERE a.account_id = %(account_no)s 
+                    WHERE a.account_id = %(account_no)s
                     AND a.is_deleted = 0
-                    ORDER BY b.seller_info_no DESC LIMIT 1
+                    AND b.close_time = '2037-12-31 23:59:59'
                 """
 
                 # SELECT 문 실행
@@ -366,7 +369,8 @@ class SellerDao:
                                 SELECT
                                 b.name,
                                 b.contact_number,
-                                b.email
+                                b.email,
+                                b.ranking
                                 FROM seller_infos AS a
                                 INNER JOIN manager_infos AS b
                                 ON a.seller_info_no = b.seller_info_id
@@ -396,29 +400,27 @@ class SellerDao:
                                 changed_time,
                                 c.name as seller_status_name,
                                 d.login_id as modifier
-                                
                                 FROM
                                 seller_accounts as a
-                                
+
                                 -- 셀러상태이력 기본정보
                                 INNER JOIN
                                 seller_status_change_histories as b
                                 ON a.seller_account_no = b.seller_account_id
-                                
+
                                 -- 셀러 상태명
                                 INNER JOIN
                                 seller_statuses as c
                                 ON b.seller_status_id = c.status_no
-                                
+
                                 -- 수정자 로그인아이디
                                 LEFT JOIN
                                 accounts as d
                                 ON d.account_no = a.account_id
-                                
+
                                 WHERE a.seller_account_no = %(seller_account_id)s
-                                & d.is_deleted = 0
-                                
-                                ORDER BY changed_time                     
+                                AND d.is_deleted = 0
+                                ORDER BY changed_time
                             """
 
                 # SELECT 문 실행
@@ -439,15 +441,17 @@ class SellerDao:
                 # seller_types 테이블 SELECT
                 select_seller_types_statement = """
                                 SELECT
-                                c.name as seller_types
-
+                                c.seller_type_no as seller_type_no,
+                                c.name as seller_type_name
                                 FROM 
                                 product_sorts as a
                                 
+                                -- 셀러정보
                                 INNER JOIN
                                 seller_infos as b
                                 ON a.product_sort_no = b.product_sort_id
-                                
+                               
+                                -- 상품속성
                                 INNER JOIN
                                 seller_types as c
                                 ON a.product_sort_no = c.product_sort_id
@@ -462,7 +466,7 @@ class SellerDao:
                 seller_types = db_cursor.fetchall()
 
                 # seller_info_result 에 seller_types 저장
-                seller_info_result['seller_types'] = [seller_type['seller_types'] for seller_type in seller_types]
+                seller_info_result['seller_types'] = seller_types
 
                 return seller_info_result
 
@@ -559,7 +563,6 @@ class SellerDao:
                 db_cursor.execute(select_product_count_statement)
                 product_count = db_cursor.fetchall()
 
-
                 # 셀러 리스트 표출, 쿼리가 들어오면 쿼리문을 포메팅해서 검색 실행
                 select_seller_list_statement = f'''
                     SELECT 
@@ -590,7 +593,6 @@ class SellerDao:
                     'offset' : offset,
                 }
 
-
                 db_cursor.execute(select_seller_list_statement, parameter)
                 seller_info = db_cursor.fetchall()
 
@@ -603,4 +605,237 @@ class SellerDao:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
 
+    # noinspection PyMethodMayBeStatic
+    def change_seller_info(self, account_info, db_connection):
+
+        """ 계정 셀러정보를 수정(새로운 이력 생성) INSERT INTO DB
+
+        계정 셀러정보를 수정합니다.
+        선분이력 관리를 위해 기존 셀러정보 updated_at(수정일시)와 close_time(종료일시)를 업데이트하고,
+        새로운 셀러정보 이력을 생성합니다.
+        입력한 브랜디 앱 아이디가 존재하는지 확인하는 절차를 가집니다.
+
+        기존 셀러정보와 새로운 셀러정보, 담당자 정보, 셀러 상태 변경 기록이 모두 정상 저장되어야 프로세스가 완료됩니다.
+        기존 셀러정보의 종료일시를 새로운 셀러정보의 시작일시와 맞추기 위해 새로운 셀러정보를 먼저 등록했습니다.
+
+        Args:
+            account_info: 엔드포인트에서 전달 받은 account 정보
+            db_connection: 연결된 database connection 객체
+
+        Returns: http 응답코드
+            200: 셀러정보 수정(새로운 이력 생성) 완료
+            400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
+            400: DB_CURSOR_ERROR
+            500: SERVER_ERROR
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-03 (leejm3@brandi.co.kr): 초기 생성
+            2020-04-04 (leejm3@brandi.co.kr): 기본정보, 담당자정보 수정 저장 확인
+            2020-04-05 (leejm3@brandi.co.kr): 에러 처리 추가 확인
+
+        """
+        try:
+            with db_connection as db_cursor:
+
+                # 트랜잭션 시작
+                db_cursor.execute("START TRANSACTION")
+                # 자동 커밋 비활성화
+                db_cursor.execute("SET AUTOCOMMIT=0")
+
+                # 브랜디앱유저 검색 정보
+                brandi_app_user_data = {
+                    'app_id': account_info['brandi_app_user_app_id']
+                }
+
+                # brandi_app_users 테이블 SELECT
+                select_app_id_statement = """
+                    SELECT
+                    app_user_no
+                    FROM
+                    brandi_app_users
+                    WHERE app_id = %(app_id)s
+                """
+
+                db_cursor.execute(select_app_id_statement, brandi_app_user_data)
+
+                # app_id 출력 결과 저장
+                app_id_result = db_cursor.fetchone()
+
+                # app_id가 있으면보 account_info 에 app_user_no 저장
+                if app_id_result:
+                    account_info['app_user_no'] = app_id_result['app_user_no']
+
+                # app_id가 없으면 app_id가 존재하지 않는다고 리턴
+                else:
+                    return jsonify({'message': 'INVALID_APP_ID'}), 400
+
+                # list 인 manager_infos 가 SQL 에 들어가면 에러를 반환해 미리 manager_infos 에 저장하고 account_info 에서 삭제
+                manager_infos = account_info['manager_infos']
+                del account_info['manager_infos']
+
+                # 셀러 기본 정보 생성
+                # seller_infos 테이블 INSERT INTO
+                insert_seller_info_statement = """
+                    INSERT INTO seller_infos (
+                    seller_account_id,
+                    profile_image_url,
+                    seller_status_id,
+                    seller_type_id,
+                    product_sort_id,                 
+                    name_kr,
+                    name_en,
+                    brandi_app_user_id,
+                    ceo_name,
+                    company_name,
+                    business_number,
+                    certificate_image_url,
+                    online_business_number,
+                    online_business_image_url,
+                    background_image_url,
+                    short_description,
+                    long_description,
+                    site_url,
+                    kakao_id,
+                    insta_id,
+                    yellow_id,
+                    center_number,
+                    zip_code,
+                    address,
+                    detail_address,
+                    weekday_start_time,
+                    weekday_end_time,
+                    weekend_start_time,
+                    weekend_end_time,
+                    bank_name,
+                    bank_holder_name,
+                    account_number,
+                    modifier
+                ) VALUES (
+                    %(seller_account_id)s,
+                    %(profile_image_url)s,
+                    %(seller_status_no)s,
+                    %(seller_type_no)s,
+                    (SELECT product_sort_id FROM seller_types WHERE seller_type_no = %(seller_type_no)s),                     
+                    %(name_kr)s,
+                    %(name_en)s,
+                    %(app_user_no)s,                    
+                    %(ceo_name)s,
+                    %(company_name)s,
+                    %(business_number)s,
+                    %(certificate_image_url)s,
+                    %(online_business_number)s,
+                    %(online_business_image_url)s,
+                    %(background_image_url)s,
+                    %(short_description)s,
+                    %(long_description)s,
+                    %(site_url)s,
+                    %(kakao_id)s,
+                    %(insta_id)s,
+                    %(yellow_id)s,                    
+                    %(center_number)s,
+                    %(zip_code)s,
+                    %(address)s,
+                    %(detail_address)s,
+                    %(weekday_start_time)s,
+                    %(weekday_end_time)s,
+                    %(weekend_start_time)s,
+                    %(weekend_end_time)s,
+                    %(bank_name)s,
+                    %(bank_holder_name)s,
+                    %(account_number)s,
+                    %(decorator_account_no)s
+                )"""
+
+                # 셀러 기본정보 insert 함
+                db_cursor.execute(insert_seller_info_statement, account_info)
+
+                # 위에서 생성된 새로운 셀러정보의 id 값을 가져옴
+                seller_info_no = db_cursor.lastrowid
+
+                # manager_infos 테이블 INSERT INTO
+                insert_manager_info_statement = """
+                    INSERT INTO manager_infos (
+                    name,
+                    contact_number,
+                    email,
+                    ranking,
+                    seller_info_id
+                ) VALUES (
+                    %(name)s,
+                    %(contact_number)s,
+                    %(email)s,
+                    %(ranking)s,
+                    %(seller_info_id)s
+                )"""
+
+                # for 문을 돌면서 담당자 정보를 insert 함
+                for i in range(len(manager_infos)):
+                    manager_info_data = {
+                        'name': manager_infos[i]['name'],
+                        'contact_number': manager_infos[i]['contact_number'],
+                        'email': manager_infos[i]['email'],
+                        'ranking': manager_infos[i]['ranking'],
+                        'seller_info_id': seller_info_no
+                    }
+
+                    db_cursor.execute(insert_manager_info_statement, manager_info_data)
+
+                # 이전 셀러정보 수정일시, 종료일시 업데이트
+                previous_seller_info_data = {
+                    'previous_seller_info_no': account_info['previous_seller_info_no'],
+                    'new_seller_info_no': seller_info_no
+                }
+
+                # previous_seller_info 테이블 UPDATE
+                update_previous_seller_info_statement = """
+                    UPDATE seller_infos
+                    SET
+                    updated_at = 
+                    (SELECT a.start_time FROM 
+                    (SELECT start_time FROM seller_infos WHERE seller_info_no = %(new_seller_info_no)s) as a),
+                    close_time = 
+                    (SELECT b.start_time FROM 
+                    (SELECT start_time FROM seller_infos WHERE seller_info_no = %(new_seller_info_no)s) as b)
+                    WHERE seller_info_no = %(previous_seller_info_no)s
+                """
+
+                db_cursor.execute(update_previous_seller_info_statement, previous_seller_info_data)
+
+                # 이전 셀러정보의 셀러 상태값과 새로운 셀러정보의 셀러 상태값이 다르면, 셀러 상태정보이력 테이블 INSERT INTO
+                if account_info['previous_seller_status_no'] != account_info['seller_status_no']:
+
+                    # INSERT INTO 문에서 확인할 데이터
+                    seller_status_data = {
+                        'seller_account_id': account_info['seller_account_id'],
+                        'new_seller_info_no': seller_info_no,
+                        'seller_status_id': account_info['seller_status_no'],
+                        'modifier': account_info['decorator_account_no']
+                    }
+
+                    # seller_status_change_histories 테이블 INSERT INTO
+                    insert_status_history_statement = """
+                        INSERT INTO seller_status_change_histories (
+                        seller_account_id,
+                        changed_time,
+                        seller_status_id,
+                        modifier
+                    ) VALUES (
+                        %(seller_account_id)s,
+                        (SELECT start_time FROM seller_infos WHERE seller_info_no = %(new_seller_info_no)s),
+                        %(seller_status_id)s,
+                        %(modifier)s
+                    )"""
+
+                    db_cursor.execute(insert_status_history_statement, seller_status_data)
+
+                db_connection.commit()
+                return jsonify({'message': 'SUCCESS'}), 200
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
 
