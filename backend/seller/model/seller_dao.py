@@ -38,7 +38,7 @@ class SellerDao:
             2020-03-25 (leesh3@brandi.co.kr): 초기 생성
         """
         try:
-            with db_connection as db_cursor:
+            with db_connection.cursor()  as db_cursor:
 
                 new_seller_info_data = {
                     'name_kr': new_seller['name_kr'],
@@ -58,7 +58,7 @@ class SellerDao:
                 db_cursor.execute("SET AUTOCOMMIT=0")
 
                 # seller_infos 테이블 INSERT INTO
-                insert_seller_info_statement = ("""
+                insert_seller_info_statement = """
                     INSERT INTO seller_infos (
                     name_kr,
                     name_en,
@@ -69,7 +69,7 @@ class SellerDao:
                     %(name_en)s,
                     %(site_url)s,
                     %(center_number)s
-                )""")
+                )"""
 
                 db_cursor.execute(insert_seller_info_statement, new_seller_info_data)
 
@@ -128,7 +128,7 @@ class SellerDao:
         """
 
         try:
-            with db_connection as db_cursor:
+            with db_connection.cursor()  as db_cursor:
 
                 # SELECT 문에서 확인할 데이터
                 account_info_data = {
@@ -180,7 +180,7 @@ class SellerDao:
         """
 
         try:
-            with db_connection as db_cursor:
+            with db_connection.cursor()  as db_cursor:
 
                 # SELECT 문에서 확인할 데이터
                 account_info_data = {
@@ -239,7 +239,7 @@ class SellerDao:
             2020-04-03 (leejm3@brandi.co.kr): 표출 정보에 외래키 id 값 추가
         """
         try:
-            with db_connection as db_cursor:
+            with db_connection.cursor()  as db_cursor:
 
                 # 셀러 기본 정보(외래키 제외)
                 # SELECT 문 조건 데이터
@@ -515,10 +515,8 @@ class SellerDao:
             end_date = str(request.args.get('close_time', None)) + ' 23:59:59'
             filter_query += f" AND seller_accounts.created_at > '{start_date}' AND seller_accounts.created_at < '{end_date}'"
 
-        print(filter_query)
-
         try:
-            with db_connection as db_cursor:
+            with db_connection.cursor()  as db_cursor:
 
                 # 상품 개수를 가져오는 sql 명령문
                 select_product_count_statement = '''
@@ -561,7 +559,7 @@ class SellerDao:
                 '''
                 parameter = {
                     'limit' : limit,
-                    'offset' : offset,
+                    'offset' : offset
                 }
 
                 # sql 쿼리와 pagination 데이터 바인딩
@@ -621,7 +619,7 @@ class SellerDao:
 
         """
         try:
-            with db_connection as db_cursor:
+            with db_connection.cursor()  as db_cursor:
 
                 # 트랜잭션 시작
                 db_cursor.execute("START TRANSACTION")
@@ -844,7 +842,7 @@ class SellerDao:
             2020-04-05 (leesh3@brandi.co.kr): 초기 생성
         """
         try:
-            with db_connection as db_cursor:
+            with db_connection.cursor()  as db_cursor:
                 get_stmt = """
                     SELECT seller_info_no, profile_image_url, name_kr
                     FROM seller_infos 
@@ -891,7 +889,7 @@ class SellerDao:
 
         # 데이터베이스 커서 실행
         try:
-            with db_connection as db_cursor:
+            with db_connection.cursor()  as db_cursor:
 
                 # 셀러 상태 변경 sql 명령문
                 update_seller_status_statement = """
@@ -918,3 +916,58 @@ class SellerDao:
         except Exception as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
+
+    def get_account_info(self, account_info, db_connection):
+
+        """ 로그인 정보 확인
+
+        account_info 를 통해서 DB 에 있는 특정 계정 정보의 account_no 와 암호화 되어있는 password 를 가져와서 return
+
+        Args:
+            account_info: 유효성 검사를 통과한 account 정보 (login_id, password)
+            db_connection: 연결된 database connection 객체
+
+        Returns:
+            200: db_account_info db 에서 get 한 account_no 와 password
+            400: INVALID_KEY
+            500: DB_CURSOR_ERROR
+
+        Authors:
+            choiyj@brandi.co.kr (최예지)
+
+        History:
+            2020-04-05 (choiyj@brandi.co.kr): 초기 생성
+            2020-04-05 (choiyj@brandi.co.kr): SQL 문을 통해 DB 에서 원하는 정보를 가지고 와서 return 하는 함수 구현
+        """
+
+        try:
+            # db_cursor 는 db_connection 에 접근하는 본체 (가져온 정보는 cursor 가 가지고 있다)
+            with db_connection as db_cursor:
+
+                # sql 문 작성 (원하는 정보를 가져오거나 집어넣거나)
+                select_account_info_statement = """
+                    SELECT
+                    account_no,
+                    password
+                    
+                    FROM accounts
+                    
+                    where login_id = %(login_id)s AND is_deleted = 0
+                """
+
+                # SELECT 문 실행
+                db_cursor.execute(select_account_info_statement, account_info)
+
+                # DB 에 저장하는 로직 작성 (fetchone, fetchall, fetchmany)
+                account_info_result = db_cursor.fetchone()
+
+                # DB 에서 꺼내온 정보를 return
+                return account_info_result
+
+        except KeyError as e:
+            print(f'KEY_ERROR WITH {e}')
+            return jsonify({'message': 'INVALID_KEY'}), 400
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500

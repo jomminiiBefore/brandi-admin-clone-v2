@@ -45,7 +45,7 @@ class SellerView:
             2020-03-30 (yoonhc@barndi.co.kr): database connection open & close 추가
         """
 
-        db_connection = DatabaseConnection()
+        db_connection = get_db_connection()
         if db_connection:
             try:
                 seller_service = SellerService()
@@ -121,7 +121,7 @@ class SellerView:
             if account_info['original_password'] is None:
                 return jsonify({"message": "NO_ORIGINAL_PASSWORD"}), 400
 
-        db_connection = DatabaseConnection()
+        db_connection = get_db_connection()
         if db_connection:
             try:
                 seller_service = SellerService()
@@ -191,7 +191,7 @@ class SellerView:
             'decorator_account_no': g.account_info['account_no'],
         }
 
-        db_connection = DatabaseConnection()
+        db_connection = get_db_connection()
         if db_connection:
             try:
                 seller_service = SellerService()
@@ -247,7 +247,7 @@ class SellerView:
         History:
             2020-04-03 (yoonhc@brandi.co.kr): 초기 생성
         """
-        db_connection = DatabaseConnection()
+        db_connection = get_db_connection()
 
         # 유저 정보를 g에서 읽어와서 service에 전달
         user = g.account_info
@@ -497,7 +497,7 @@ class SellerView:
         }
 
         # 데이터베이스 연결
-        db_connection = DatabaseConnection()
+        db_connection = get_db_connection()
         if db_connection:
             try:
                 seller_service = SellerService()
@@ -541,7 +541,8 @@ class SellerView:
         History:
             2020-04-04 (leesh3@brandi.co.kr): 초기 생성
         """
-        db_connection = DatabaseConnection()
+
+        db_connection = get_db_connection()
         if db_connection:
             try:
                 seller_service = SellerService()
@@ -552,13 +553,70 @@ class SellerView:
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
 
+    @seller_app.route('/login', methods=['POST'])
+    @validate_params(
+        Param('login_id', JSON, str),
+        Param('password', JSON, str)
+    )
+    def login(*args):
+
+        """ 셀러 로그인 엔드포인트
+
+        셀러 로그인 엔드포인트 입니다.
+        login_id와 password를 받습니다.
+
+        request.body:
+            login_id: 로그인 아이디
+            password: 로그인 비밀번호
+
+        Args:
+            *args: 유효성 검사를 통과한 request.body의 인자
+
+        Returns:
+            200: SUCCESS 로그인 성공
+            500: NO_DATABASE_CONNECTION
+
+        Authors:
+            choiyj@brandi.co.kr (최예지)
+
+        History:
+            2020-04-04 (choiyj@brandi.co.kr): 초기 생성
+            2020-04-04 (choiyj@brandi.co.kr): account_info 에 필요한 정보 담음, DB 열림닫힘 여부에 따라 실행되는 함수 작성
+        """
+
+        # validation 확인이 된 data 를 account_info 로 재정의
+        account_info = {
+            'login_id': args[0],
+            'password': args[1]
+        }
+
+        # DB에 연결
+        db_connection = get_db_connection()
+
+        # DB가 열렸을 경우
+        if db_connection:
+            try:
+                # service 에 있는 SellerService 를 가져와서 seller_service 라는 인스턴스를 만듬
+                seller_service = SellerService()
+
+                # 로그인 함수를 실행한 결과값을 login_result 에 저장
+                login_result = seller_service.login(account_info, db_connection)
+
+                return login_result
+
+            # 정의하지 않은 모든 error 를 잡아줌
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 400
+
+            # try 랑 except 에 상관없이 무조건 실행
             finally:
                 try:
                     db_connection.close()
                 except Exception as e:
                     return jsonify({'message': f'{e}'}), 400
-
-        return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
+        # DB가 열리지 않았을 경우
+        else:
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('/status', methods=['PUT'], endpoint='change_seller_status')
     @login_required
@@ -574,7 +632,7 @@ class SellerView:
         History:
             2020-04-05 (yoonhc@brandi.co.kr): 초기 생성
         """
-        db_connection = DatabaseConnection()
+        db_connection = get_db_connection()
 
         # 유저정보를 가져와 서비스로 넘김
         user = g.account_info
