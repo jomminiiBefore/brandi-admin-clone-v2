@@ -625,8 +625,7 @@ class SellerDao:
         Returns: http 응답코드
             200: 셀러정보 수정(새로운 이력 생성) 완료
             400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
-            400: DB_CURSOR_ERROR
-            500: SERVER_ERROR
+            500: SERVER_ERROR, DB_CURSOR_ERROR
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -837,5 +836,5 @@ class SellerDao:
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
-            return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 

@@ -60,7 +60,7 @@ class SellerView:
                 except Exception as e:
                     return jsonify({'message': f'{e}'}), 400
         else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('', methods=['GET'])
     def get_all_sellers():
@@ -93,7 +93,7 @@ class SellerView:
                 except Exception as e:
                     return jsonify({'message': f'{e}'}), 400
         else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('/<int:parameter_account_no>', methods=['PUT'], endpoint='change_password')
     @login_required
@@ -105,11 +105,15 @@ class SellerView:
     def change_password(*args):
         """ 계정 비밀번호 변경 엔드포인트
 
+        계정 비밀번호 변경 엔드포인트 입니다.
         계정이 가진 권한에 따라 지정된 인자를 받아 비밀번호를 변경합니다.
         url 에 비밀번호를 바꿔야할 계정 번호를 받습니다.
+
         Args:
-            * args:
-                parameter_account_no: 비밀번호가 바뀌어야할 계정 번호
+            *args: 유효성 검사를 통과한 파라미터
+
+        url parameter:
+            parameter_account_no: 비밀번호가 바뀌어야할 계정 번호
 
         g.account_info: 데코레이터에서 넘겨받은 계정 정보
             auth_type_id: 계정의 권한정보
@@ -123,7 +127,7 @@ class SellerView:
             200: SUCCESS 비밀번호 변경 완료
             400: VALIDATION_ERROR, INVALID_AUTH_TYPE_ID, NO_ORIGINAL_PASSWORD
             401: INVALID_PASSWORD
-            500: DB_CURSOR_ERROR, SERVER_ERROR
+            500: DB_CURSOR_ERROR, SERVER_ERROR, NO_DATABASE_CONNECTION
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -165,13 +169,13 @@ class SellerView:
                     return jsonify({'message': f'{e}'}), 400
 
         else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('/<int:parameter_account_no>/info', methods=['GET'], endpoint='get_seller_info')
     @login_required
     @validate_params(
         Param('parameter_account_no', PATH, int),
-        Param('parameter_account_no', PATH, rules=[MaxLength(6)]),
+        Param('parameter_account_no', PATH, str, rules=[MaxLength(6)]),
     )
     def get_seller_info(*args):
 
@@ -180,20 +184,27 @@ class SellerView:
         셀러정보를 표출하는 엔드포인트 입니다.
         url 로 셀러정보를 확인하고 싶은 계정 번호를 받습니다.
 
+        셀러정보를 열람을 수행하려는 계정의 번호를 데코레이터로부터 받습니다.
+        열람 대상 셀러정보의 계정의 번호를 url parameter 로 받습니다.
+
+        받은 정보를 유효성 검사를 거친 후 account_info 로 저장해 service 로 넘겨줍니다.
+
         Args:
-            * args:
-                parameter_account_no: 불러 올 셀러정보의 계정 번호
-        
-        g.account_info: 데코레이터에서 넘겨받은 계정 정보
+            *args: 유효성 검사를 통과한 파라미터
+
+        url parameter:
+            parameter_account_no: 열람하고자 하는 셀러정보의 계정 번호
+
+        g.account_info: 데코레이터에서 넘겨받은(셀러정보를 열람을 수행하려는) 계정 정보
             auth_type_id: 계정의 권한정보
             account_no: 데코레이터에서 확인된 계정번호
 
         Returns: http 응답코드
-            # 200: SUCCESS 비밀번호 변경 완료
-            # 400: INVALID_KEY
-            # 400: VALIDATION_ERROR, INVALID_AUTH_TYPE_ID
-            # 401: INVALID_PASSWORD
-            # 500: SERVER ERROR
+            200: SUCCESS 비밀번호 변경 완료
+            400: INVALID_KEY
+            400: VALIDATION_ERROR, INVALID_AUTH_TYPE_ID
+            401: INVALID_PASSWORD
+            500: SERVER ERROR, DB_CURSOR_ERROR, NO_DATABASE_CONNECTION
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -201,6 +212,7 @@ class SellerView:
         History:
             2020-04-01 (leejm3@brandi.co.kr): 초기 생성
             2020-04-02 (leejm3@brandi.co.kr): 파라미터 validation 추가, 데코레이터 적용
+            2020-04-03 (leejm3@brandil.co.kr): 주석 수정(메인문구, urlparameter 수정)
         """
 
         # validation 확인이 된 data 를 account_info 로 재정의
@@ -235,7 +247,7 @@ class SellerView:
                     return jsonify({'message': f'{e}'}), 400
 
         else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('/list', methods=['GET'])
     @login_required
@@ -431,9 +443,9 @@ class SellerView:
             200: SUCCESS 셀러정보 수정(새로운 이력 생성) 완료
             400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
             400: VALIDATION_ERROR_MANAGER_INFO, NO_SPECIFIC_MANAGER_INFO,
-                 DB_CURSOR_ERROR, INVALID_AUTH_TYPE_ID
+                 INVALID_AUTH_TYPE_ID
             403: NO_AUTHORIZATION
-            500: SERVER_ERROR
+            500: SERVER_ERROR, DB_CURSOR_ERROR, NO_DATABASE_CONNECTION
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -534,5 +546,5 @@ class SellerView:
                     return jsonify({'message': f'{e}'}), 400
 
         else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
