@@ -128,7 +128,7 @@ const Main = () => {
         <TableItem title="셀러 속성" isRequired={true}>
           <SellerProperty />
         </TableItem>
-        <TableItem title="셀러 한글명" isRequired={false}>
+        <TableItem title="셀러 한글명" isRequired={true}>
           <InputContainer
             width={287}
             height={34}
@@ -141,9 +141,10 @@ const Main = () => {
             valid={isValid.koreanName}
             validationText="한글, 영문, 숫자만 입력해주세요."
             inputText={koreanName}
+            isRequired={false}
           />
         </TableItem>
-        <TableItem title="셀러 영문명" isRequired={false}>
+        <TableItem title="셀러 영문명" isRequired={true}>
           <InputContainer
             width={287}
             height={34}
@@ -156,6 +157,7 @@ const Main = () => {
             valid={isValid.englishName}
             validationText="셀러 영문명은 소문자만 가능합니다."
             inputText={englishName}
+            isRequired={true}
           />
         </TableItem>
         <TableItem title="셀러 계정" isRequired={false}>
@@ -193,26 +195,23 @@ const Main = () => {
             valid={isValid.ceoName}
             validationText="none"
             inputText={ceoName}
+            isRequired={true}
           />
         </TableItem>
         <TableItem title="사업자명" isRequired={true}>
-          <Input
+          <InputContainer
             width={287}
             height={34}
             placeholder="사업자명"
-            name="englishName"
+            name="businessName"
             setText={setValue}
             setBlur={setBlur}
-            typed={isTyped.englishName}
-            blurred={isBlurred.englishName}
-            valid={isValid.englishName}
-          />
-          <Validation
-            validationText="셀러 영문명은 소문자만 가능합니다."
-            inputText={englishName}
-            typed={isTyped.englishName}
-            blurred={isBlurred.englishName}
-            valid={isValid.englishName}
+            typed={isTyped.businessName}
+            blurred={isBlurred.businessName}
+            valid={isValid.businessName}
+            validationText="none"
+            inputText={businessName}
+            isRequired={true}
           />
         </TableItem>
         <TableItem title="사업자번호" isRequired={true}>
