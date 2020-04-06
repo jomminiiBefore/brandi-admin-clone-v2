@@ -39,7 +39,7 @@ class SellerService:
         new_seller = request.json
         new_seller_result = seller_dao.insert_seller(new_seller, db_connection)
 
-        return new_seller_result 
+        return new_seller_result
 
     # noinspection PyMethodMayBeStatic
     def change_password(self, account_info, db_connection):
@@ -258,6 +258,7 @@ class SellerService:
         except Exception as e:
             return jsonify({'message': f'{e}'}), 400
 
+    # noinspection PyMethodMayBeStatic
     def get_seller_list(self, request, user, db_connection):
 
         """ 가입된 모든 셀러 정보 리스트 표출
@@ -286,8 +287,9 @@ class SellerService:
             seller_list_result = seller_dao.get_seller_list(request, db_connection)
             return seller_list_result
 
-        return jsonify({'message' : 'AUTHORIZATION_REQUIRED'}), 403
+        return jsonify({'message': 'AUTHORIZATION_REQUIRED'}), 403
 
+    # noinspection PyMethodMayBeStatic
     def change_seller_status(self, request, user, db_connection):
 
         """ 마스터 권한 셀러 상태 변경
@@ -320,13 +322,14 @@ class SellerService:
 
             # 셀러 상태 번호와 셀러 계정 번호가 둘다 들어오지 않으면 400 리턴
             if not seller_status_id or not seller_account_id:
-                return jsonify({'message' : 'INVALID_VALUE'}), 400
+                return jsonify({'message': 'INVALID_VALUE'}), 400
 
             seller_list_result = seller_dao.change_seller_status(seller_status_id, seller_account_id, db_connection)
             return seller_list_result
 
-        return jsonify({'message' : 'AUTHORIZATION_REQUIRED'}), 403
+        return jsonify({'message': 'AUTHORIZATION_REQUIRED'}), 403
 
+    # noinspection PyMethodMayBeStatic
     def get_seller_name_list(self, keyword, db_connection):
 
         """ 마스터 권한으로 상품 등록시 셀러를 검색
@@ -341,7 +344,7 @@ class SellerService:
         Returns:
             200: 검색된 셀러 10개
             403: 마스터 권한이 없음
-            
+
          Authors:
 
             leesh3@brandi.co.kr (이소헌)
@@ -358,6 +361,7 @@ class SellerService:
 
         return jsonify({'message': 'AUTHORIZATION_REQUIRED'}), 403
 
+    # noinspection PyMethodMayBeStatic
     def login(self, account_info, db_connection):
 
         """ 로그인 로직 처리
@@ -414,5 +418,77 @@ class SellerService:
                 return jsonify({'message': 'INVALID_LOGIN_ID'}), 400
 
         # 명시하지 않은 모든 에러를 잡아서 return
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+    # noinspection PyMethodMayBeStatic
+    def sign_up(self, account_info, db_connection):
+        """ 회원가입 로직 처리
+
+        유효성 검사를 통과한 입력 정보를 account_info 로 받고,
+        login_id, name_kr, name_en 에 대한 중복 체크 진행
+
+        중복 체크를 통과하면 bcrypt로 암호화된 비밀번호를 생성하고,
+        생성된 비밀번호를 account_info 에 넣어 회원가입 dao 를 실행
+
+        Args:
+            account_info: 유효성 검사를 통과한 account 정보 (login_id, password)
+                login_id 로그인 아이디
+                password 비밀번호
+                contact_number 담당자 번호
+                seller_type_id 셀러 속성 아이디
+                name_kr 셀러명
+                name_en 셀러 영문명
+                center_number 고객센터 번호
+                site_url 사이트 URL
+                kakao_id 카카오 아이디
+                insta_id 인스타 아이디
+            db_connection: 연결된 database connection 객체
+
+        Returns: http 응답코드
+            200: SUCCESS 셀러 회원가입 완료
+            400: EXISTING_LOGIN_ID, EXISTING_NAME_KR,
+                 EXISTING_NAME_EN, INVALID_KEY
+            500: NO_DATABASE_CONNECTION
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-06 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+
+        seller_dao = SellerDao()
+        try:
+            # login_id 중복 체크
+            check_overlap_login_id_result = seller_dao. \
+                check_overlap_login_id(account_info['login_id'], db_connection)
+
+            if check_overlap_login_id_result:
+                return jsonify({'message': 'EXISTING_LOGIN_ID'}), 400
+
+            # name_kr 중복 체크
+            check_overlap_name_kr_result = seller_dao. \
+                check_overlap_name_kr(account_info['name_kr'], db_connection)
+
+            if check_overlap_name_kr_result:
+                return jsonify({'message': 'EXISTING_NAME_KR'}), 400
+
+            # name_en 중복 체크
+            check_overlap_name_en_result = seller_dao. \
+                check_overlap_name_en(account_info['name_en'], db_connection)
+
+            if check_overlap_name_en_result:
+                return jsonify({'message': 'EXISTING_NAME_EN'}), 400
+
+            # 중복체크까지 모두 끝나면 암호화된 비밀번호 생성
+            bcrypted_password = bcrypt.hashpw(account_info['password'].encode('utf-8'), bcrypt.gensalt())
+            account_info['password'] = bcrypted_password
+
+            # 회원가입 절차 진행
+            sign_up_result = seller_dao.sign_up(account_info, db_connection)
+            return sign_up_result
+
         except Exception as e:
             return jsonify({'message': f'{e}'}), 400
