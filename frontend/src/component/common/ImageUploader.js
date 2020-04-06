@@ -8,12 +8,12 @@ const ImageUploader = () => {
   const [file, setFile] = useState();
   const [imagePreviewUrl, setImagePreviewUrl] = useState();
 
-  const _handleSubmit = e => {
+  const _handleSubmit = (e) => {
     e.preventDefault();
     // TODO: do something with -> this.state.file
   };
 
-  const _handleImageChange = e => {
+  const _handleImageChange = (e) => {
     e.preventDefault();
 
     let reader = new FileReader();
@@ -32,7 +32,7 @@ const ImageUploader = () => {
     setImagePreviewUrl(null);
   };
 
-  console.log('file:: ', file);
+  // console.log('file:: ', file);
   return (
     <div>
       {imagePreviewUrl ? (

@@ -8,7 +8,6 @@ import styled from 'styled-components';
  */
 
 const SmallButton = ({ name, color, textColor, onClickEvent }) => {
-  console.log('onclick:: ', onClickEvent);
   return (
     <Container onClick={onClickEvent}>
       <ButtonWrapper color={color}>
@@ -34,10 +33,10 @@ const ButtonWrapper = styled.span`
   &:hover {
     filter: ${style.filter.brightness};
   }
-  background-color: ${props => props.color};
+  background-color: ${(props) => props.color};
 `;
 
 const ButtonText = styled.span`
   font-size: 12px;
-  color: ${props => props.textColor};
+  color: ${(props) => props.textColor};
 `;
