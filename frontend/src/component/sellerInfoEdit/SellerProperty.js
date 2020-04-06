@@ -3,9 +3,7 @@ import style from 'src/utils/styles';
 import styled from 'styled-components';
 
 const SellerProperty = () => {
-  const [property, setProperty] = useState();
-
-  const onChangeRadio = e => {
+  const onChangeRadio = (e) => {
     console.log(e.target.value);
   };
 
@@ -19,7 +17,7 @@ const SellerProperty = () => {
           value="designer"
           onChange={onChangeRadio}
         />
-        <label for="designer">디자이너브랜드</label>
+        <label>디자이너브랜드</label>
       </InputButtonContainer>
       <InputButtonContainer>
         <input
@@ -29,7 +27,7 @@ const SellerProperty = () => {
           value="general"
           onChange={onChangeRadio}
         />
-        <label for="general">제너럴브랜드</label>
+        <label>제너럴브랜드</label>
       </InputButtonContainer>
       <InputButtonContainer>
         <input
@@ -39,7 +37,7 @@ const SellerProperty = () => {
           value="national"
           onChange={onChangeRadio}
         />
-        <label for="national">내셔널브랜드</label>
+        <label>내셔널브랜드</label>
       </InputButtonContainer>
     </Container>
   );
