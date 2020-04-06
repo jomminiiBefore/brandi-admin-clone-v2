@@ -1,12 +1,12 @@
+import pandas as pd, uuid, os
 from flask import jsonify
 from datetime import datetime
 from mysql.connector.errors import Error
 
-from connection import DatabaseConnection
+from connection import DatabaseConnection, get_s3_connection
 
 
 class SellerDao:
-
     """ 셀러 모델
 
     Authors:
@@ -15,6 +15,24 @@ class SellerDao:
         2020-03-25 (leesh3@brandi.co.kr): 초기 생성
 
     """
+    def gen_random_name(self):
+
+        """ 랜덤한 이름 생성
+
+        Args:
+            self: 클래스에서 전역으로 쓰임.
+
+        Returns: http 응답코드
+            random_name: 랜덤한 이름 리
+
+        Authors:
+            heechul@brandi.co.kr (윤희철)
+
+        History:
+            2020-04-07 (heechul@brandi.co.kr): 초기 생성
+        """
+        random_name = str(uuid.uuid4())
+        return random_name
 
     # noinspection PyMethodMayBeStatic
     def get_account_password(self, account_info, db_connection):
@@ -359,6 +377,7 @@ class SellerDao:
 
     # noinspection PyMethodMayBeStatic
     def get_seller_list(self, request, db_connection):
+
         """ GET 셀러 리스트를 표출하고, 검색 키워드가 오면 키워드 별 검색 가능.
 
         Args:
@@ -375,6 +394,7 @@ class SellerDao:
         History:
             2020-04-03(heechul@brandi.co.kr): 초기 생성
         """
+
         # offset과 limit에 음수가 들어오면  default값 지정
         offset = 0 if int(request.args.get('offset', 0)) < 0 else int(request.args.get('offset', 0))
         limit = 10 if int(request.args.get('limit', 10)) < 0 else int(request.args.get('limit', 10))
@@ -382,49 +402,49 @@ class SellerDao:
         # sql에서 where 조건문에 들어갈 필터 문자열
         filter_query = ''
 
-        # request에 쿼리파라미터가 들어오고 값이 존재하면 filter_query에 조건 쿼리문을 추가해줌.
-        seller_account_no = request.args.get('seller_account_no', None)
+        # request안의 유효성검사에 딕셔너리인 valid_param에서 value가 None이 아니면 filter_query에 조건 쿼리문을 추가해줌.
+        seller_account_no = request.valid_param['seller_account_no']
         if seller_account_no:
             filter_query += f" AND seller_accounts.seller_account_no = {seller_account_no}"
 
-        login_id = request.args.get('login_id', None)
+        login_id = request.valid_param['login_id']
         if login_id:
             filter_query += f" AND accounts.login_id = '{login_id}'"
 
-        name_kr = request.args.get('name_kr', None)
+        name_kr = request.valid_param['name_kr']
         if name_kr:
             filter_query += f" AND name_kr = '{name_kr}'"
 
-        name_en = request.args.get('name_en', None)
+        name_en = request.valid_param['name_en']
         if name_en:
             filter_query += f" AND name_en = '{name_en}'"
 
-        brandi_app_user_id = request.args.get('brandi_app_user_id', None)
+        brandi_app_user_id = request.valid_param['brandi_app_user_id']
         if brandi_app_user_id:
             filter_query += f" AND brandi_app_user_id = {brandi_app_user_id}"
 
-        manager_name = request.args.get('manager_name', None)
+        manager_name = request.valid_param['manager_name']
         if manager_name:
             filter_query += f" AND manager_infos.name = '{manager_name}'"
 
-        seller_status = request.args.get('seller_status', None)
+        seller_status = request.valid_param['seller_status']
         if seller_status:
             filter_query += f" AND seller_statuses.name = '{seller_status}'"
 
-        manager_contact_number = request.args.get('manager_contact_number', None)
+        manager_contact_number = request.valid_param['manager_contact_number']
         if manager_contact_number:
             filter_query += f" AND manager_infos.contact_number LIKE '%{manager_contact_number}%'"
 
-        manager_email = request.args.get('manager_email', None)
+        manager_email = request.valid_param['manager_email']
         if manager_email:
             filter_query += f" AND manager_infos.email = '{manager_email}'"
 
-        seller_type_name = request.args.get('seller_type_name', None)
+        seller_type_name = request.valid_param['seller_type_name']
         if seller_type_name:
             filter_query += f" AND seller_types.name = '{seller_type_name}'"
 
-        start_date = request.args.get('start_time', None)
-        end_date = request.args.get('close_time', None)
+        start_date = request.valid_param['start_time']
+        end_date = request.valid_param['close_time']
         if start_date and end_date:
             start_date = str(request.args.get('start_time', None)) + ' 00:00:00'
             end_date = str(request.args.get('close_time', None)) + ' 23:59:59'
@@ -433,21 +453,8 @@ class SellerDao:
         try:
             with db_connection as db_cursor:
 
-                # 상품 개수를 가져오는 sql 명령문
-                select_product_count_statement = '''
-                    SELECT 
-                    COUNT(products.product_no) as product_count
-                    FROM seller_infos
-                    right JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
-                    LEFT JOIN product_infos ON seller_infos.seller_account_id = product_infos.seller_id
-                    LEFT JOIN products ON product_infos.product_id = products.product_no 
-                    GROUP BY seller_accounts.seller_account_no
-                '''
-                db_cursor.execute(select_product_count_statement)
-                product_count = db_cursor.fetchall()
-
                 # 셀러 리스트를 가져오는 sql 명령문, 쿼리가 들어오면 쿼리문을 포메팅해서 검색 실행
-                select_seller_list_statement = '''
+                select_seller_list_statement = f'''
                     SELECT 
                     seller_account_id, 
                     accounts.login_id,
@@ -458,6 +465,12 @@ class SellerDao:
                     seller_status_id,
                     seller_types.name as seller_type_name,
                     site_url,
+                    (
+                        SELECT COUNT(0) 
+                        FROM product_infos 
+                        WHERE product_infos.seller_id  = seller_infos.seller_account_id 
+                        AND product_infos.close_time = '2037-12-31 23:59:59' 
+                    ) as product_count,
                     seller_accounts.created_at,
                     manager_infos.name as manager_name,
                     manager_infos.contact_number as manager_contact_number,
@@ -469,23 +482,61 @@ class SellerDao:
                     LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
                     LEFT JOIN manager_infos on manager_infos.seller_info_id = seller_infos.seller_info_no 
                     WHERE seller_infos.close_time = '2037-12-31 23:59:59.0' 
-                    AND manager_infos.ranking = 1%(filter_query)s
+                    AND manager_infos.ranking = 1{filter_query}
                     LIMIT %(limit)s OFFSET %(offset)s                   
                 '''
                 parameter = {
-                    'limit' : limit,
-                    'offset' : offset,
-                    'filter_query' : filter_query
+                    'limit': limit,
+                    'offset': offset,
                 }
 
                 # sql 쿼리와 pagination 데이터 바인딩
                 db_cursor.execute(select_seller_list_statement, parameter)
                 seller_info = db_cursor.fetchall()
 
-                # 데이터 베이스에서 가져온 셀러, 매니저, 상품 개수 정보 리스트화
-                seller_list = [{**seller_info[i], **product_count[i]} for i in range(0, len(seller_info))]
-                print(seller_list)
-                for seller in seller_list:
+                # 쿼리파라미터에 excel키가 1로 들어오면 엑셀파일을 만듦.
+                if request.valid_param['excel'] == 1:
+                    s3 = get_s3_connection()
+
+                    # pandas 데이터 프레임을 만들기 위한 column과 value 정리
+                    seller_list_dict = {
+                        '셀러번호': [seller['seller_account_id'] for seller in seller_info],
+                        '관리자계정ID': [seller['login_id'] for seller in seller_info],
+                        '셀러영문명': [seller['name_en'] for seller in seller_info],
+                        '셀러한글명': [seller['name_kr'] for seller in seller_info],
+                        '브랜디회원번호': [seller['brandi_app_user_id'] for seller in seller_info],
+                        '담당자명': [seller['manager_name'] for seller in seller_info],
+                        '담당자전화번호': [seller['manager_contact_number'] for seller in seller_info],
+                        '판매구분': [seller['seller_type_name'] for seller in seller_info],
+                        '상품개수': [seller['product_count'] for seller in seller_info],
+                        '셀러URL': [seller['site_url'] for seller in seller_info],
+                        '셀러등록일': [seller['created_at'] for seller in seller_info],
+                        '승인여부': [seller['seller_status'] for seller in seller_info]
+                    }
+
+                    # 데이터베이스의 데이터를 기반으로 한 딕셔너리를 판다스 데이터 프레임으로 만들어줌.
+                    df = pd.DataFrame(data=seller_list_dict)
+
+                    # 파일이름과 파일경로를 정의해줌.
+                    file_name = f'{self.gen_random_name()}.xlsx'
+                    file = f'../{file_name}'
+
+                    # 파일을 엑셀파일로 변환해서 로컬에 저장
+                    df.to_excel(file, encoding='utf8')
+
+                    # 로컬에 저장된 파일을 s3에 업로드
+                    s3.upload_file(file, "brandi-intern", file_name)
+
+                    # s3에 올라간 파일을 다운받는 url
+                    file_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{file_name}'
+
+                    # s3에 올라간 후에 로컬에 있는 파일 삭제
+                    os.remove(file)
+
+                    return jsonify({'file_url': file_url}), 200
+
+                # 셀러 상태를 확인하여 해당 상태에서 취할 수 있는 action을 기존의 seller_info에 넣어줌.
+                for seller in seller_info:
                     if seller['seller_status'] == '입점':
                         seller['action'] = ['휴점 신청', '퇴점 신청 처리']
                     elif seller['seller_status'] == '입점대기':
@@ -494,9 +545,20 @@ class SellerDao:
                         seller['action'] = ['휴점 해제', '퇴점 신청 처리']
                     elif seller['seller_status'] == '퇴점대기':
                         seller['action'] = ['휴점 신청', '퇴점 확정 처리', '퇴점 철회 처리']
-                print(seller_list)
 
-                return jsonify({'data': seller_list}), 200
+                # pagination을 위해서 전체 셀러가 몇명인지 count해서 기존의 seller_info에 넣어줌.
+                seller_count_statement = '''
+                    SELECT 
+                    COUNT(seller_account_id) as seller_count
+                    FROM seller_infos
+                    LEFT JOIN seller_accounts ON seller_infos.seller_account_id = seller_accounts.seller_account_no 
+                    LEFT JOIN accounts ON seller_accounts.account_id = accounts.account_no 
+                    WHERE close_time = '2037-12-31 23:59:59.0' AND accounts.is_deleted = 0
+                '''
+                db_cursor.execute(seller_count_statement)
+                seller_count = db_cursor.fetchone()
+
+                return jsonify({'seller_list': seller_info, 'seller_count': seller_count['seller_count']}), 200
 
         # 데이터베이스 error
         except Exception as e:
@@ -523,6 +585,7 @@ class SellerDao:
         Returns: http 응답코드
             200: 셀러정보 수정(새로운 이력 생성) 완료
             400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
+            403: NO_AUTHORIZATION_FOR_STATUS_CHANGE
             500: DB_CURSOR_ERROR, INVALID_KEY
 
         Authors:
@@ -736,7 +799,11 @@ class SellerDao:
                 account_info['previous_seller_status_id'] = previous_seller_status_id['seller_status_id']
 
                 # 이전 셀러정보의 셀러 상태값과 새로운 셀러정보의 셀러 상태값이 다르면, 셀러 상태정보이력 테이블 INSERT INTO
-                if account_info['previous_seller_status_no'] != account_info['seller_status_no']:
+                if account_info['previous_seller_status_id'] != account_info['seller_status_no']:
+
+                    # 마스터 권한이 아닐 때 셀러 상태(입점 등)를 변경하려고 하면 에러 리턴
+                    if account_info['auth_type_id'] != 1:
+                        return jsonify({'message': 'NO_AUTHORIZATION_FOR_STATUS_CHANGE'}), 403
 
                     # INSERT INTO 문에서 확인할 데이터
                     seller_status_data = {
@@ -846,26 +913,146 @@ class SellerDao:
 
         # 데이터베이스 커서 실행
         try:
-            with db_connection.cursor() as db_cursor:
+            with db_connection as db_cursor:
 
-                # 셀러 상태 변경 sql 명령문
-                update_seller_status_statement = """
-                    UPDATE
-                    seller_infos
-                    SET
-                    seller_status_id = %(seller_status_id)s
-                    WHERE
-                    seller_account_id = %(seller_account_id)s
-                """
-
-                # service 에서 넘어온 셀러 데이터
-                seller_status_data = {
-                    'seller_status_id' : seller_status_id,
-                    'seller_account_id' : seller_account_id
+                # seller_infos : service에서 넘어온 셀러 데이터
+                seller_data = {
+                    'seller_status_id': seller_status_id,
+                    'seller_account_id': seller_account_id
                 }
 
-                # 데이터 sql 명령문과 셀러 데이터 바인딩
-                db_cursor.execute(update_seller_status_statement, seller_status_data)
+                # 새로운 이력 생성 이전의 셀러 번호를 가져와서 셀러데이터에 저장
+                db_cursor.execute('''
+                SELECT seller_info_no
+                FROM seller_infos
+                WHERE seller_account_id = %(seller_account_id)s
+                AND close_time = '2037-12-31 23:59:59'
+                ''', seller_data)
+
+                # 새로운 버전 이전의 버전의 셀러 번호를 seller_data에 저장장
+                seller_data['previous_seller_info_no'] = db_cursor.fetchone()['seller_info_no']
+                print(f"이전 셀러 인포 아이디 : {seller_data['previous_seller_info_no']}")
+
+                # seller_infos : 셀러 상태 변경 sql 명령문
+                update_seller_status_statement = """
+                    INSERT INTO seller_infos
+                    (
+                        seller_account_id,
+                        profile_image_url,
+                        seller_status_id,
+                        seller_type_id,
+                        product_sort_id,                 
+                        name_kr,
+                        name_en,
+                        brandi_app_user_id,
+                        ceo_name,
+                        company_name,
+                        business_number,
+                        certificate_image_url,
+                        online_business_number,
+                        online_business_image_url,
+                        background_image_url,
+                        short_description,
+                        long_description,
+                        site_url,
+                        kakao_id,
+                        insta_id,
+                        yellow_id,
+                        center_number,
+                        zip_code,
+                        address,
+                        detail_address,
+                        weekday_start_time,
+                        weekday_end_time,
+                        weekend_start_time,
+                        weekend_end_time,
+                        bank_name,
+                        bank_holder_name,
+                        account_number,
+                        modifier
+                    )
+                    SELECT
+                        seller_account_id,
+                        profile_image_url,
+                        %(seller_status_id)s,
+                        seller_type_id,
+                        product_sort_id,                 
+                        name_kr,
+                        name_en,
+                        brandi_app_user_id,
+                        ceo_name,
+                        company_name,
+                        business_number,
+                        certificate_image_url,
+                        online_business_number,
+                        online_business_image_url,
+                        background_image_url,
+                        short_description,
+                        long_description,
+                        site_url,
+                        kakao_id,
+                        insta_id,
+                        yellow_id,
+                        center_number,
+                        zip_code,
+                        address,
+                        detail_address,
+                        weekday_start_time,
+                        weekday_end_time,
+                        weekend_start_time,
+                        weekend_end_time,
+                        bank_name,
+                        bank_holder_name,
+                        account_number,
+                        modifier
+                    FROM seller_infos                    
+                    WHERE
+                    seller_account_id = %(seller_account_id)s AND close_time = '2037-12-31 23:59:59'
+                """
+
+                # seller_infos : 데이터 sql명령문과 셀러 데이터 바인딩 후 새로운 셀러 정보 이력의 primary key 딕셔너리에 담음
+                db_cursor.execute(update_seller_status_statement, seller_data)
+                new_seller_info_id = db_cursor.lastrowid
+                seller_data['new_seller_info_id'] = new_seller_info_id
+
+                # 선분이력을 닫아주는 시간을 쿼리로 가져옴. 선분이력을 닫아주는 시간을 seller_data에 저장함.
+                db_cursor.execute('SELECT NOW()')
+                close_time = db_cursor.fetchone()
+                seller_data['close_time'] = close_time['NOW()']
+
+                # seller_infos 테이블에 해당 seller_account의 새로운 이력이 생겼기 때문에 이전의 이력을 끊어주는 작업.
+                update_previous_seller_infos_stat = '''
+                UPDATE
+                seller_infos
+                SET
+                close_time = %(close_time)s
+                WHERE
+                seller_info_no = %(previous_seller_info_no)s
+                AND seller_account_id = %(seller_account_id)s
+                '''
+                db_cursor.execute(update_previous_seller_infos_stat, seller_data)
+
+                # manager_infos : 매니저 정보에서 셀러 인포 foreign key를 새로 생성된 이력으로 바꿔는 명령문.
+                insert_manager_info_statement = """
+                    INSERT INTO manager_infos (
+                        name,
+                        contact_number,
+                        email,
+                        ranking,
+                        seller_info_id
+                    ) 
+                    SELECT
+                        name,
+                        contact_number,
+                        email,
+                        ranking,
+                        %(new_seller_info_id)s
+                        FROM manager_infos
+                        WHERE manager_info_no = (SELECT manager_info_no FROM manager_infos WHERE seller_info_id = %(previous_seller_info_no)s AND ranking = 1)
+                        AND ranking = 1
+                """
+
+                db_cursor.execute(insert_manager_info_statement, seller_data)
                 db_connection.commit()
                 return jsonify({'message': 'SUCCESS'}), 200
 
@@ -981,7 +1168,7 @@ class SellerDao:
 
         # 데이터베이스 error
         except Exception as e:
-            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            print(f'DAO_DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
 
     # noinspection PyMethodMayBeStatic

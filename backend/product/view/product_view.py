@@ -10,9 +10,8 @@ from flask_request_validator import (
     validate_params
 )
 from product.service.product_service import ProductService
-from utils import login_required
-
-from connection import get_db_connection
+from connection import DatabaseConnection, get_db_connection
+from utils import login_required, ImageUpload
 
 
 class ProductView():

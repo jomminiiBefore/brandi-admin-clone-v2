@@ -11,9 +11,9 @@ from config import DATABASES, S3_CONFIG
 def get_s3_connection():
     s3_connection = boto3.client(
         's3',
-        aws_access_key_id = S3_CONFIG['AWS_ACCESS_KEY_ID'],
-        aws_secret_access_key = S3_CONFIG['AWS_SECRET_ACCESS_KEY'],
-        region_name = S3_CONFIG['REGION_NAME'],
+        aws_access_key_id=S3_CONFIG['AWS_ACCESS_KEY_ID'],
+        aws_secret_access_key=S3_CONFIG['AWS_SECRET_ACCESS_KEY'],
+        region_name=S3_CONFIG['REGION_NAME'],
     )
     return s3_connection
 
