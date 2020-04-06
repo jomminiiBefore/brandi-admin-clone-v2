@@ -16,6 +16,7 @@ const InputContainer = ({
   valid,
   validationText,
   inputText,
+  isRequired,
 }) => {
   return (
     <div>
@@ -31,6 +32,7 @@ const InputContainer = ({
         valid={valid}
         validationText={validationText}
         inputText={inputText}
+        isRequired={isRequired}
       />
       <Validation
         validationText={validationText}
@@ -38,6 +40,7 @@ const InputContainer = ({
         typed={typed}
         blurred={blurred}
         valid={valid}
+        isRequired={isRequired}
       />
     </div>
   );

@@ -14,6 +14,7 @@ const Input = ({
   valid,
   validationText,
   inputText,
+  isRequired,
 }) => {
   /*
     setText: 텍스트가 바뀌었을 경우
@@ -49,6 +50,7 @@ const Input = ({
         isValid={isValid}
         validationText={validationText}
         inputText={inputText}
+        isRequired={isRequired}
       />
     </Container>
   );
@@ -64,6 +66,7 @@ const InputBox = styled.input`
   padding: 10px;
   border: 1px solid;
   border-color: ${(props) => {
+    // validation 유무
     if (props.validationText === 'none') {
       if (props.inputText || !props.typed) {
         return '#e5e5e5';
@@ -71,10 +74,19 @@ const InputBox = styled.input`
         return style.color.validationRed;
       }
     } else {
-      if (props.isValid) {
-        return '#e5e5e5';
+      // 필수 입력 유무
+      if (props.isRequired) {
+        if (props.isValid) {
+          return '#e5e5e5';
+        } else {
+          return style.color.validationRed;
+        }
       } else {
-        return style.color.validationRed;
+        if (props.isValid || !props.inputText) {
+          return '#e5e5e5';
+        } else {
+          return style.color.validationRed;
+        }
       }
     }
   }};
@@ -84,6 +96,7 @@ const InputBox = styled.input`
   &:focus {
     border: 1px solid;
     border-color: ${(props) => {
+      // validation 유무
       if (props.validationText === 'none') {
         if (props.inputText || !props.typed) {
           return '#333333';
@@ -91,10 +104,19 @@ const InputBox = styled.input`
           return style.color.validationRed;
         }
       } else {
-        if (props.isValid) {
-          return '#333333';
+        // 필수 입력 유무
+        if (props.isRequired) {
+          if (props.isValid) {
+            return '#e5e5e5';
+          } else {
+            return style.color.validationRed;
+          }
         } else {
-          return style.color.validationRed;
+          if (props.isValid || !props.inputText) {
+            return '#e5e5e5';
+          } else {
+            return style.color.validationRed;
+          }
         }
       }
     }};

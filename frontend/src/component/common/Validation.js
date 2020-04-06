@@ -1,7 +1,14 @@
 import React from 'react';
 import styled from 'styled-components';
 
-const Validation = ({ inputText, validationText, typed, blurred, valid }) => {
+const Validation = ({
+  inputText,
+  validationText,
+  typed,
+  blurred,
+  valid,
+  isRequired,
+}) => {
   console.log(typed, blurred, valid, inputText);
   // inputText: input에 입력한 값 (input에 아무 값도 입력하지 않았을 때 '필수 입력 항목입니다' 메세지 출력 유무를 판단하기 위해 필요)
   // validationText: validationText 메세지 내용 | 텍스트가 none이면 validation이 존재하지 않는 경우다.
@@ -16,7 +23,7 @@ const Validation = ({ inputText, validationText, typed, blurred, valid }) => {
           <ValidationBox>{validationText}</ValidationBox>
         </Container>
       )}
-      {typed && blurred && !inputText && !valid && (
+      {typed && blurred && !inputText && !valid && isRequired && (
         <Container>
           <ValidationBox>필수 입력 항목입니다.</ValidationBox>
         </Container>
