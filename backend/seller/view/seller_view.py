@@ -24,47 +24,7 @@ class SellerView:
     """
     seller_app = Blueprint('seller_app', __name__, url_prefix='/seller')
 
-    @seller_app.route("", methods=["POST"], endpoint='sign_up')
-    def sign_up():
-
-        """ 신규 셀러 회원가입 엔드포인드
-
-        입력된 인자가 신규 셀러로 가입됩니다.
-
-        Returns: http 응답코드
-            200: 신규 셀러 계정 저장 완료
-            400: key error
-            500: server error
-
-        Authors:
-            leesh3@brandi.co.kr (이소헌)
-            yoonhc@barndi.co.kr (윤희철)
-
-        History:
-            2020-03-25 (leesh3@brandi.co.kr): 초기 생성
-            2020-03-30 (yoonhc@barndi.co.kr): database connection open & close 추가
-        """
-
-        db_connection = get_db_connection()
-        if db_connection:
-            try:
-                seller_service = SellerService()
-                new_seller_result = seller_service.create_new_seller(request, db_connection)
-
-                return new_seller_result
-
-            except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
-
-            finally:
-                try:
-                    db_connection.close()
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
-
-    @seller_app.route('/<int:parameter_account_no>', methods=['PUT'], endpoint='change_password')
+    @seller_app.route('/<int:parameter_account_no>/password', methods=['PUT'], endpoint='change_password')
     @login_required
     @validate_params(
         Param('parameter_account_no', PATH, int),
@@ -104,6 +64,9 @@ class SellerView:
         History:
             2020-03-31 (leejm3@brandi.co.kr): 초기 생성
             2020-04-02 (leejm3@brandi.co.kr): 파라미터 validation 추가, 데코레이터 적용
+            2020-04-06 (leejm3@brandi.co.kr):
+                url path 변경('/<int:parameter_account_no>' -> '/<int:parameter_account_no>/password')
+
         """
 
         # validation 확인이 된 data 를 account_info 로 재정의
@@ -140,7 +103,7 @@ class SellerView:
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
-    @seller_app.route('/<int:parameter_account_no>/info', methods=['GET'], endpoint='get_seller_info')
+    @seller_app.route('/<int:parameter_account_no>', methods=['GET'], endpoint='get_seller_info')
     @login_required
     @validate_params(
         Param('parameter_account_no', PATH, int),
@@ -182,6 +145,9 @@ class SellerView:
             2020-04-01 (leejm3@brandi.co.kr): 초기 생성
             2020-04-02 (leejm3@brandi.co.kr): 파라미터 validation 추가, 데코레이터 적용
             2020-04-03 (leejm3@brandil.co.kr): 주석 수정(메인문구, urlparameter 수정)
+            2020-04-06 (leejm3@brandi.co.kr):
+                url path 변경('/<int:parameter_account_no>/info' -> '/<int:parameter_account_no>')
+
         """
 
         # validation 확인이 된 data 를 account_info 로 재정의
@@ -255,7 +221,7 @@ class SellerView:
         seller_list_result = seller_service.get_seller_list(request, user, db_connection)
         return seller_list_result
 
-    @seller_app.route('/<int:parameter_account_no>/info', methods=['PUT'], endpoint='change_seller_info')
+    @seller_app.route('/<int:parameter_account_no>', methods=['PUT'], endpoint='change_seller_info')
     @login_required
     @validate_params(
         Param('parameter_account_no', PATH, int),
@@ -267,7 +233,7 @@ class SellerView:
         Param('seller_type_no', JSON, int),
         Param('name_kr', JSON, str,
               rules=[Pattern(r'^[가-힣a-zA-Z0-9\ ]{1,45}$')]),
-        Param('name_en', JSON, str, required=False,
+        Param('name_en', JSON, str,
               rules=[Pattern(r'^[a-z\ ]{1,45}$')]),
         Param('account_no', JSON, int),
         Param('brandi_app_user_app_id', JSON, str,
@@ -419,9 +385,12 @@ class SellerView:
         Authors:
             leejm3@brandi.co.kr (이종민)
 
-        History:들
+        History:
             2020-04-03 (leejm3@brandi.co.kr): 초기 생성
-            2020-04-04 (leejm4@brandi.co.kr): 이전 셀러 정보번호, 이전 셀러 정보 상태정보, 셀러 계정번호 추가
+            2020-04-04 (leejm3@brandi.co.kr): 이전 셀러 정보번호, 이전 셀러 정보 상태정보, 셀러 계정번호 추가
+            2020-04-06 (leejm3@brandi.co.kr):
+                url path 변경('/<int:parameter_account_no>/info' -> '/<int:parameter_account_no>')
+
         """
 
         # manager_infos 유효성 확인
@@ -561,7 +530,6 @@ class SellerView:
     def login(*args):
 
         """ 셀러 로그인 엔드포인트
-
         셀러 로그인 엔드포인트 입니다.
         login_id와 password를 받습니다.
 
@@ -639,3 +607,103 @@ class SellerView:
         seller_service = SellerService()
         status_change_result = seller_service.change_seller_status(request, user, db_connection)
         return status_change_result
+
+    @seller_app.route('', methods=['POST'])
+    @validate_params(
+        Param('login_id', JSON, str,
+              rules=[Pattern(r'^[a-zA-Z0-9]{1}[a-zA-Z0-9_-]{4,19}')]),
+        Param('password', JSON, str,
+              rules=[MaxLength(80)]),
+        Param('password', JSON, str,
+              rules=[MinLength(4)]),
+        Param('contact_number', JSON, str,
+              rules=[Pattern(r'^[0-9]{3}-{1}[0-9]{4}-{1}[0-9]{4}$')]),
+        Param('seller_type_id', JSON, int),
+        Param('name_kr', JSON, str,
+              rules=[Pattern(r'^[가-힣a-zA-Z0-9\ ]{1,45}$')]),
+        Param('name_en', JSON, str,
+              rules=[Pattern(r'^[a-z\ ]{1,45}$')]),
+        Param('center_number', JSON, str,
+              rules=[Pattern(r'^[0-9]{2,3}-{1}[0-9]{4}-{1}[0-9]{4}$')]),
+        Param('site_url', JSON, str,
+              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
+        Param('site_url', JSON, str,
+              rules=[MaxLength(200)]),
+        Param('kakao_id', JSON, str, required=False,
+              rules=[Pattern(r'^[가-힣a-zA-Z0-9]{1,45}$')]),
+        Param('insta_id', JSON, str, required=False,
+              rules=[Pattern(r'^[a-zA-Z0-9]{1,45}$')]),
+        Param('seller_type_id', JSON, str,
+              rules=[Pattern(r"^[1-7]{1}$")])
+    )
+    def sign_up(*args):
+
+        """ 계정 회원가입 엔드포인트
+
+        회원가입 엔드포인트 입니다.
+        request.body 로 회원가입에 필요한 정보를 받고,
+        유효성 검사를 마친 정보를 account_info 에 담아
+        service 에 전달합니다.
+
+        Args:
+            *args: 유효성 검사를 통과한 파라미터
+
+        request.body:
+            login_id 로그인 아이디 str
+            password 비밀번호 str
+            contact_number 담당자 번호 str
+            seller_type_id 셀러 속성 아이디 int
+            name_kr 셀러명 str
+            name_en 셀러 영문명 str
+            center_number 고객센터 번호 str
+            site_url 사이트 URL str
+            kakao_id 카카오 아이디 str required=False
+            insta_id 인스타 아이디 str required=False
+
+        Returns: http 응답코드
+            200: SUCCESS 셀러 회원가입 완료
+            400: EXISTING_LOGIN_ID, EXISTING_NAME_KR,
+                 EXISTING_NAME_EN, INVALID_KEY
+            500: NO_DATABASE_CONNECTION
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+        2020-04-06 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+
+        # validation 확인이 된 data 를 account_info 로 재정의
+        account_info = {
+            'login_id': args[0],
+            'password': args[1],
+            'contact_number': args[3],
+            'seller_type_id': args[4],
+            'name_kr': args[5],
+            'name_en': args[6],
+            'center_number': args[7],
+            'site_url': args[8],
+            'kakao_id': args[10],
+            'insta_id': args[11]
+        }
+
+        # 데이터베이스 연결
+        db_connection = get_db_connection()
+        if db_connection:
+            try:
+                seller_service = SellerService()
+
+                sign_up_result = seller_service.sign_up(account_info, db_connection)
+                return sign_up_result
+
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 400
+
+            finally:
+                try:
+                    db_connection.close()
+                except Exception as e:
+                    return jsonify({'message': f'{e}'}), 400
+        else:
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500

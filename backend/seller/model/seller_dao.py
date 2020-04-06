@@ -1,4 +1,5 @@
 from flask import jsonify
+from datetime import datetime
 from mysql.connector.errors import Error
 
 from connection import DatabaseConnection
@@ -38,7 +39,7 @@ class SellerDao:
             2020-03-25 (leesh3@brandi.co.kr): 초기 생성
         """
         try:
-            with db_connection.cursor()  as db_cursor:
+            with db_connection.cursor() as db_cursor:
 
                 new_seller_info_data = {
                     'name_kr': new_seller['name_kr'],
@@ -128,7 +129,7 @@ class SellerDao:
         """
 
         try:
-            with db_connection.cursor()  as db_cursor:
+            with db_connection.cursor() as db_cursor:
 
                 # SELECT 문에서 확인할 데이터
                 account_info_data = {
@@ -180,7 +181,7 @@ class SellerDao:
         """
 
         try:
-            with db_connection.cursor()  as db_cursor:
+            with db_connection.cursor() as db_cursor:
 
                 # SELECT 문에서 확인할 데이터
                 account_info_data = {
@@ -239,7 +240,7 @@ class SellerDao:
             2020-04-03 (leejm3@brandi.co.kr): 표출 정보에 외래키 id 값 추가
         """
         try:
-            with db_connection.cursor()  as db_cursor:
+            with db_connection.cursor() as db_cursor:
 
                 # 셀러 기본 정보(외래키 제외)
                 # SELECT 문 조건 데이터
@@ -516,7 +517,7 @@ class SellerDao:
             filter_query += f" AND seller_accounts.created_at > '{start_date}' AND seller_accounts.created_at < '{end_date}'"
 
         try:
-            with db_connection.cursor()  as db_cursor:
+            with db_connection.cursor() as db_cursor:
 
                 # 상품 개수를 가져오는 sql 명령문
                 select_product_count_statement = '''
@@ -619,7 +620,7 @@ class SellerDao:
 
         """
         try:
-            with db_connection.cursor()  as db_cursor:
+            with db_connection.cursor() as db_cursor:
 
                 # 트랜잭션 시작
                 db_cursor.execute("START TRANSACTION")
@@ -821,6 +822,7 @@ class SellerDao:
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
+    # noinspection PyMethodMayBeStatic
     def get_seller_name_list(self, keyword, db_connection):
 
         """
@@ -842,7 +844,7 @@ class SellerDao:
             2020-04-05 (leesh3@brandi.co.kr): 초기 생성
         """
         try:
-            with db_connection.cursor()  as db_cursor:
+            with db_connection.cursor() as db_cursor:
                 get_stmt = """
                     SELECT seller_info_no, profile_image_url, name_kr
                     FROM seller_infos 
@@ -867,6 +869,7 @@ class SellerDao:
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
+    # noinspection PyMethodMayBeStatic
     def change_seller_status(self, seller_status_id, seller_account_id, db_connection):
 
         """ 마스터 권한 셀러 상태 변경
@@ -889,7 +892,7 @@ class SellerDao:
 
         # 데이터베이스 커서 실행
         try:
-            with db_connection.cursor()  as db_cursor:
+            with db_connection.cursor() as db_cursor:
 
                 # 셀러 상태 변경 sql 명령문
                 update_seller_status_statement = """
@@ -901,22 +904,23 @@ class SellerDao:
                     seller_account_id = %(seller_account_id)s
                 """
 
-                # service에서 넘어온 셀러 데이터
+                # service 에서 넘어온 셀러 데이터
                 seller_status_data = {
                     'seller_status_id' : seller_status_id,
                     'seller_account_id' : seller_account_id
                 }
 
-                # 데이터 sql명령문과 셀러 데이터 바인딩
+                # 데이터 sql 명령문과 셀러 데이터 바인딩
                 db_cursor.execute(update_seller_status_statement, seller_status_data)
                 db_connection.commit()
-                return jsonify({'message' : 'SUCCESS'}), 200
+                return jsonify({'message': 'SUCCESS'}), 200
 
         # 데이터베이스 error
         except Exception as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
 
+    # noinspection PyMethodMayBeStatic
     def get_account_info(self, account_info, db_connection):
 
         """ 로그인 정보 확인
@@ -970,4 +974,320 @@ class SellerDao:
 
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
+
+    # noinspection PyMethodMayBeStatic
+    def check_overlap_login_id(self, login_id, db_connection):
+
+        """ 로그인 아이디 중복 체크
+
+        service 에서 전달 받은 login_id 가 DB에 존재하는지 확인해서 리턴
+
+        Args:
+            login_id: account_info 의 login_id
+            db_connection: 연결된 database connection 객체
+
+        Returns:
+            login_id로 확인된 계정 번호.
+            -> service 에서 계정번호가 검색된 경우 중복처리 진행
+            500: DB_CURSOR_ERROR
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-06 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+
+        try:
+            with db_connection.cursor() as db_cursor:
+
+                # 계정 SELECT 문
+                select_account_statement = """
+                    SELECT
+                    account_no
+                    FROM
+                    accounts
+                    WHERE
+                    login_id = %(login_id)s
+                """
+
+                # service 에서 넘어온 셀러 데이터
+                login_id_data = {
+                    'login_id': login_id
+                }
+
+                # 데이터 sql 명령문과 셀러 데이터 바인딩
+                db_cursor.execute(select_account_statement, login_id_data)
+
+                # 쿼리로 나온 계정번호를 저장
+                select_result = db_cursor.fetchone()
+                return select_result
+
+        # 데이터베이스 error
+        except Exception as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
+
+    # noinspection PyMethodMayBeStatic
+    def check_overlap_name_kr(self, name_kr, db_connection):
+        """ 셀러명 중복 체크
+
+        service 에서 전달 받은 name_kr 가 DB에 존재하는지 확인해서 리턴
+
+        Args:
+            name_kr: account_info 의 name_kr
+            db_connection: 연결된 database connection 객체
+
+        Returns:
+            name_kr로 확인된 셀러정보 번호.
+            -> service 에서 셀러정보 번호가 검색된 경우 중복처리 진행
+            500: DB_CURSOR_ERROR
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-06 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+
+        try:
+            with db_connection.cursor() as db_cursor:
+
+                # 셀러정보 SELECT 문
+                select_seller_info_statement = """
+                    SELECT
+                    seller_info_no
+                    FROM
+                    seller_infos
+                    WHERE
+                    name_kr = %(name_kr)s
+                    AND is_deleted = 0
+                """
+
+                # service 에서 넘어온 셀러 데이터
+                name_kr_data = {
+                    'name_kr': name_kr
+                }
+
+                # 데이터 sql 명령문과 셀러 데이터 바인딩
+                db_cursor.execute(select_seller_info_statement, name_kr_data)
+
+                # 쿼리로 나온 셀러정보 번호를 저장
+                select_result = db_cursor.fetchone()
+                return select_result
+
+        # 데이터베이스 error
+        except Exception as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
+
+    # noinspection PyMethodMayBeStatic
+    def check_overlap_name_en(self, name_en, db_connection):
+        """ 셀러 영문명 중복 체크
+
+        service 에서 전달 받은 name_en 가 DB에 존재하는지 확인해서 리턴
+
+        Args:
+            name_en: account_info 의 name_en
+            db_connection: 연결된 database connection 객체
+
+        Returns:
+            name_en로 확인된 셀러정보 번호.
+            -> service 에서 셀러정보 번호가 검색된 경우 중복처리 진행
+            500: DB_CURSOR_ERROR
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-06 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+
+        try:
+            with db_connection.cursor() as db_cursor:
+
+                # 셀러정보 SELECT 문
+                select_seller_info_statement = """
+                    SELECT
+                    seller_info_no
+                    FROM
+                    seller_infos
+                    WHERE
+                    name_en = %(name_en)s
+                    AND is_deleted = 0
+                """
+
+                # service 에서 넘어온 셀러 데이터
+                name_en_data = {
+                    'name_en': name_en
+                }
+
+                # 데이터 sql 명령문과 셀러 데이터 바인딩
+                db_cursor.execute(select_seller_info_statement, name_en_data)
+
+                # 쿼리로 나온 셀러정보 번호를 저장
+                select_result = db_cursor.fetchone()
+                return select_result
+
+        # 데이터베이스 error
+        except Exception as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
+
+    # noinspection PyMethodMayBeStatic
+    def sign_up(self, account_info, db_connection):
+
+        """ 계정 회원가입 데이터를 INSERT 하는 DAO
+
+        1. accounts 계정 생성
+        2. seller_accounts 셀러 계정 생성
+        3. seller_infos 셀러 정보 생성
+        4. manage_infos 담당자 정보 생성
+        5. seller_status_change_histories 셀러 상태 변경 이력 생성
+
+        Args:
+            account_info: 유효성 검사를 통과한 account 정보
+                login_id 로그인 아이디
+                password 암호화된 비밀번호
+                contact_number 담당자 번호
+                seller_type_id 셀러 속성 아이디
+                name_kr 셀러명
+                name_en 셀러 영문명
+                center_number 고객센터 번호
+                site_url 사이트 URL
+                kakao_id 카카오 아이디
+                insta_id 인스타 아이디
+            db_connection: 연결된 database connection 객체
+
+        Returns: http 응답코드
+            200: SUCCESS 셀러 회원가입 완료
+            400: INVALID_KEY
+            500: DB_CURSOR_ERROR
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-01 (leejm3@brandi.co.kr) : 초기 생성
+            
+        """
+
+        try:
+            with db_connection.cursor() as db_cursor:
+
+                # accounts 생성
+                # 계정 INSERT 문
+                insert_accounts_statement = """
+                    INSERT INTO accounts(
+                    auth_type_id,
+                    login_id,
+                    password
+                ) VALUES (
+                    2,
+                    %(login_id)s,
+                    %(password)s
+                )"""
+
+                # 데이터 sql 명령문과 셀러 데이터 바인딩
+                db_cursor.execute(insert_accounts_statement, account_info)
+
+                # 위에서 생성된 새로운 계정의 id 값을 가져옴
+                account_no = db_cursor.lastrowid
+                account_info['account_no'] = account_no
+                # seller_accounts 생성
+                # 셀러계정 INSERT 문
+                insert_seller_accounts_statement = """
+                    INSERT INTO seller_accounts(
+                    account_id
+                ) VALUES (
+                    %(account_no)s
+                )"""
+
+                # 데이터 sql 명령문과 셀러 데이터 바인딩
+                db_cursor.execute(insert_seller_accounts_statement, account_info)
+
+                # 위에서 생성된 셀러계정의 id 값을 가져옴
+                seller_account_no = db_cursor.lastrowid
+                account_info['seller_account_id'] = seller_account_no
+
+                # seller_infos 생성
+                # 셀러정보 INSERT 문
+                insert_seller_infos_statement = """
+                    INSERT INTO seller_infos(
+                    seller_account_id,
+                    seller_type_id,
+                    seller_status_id,
+                    product_sort_id,
+                    name_kr,
+                    name_en,
+                    center_number,
+                    site_url,
+                    kakao_id,
+                    insta_id,
+                    modifier
+                ) VALUES (
+                    %(seller_account_id)s,
+                    %(seller_type_id)s,
+                    1,
+                    (SELECT product_sort_id FROM seller_types WHERE seller_type_no = %(seller_type_id)s),
+                    %(name_kr)s,
+                    %(name_en)s,
+                    %(center_number)s,
+                    %(site_url)s,
+                    %(kakao_id)s,
+                    %(insta_id)s,
+                    %(account_no)s
+                )"""
+
+                # 데이터 sql 명령문과 셀러 데이터 바인딩
+                db_cursor.execute(insert_seller_infos_statement, account_info)
+
+                # 위에서 생성된 셀러정보의 id 값을 가져옴
+                seller_info_no = db_cursor.lastrowid
+                account_info['seller_info_no'] = seller_info_no
+
+                # manager_infos 생성
+                # 담당자정보 INSERT 문
+                insert_manager_infos_statement = """
+                    INSERT INTO manager_infos(
+                    contact_number,
+                    seller_info_id
+                ) VALUES (
+                    %(contact_number)s,
+                    %(seller_info_no)s
+                )"""
+
+                # 데이터 sql 명령문과 셀러 데이터 바인딩
+                db_cursor.execute(insert_manager_infos_statement, account_info)
+
+                # seller_status_change_histories 생성
+                # 셀러 상태변경 이력 INSERT 문
+                insert_status_histories_statement = """
+                    INSERT INTO seller_status_change_histories(
+                    seller_account_id,
+                    seller_status_id,
+                    modifier                    
+                ) VALUES (
+                    %(seller_account_id)s,
+                    1,
+                    %(account_no)s
+                )"""
+
+                # 데이터 sql 명령문과 셀러 데이터 바인딩
+                db_cursor.execute(insert_status_histories_statement, account_info)
+                db_connection.commit()
+                return jsonify({"message": "SUCCESS"}), 200
+
+        except KeyError as e:
+            print(f'KEY_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'INVALID_KEY'}), 400
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
