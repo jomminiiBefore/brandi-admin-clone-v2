@@ -1,10 +1,52 @@
-import React from "react";
+import React, { useState } from "react";
+import { withRouter } from "react-router-dom";
 import styled from "styled-components";
-import Input from "src/component/common/Input";
+import { YJURL } from "src/utils/config";
+import InputContainer from "src/component/common/InputContainer";
+import CustomButton from "src/component/common/CustomButton";
 import Footer from "src/component/common/Footer";
 import styles from "src/utils/styles";
 
-const Login = () => {
+const Login = props => {
+  const [inputs, setInputs] = useState({
+    login_id: "",
+    password: ""
+  });
+
+  const onChange = e => {
+    setInputs({ ...inputs, [e.target.name]: e.target.value });
+  };
+
+  const goToSignUp = () => {
+    props.history.push("/signup");
+  };
+
+  // login fetch 함수
+  const handleLogin = () => {
+    fetch(`${YJURL}/seller/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        login_id: inputs.login_id,
+        password: inputs.password
+      })
+    })
+      .then(res => res.json())
+      .then(res => {
+        console.log("login-res:: ", res);
+        if (res.token) {
+          localStorage.setItem("token", res.token);
+          props.history.push("/loginOk");
+        } else {
+          alert("아이디 또는 패스워드를 확인해주세요.");
+        }
+        return res;
+      })
+      .catch(error => console.log("error::: ", error));
+  };
+
   return (
     <Container>
       <BgBox>
@@ -13,41 +55,71 @@ const Login = () => {
       <LoginBox>
         <InputBox>
           <MainTitle>셀러 로그인</MainTitle>
-          <Input width="300" height="34" placeholder="셀러 아이디" />
-          <Input width="300" height="34" placeholder="셀러 비밀번호" />
+          <Wrapper>
+            <InputContainer
+              width="300"
+              height="34"
+              placeholder="셀러 아이디"
+              name="login_id"
+              setText={onChange}
+              setBlur={onChange}
+            />
+          </Wrapper>
+          <Wrapper>
+            <InputContainer
+              width="300"
+              height="34"
+              placeholder="셀러 비밀번호"
+              name="password"
+              setText={onChange}
+              setBlur={onChange}
+            />
+          </Wrapper>
         </InputBox>
         <SellerInfoBox>
           <InputCheckbox type="checkbox" />
           <RememberInfo>아이디/비밀번호 기억하기</RememberInfo>
           <FindPw>비밀번호 찾기</FindPw>
         </SellerInfoBox>
-        <HelpiImg />
+        <ButtonBox>
+          <CustomButton name={"셀러가입"} onClickEvent={goToSignUp} />
+          <CustomButton
+            name={"로그인"}
+            textColor={"white"}
+            color={styles.color.buttonBlue}
+            onClickEvent={handleLogin}
+          />
+        </ButtonBox>
+        <HelpiLink
+          href="https://www.notion.so/HELPI-f24864d9056c4d2a8b988a07814d5c7f"
+          target="_blank"
+        >
+          <HelpiImg />
+        </HelpiLink>
         <BottomInfoBox>
-          <div style={{ fontWeight: "300" }}>
+          <InfoText>
             입점안내{" "}
-            <span
-              style={{ color: `${styles.color.buttonBlue}`, fontWeight: "200" }}
-            >
+            <ShowInfo href="http://www.brandiinc.com/brandi/" target="_blank">
               보러가기
-            </span>
-          </div>
-          <div style={{ fontWeight: "300" }}>고객센터</div>
-          <div style={{ fontSize: "13px" }}>| 대표번호 : 1566-1910</div>
-          <div style={{ fontSize: "13px" }}>
+            </ShowInfo>
+          </InfoText>
+          <ServiceCenterNumber>고객센터</ServiceCenterNumber>
+          <RepNumber>| 대표번호 : 1566-1910</RepNumber>
+          <Kakaofriend>
             | 카카오톡 플러스친구 :{" "}
-            <span style={{ color: `${styles.color.buttonBlue}` }}>
+            <KakaoBrandi href="https://pf.kakao.com/_pSxoZu" target="_blank">
               @브랜디셀러
-            </span>
-          </div>
+            </KakaoBrandi>
+          </Kakaofriend>
         </BottomInfoBox>
       </LoginBox>
-      <div style={{ padding: "25px" }}></div>
+      <BottomEmpty />
       <Footer />
     </Container>
   );
 };
 
-export default Login;
+export default withRouter(Login);
 
 const Container = styled.div`
   width: 100vw;
@@ -86,6 +158,10 @@ const MainTitle = styled.div`
   font-weight: ${styles.fontWeight.thin};
 `;
 
+const Wrapper = styled.div`
+  margin-top: 10px;
+`;
+
 const InputBox = styled.div`
   display: flex;
   align-items: center;
@@ -113,6 +189,13 @@ const FindPw = styled.div`
   font-size: ${styles.fontSize.generalFont};
 `;
 
+const ButtonBox = styled.div`
+  margin: 20px 0px 15px 0px;
+  display: flex;
+`;
+
+const HelpiLink = styled.a``;
+
 const HelpiImg = styled.img`
   width: 360px;
   height: 120px;
@@ -124,4 +207,40 @@ const HelpiImg = styled.img`
 const BottomInfoBox = styled.div`
   margin-right: 70px;
   line-height: 25px;
+`;
+
+const InfoText = styled.div`
+  font-weight: ${styles.fontWeight.thin};
+`;
+
+const ShowInfo = styled.a`
+  color: ${styles.color.buttonBlue};
+  font-weight: ${styles.fontWeight.thin};
+  &:hover {
+    border-bottom: 1px solid ${styles.color.buttonBlue};
+  }
+`;
+
+const ServiceCenterNumber = styled.div`
+  font-size: ${styles.fontWeight.thin};
+  font-weight: ${styles.fontWeight.thin};
+`;
+
+const RepNumber = styled.div`
+  font-size: ${styles.fontSize.generalFont};
+`;
+
+const Kakaofriend = styled.div`
+  font-size: ${styles.fontSize.generalFont};
+`;
+
+const KakaoBrandi = styled.a`
+  color: ${styles.color.buttonBlue};
+  &:hover {
+    border-bottom: 1px solid ${styles.color.buttonBlue};
+  }
+`;
+
+const BottomEmpty = styled.div`
+  padding: 25px;
 `;
