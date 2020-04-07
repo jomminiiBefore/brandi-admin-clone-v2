@@ -1,5 +1,5 @@
-import React from 'react';
-import styled from 'styled-components';
+import React from "react";
+import styled from "styled-components";
 
 const Validation = ({
   inputText,
@@ -7,7 +7,7 @@ const Validation = ({
   typed,
   blurred,
   valid,
-  isRequired,
+  isRequired
 }) => {
   console.log(typed, blurred, valid, inputText);
   // inputText: input에 입력한 값 (input에 아무 값도 입력하지 않았을 때 '필수 입력 항목입니다' 메세지 출력 유무를 판단하기 위해 필요)
@@ -18,7 +18,7 @@ const Validation = ({
 
   return (
     <>
-      {validationText !== 'none' && typed && blurred && inputText && !valid && (
+      {validationText !== "none" && typed && blurred && inputText && !valid && (
         <Container>
           <ValidationBox>{validationText}</ValidationBox>
         </Container>
@@ -36,6 +36,7 @@ export default Validation;
 const Container = styled.div``;
 
 const ValidationBox = styled.div`
+  width: 410px;
   padding-top: 10px;
   color: #a94442;
   font-size: 13px;
