@@ -13,6 +13,7 @@ class SellerDao:
         leesh3@brandi.co.kr (이소헌)
     History:
         2020-03-25 (leesh3@brandi.co.kr): 초기 생성
+
     """
 
     def insert_seller(self, new_seller, db_connection):

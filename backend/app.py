@@ -9,7 +9,7 @@ from config import S3_CONFIG
 from seller.view.seller_view import SellerView
 from product.view.product_view import ProductView
 from image.view.image_view import ImageView
-
+from event.view.event_view import EventView
 
 class CustomJSONEncoder(JSONEncoder):
 
@@ -78,6 +78,7 @@ def create_app():
     app.register_blueprint(SellerView.seller_app)
     app.register_blueprint(ProductView.product_app)
     app.register_blueprint(ImageView.image_app)
+    app.register_blueprint(EventView.event_app)
 
     return app
 
