@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from decimal import Decimal
 
 from flask import Flask
@@ -42,6 +42,9 @@ class CustomJSONEncoder(JSONEncoder):
 
         if isinstance(obj, bytes):
             return obj.decode("utf-8")
+
+        if isinstance(obj, datetime):
+            return datetime.strftime(obj+timedelta(hours=+9), '%Y-%m-%d %H:%M:%S')
 
         return JSONEncoder.default(self, obj)
 
