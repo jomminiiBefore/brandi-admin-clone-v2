@@ -2,43 +2,27 @@ import React, { useState } from 'react';
 import style from 'src/utils/styles';
 import styled from 'styled-components';
 
-const SellerProperty = () => {
+const SellerProperty = ({ sellerTypes }) => {
   const onChangeRadio = (e) => {
     console.log(e.target.value);
   };
 
   return (
     <Container>
-      <InputButtonContainer>
-        <input
-          type="radio"
-          id="designer"
-          name="brand"
-          value="designer"
-          onChange={onChangeRadio}
-        />
-        <label>디자이너브랜드</label>
-      </InputButtonContainer>
-      <InputButtonContainer>
-        <input
-          type="radio"
-          id="general"
-          name="brand"
-          value="general"
-          onChange={onChangeRadio}
-        />
-        <label>제너럴브랜드</label>
-      </InputButtonContainer>
-      <InputButtonContainer>
-        <input
-          type="radio"
-          id="national"
-          name="brand"
-          value="national"
-          onChange={onChangeRadio}
-        />
-        <label>내셔널브랜드</label>
-      </InputButtonContainer>
+      {sellerTypes
+        ? sellerTypes.map((item, key) => (
+            <InputButtonContainer key={key}>
+              <input
+                type="radio"
+                id={item.seller_type_no}
+                name="brand"
+                value={item.seller_type_no}
+                onChange={onChangeRadio}
+              />
+              <LabelText>{item.seller_type_name}</LabelText>
+            </InputButtonContainer>
+          ))
+        : ''}
     </Container>
   );
 };
@@ -53,4 +37,8 @@ const Container = styled.div`
 
 const InputButtonContainer = styled.div`
   margin-right: 15px;
+`;
+
+const LabelText = styled.label`
+  font-size: 13px;
 `;
