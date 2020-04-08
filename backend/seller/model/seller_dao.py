@@ -343,6 +343,10 @@ class SellerDao:
                 # seller_info_result 에 seller_types 저장
                 seller_info_result['seller_types'] = seller_types
 
+                # seller_info_result 에 auth_type_id 저장
+                print(account_info)
+                seller_info_result['auth_type_id'] = account_info['auth_type_id']
+
                 return seller_info_result
 
         except KeyError as e:
