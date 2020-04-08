@@ -13,14 +13,18 @@ from flask_request_validator import (
 )
 
 from seller.service.seller_service import SellerService
-from connection import DatabaseConnection
 from connection import get_db_connection
 from utils import login_required
 
 
 class SellerView:
-    """
-    셀러 뷰
+    """ 셀러 뷰
+
+    Authors:
+        leesh3@brandi.co.kr (이소헌)
+    History:
+        2020-03-25 (leesh3@brandi.co.kr): 초기 생성
+
     """
     seller_app = Blueprint('seller_app', __name__, url_prefix='/seller')
 
@@ -624,7 +628,7 @@ class SellerView:
         Param('name_en', JSON, str,
               rules=[Pattern(r'^[a-z\ ]{1,45}$')]),
         Param('center_number', JSON, str,
-              rules=[Pattern(r'^[0-9]{2,3}-{1}[0-9]{4}-{1}[0-9]{4}$')]),
+              rules=[Pattern(r'^[0-9]{2,3}-{1}[0-9]{3,4}-{1}[0-9]{4}$')]),
         Param('site_url', JSON, str,
               rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
         Param('site_url', JSON, str,
@@ -671,6 +675,8 @@ class SellerView:
 
         History:
         2020-04-06 (leejm3@brandi.co.kr): 초기 생성
+        2020-04-07 (leejm3@brandi.co.kr):
+            'center_number'의 중간부분 유효성검사 허용 범위를 4글자->3~4글자로 변경
 
         """
 

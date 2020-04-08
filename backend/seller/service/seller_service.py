@@ -10,10 +10,16 @@ from seller.model.seller_dao import SellerDao
 
 class SellerService:
 
-    """
-    셀러 서비스
+    """ 셀러 서비스
+
+   Authors:
+        leesh3@brandi.co.kr (이소헌)
+   History:
+        2020-03-25 (leesh3@brandi.co.kr): 초기 생성
+
     """
     def create_new_seller(self, request, db_connection):
+
         """ 신규 셀러 회원가입
 
         인력된 인자가 신규 셀러로 가입됨
