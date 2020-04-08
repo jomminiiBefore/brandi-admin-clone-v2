@@ -617,7 +617,12 @@ class SellerDao:
         History:
             2020-04-03 (leejm3@brandi.co.kr): 초기 생성
             2020-04-04 (leejm3@brandi.co.kr): 기본정보, 담당자정보 수정 저장 확인
-            2020-04-05 (leejm3@brandi.co.kr): 에러 처리 추가 확인
+            2020-04-05 (leejm3@brandi.co.kr): 에러 처리 추가 확인정
+            2020-04-08 (leejm3@brandi.co.kr):
+                select now() 사용하여 선분이력 관리하도록 수정
+                수정 전 셀러정보 id 값을 불러오는 방식 변경
+                - 기존 : request.body로 UI에게 받음
+                - 변경 : DB를 조회해서 해당 seller_account_id 의 가장 마지막 셀러정보 id 를 불러옴
 
         """
         try:
@@ -627,6 +632,33 @@ class SellerDao:
                 db_cursor.execute("START TRANSACTION")
                 # 자동 커밋 비활성화
                 db_cursor.execute("SET AUTOCOMMIT=0")
+
+                # list 인 manager_infos 가 SQL 에 들어가면 에러를 반환해 미리 manager_infos 에 저장하고 account_info 에서 삭제
+                manager_infos = account_info['manager_infos']
+                del account_info['manager_infos']
+
+                # 현재 시간 저장
+                db_cursor.execute("""
+                    SELECT now()
+                """)
+                now = db_cursor.fetchone()
+
+                account_info['now'] = now['now()']
+
+                # 이전 셀러정보 아이디 가져오기
+                # seller_infos 테이블 SELECT
+                select_seller_infos_statement = """
+                    SELECT seller_info_no
+                    FROM seller_infos
+                    WHERE seller_account_id = %(seller_account_id)s
+                    AND close_time = '2037-12-31 23:59:59'
+                """
+
+                db_cursor.execute(select_seller_infos_statement, account_info)
+
+                previous_seller_info_id = db_cursor.fetchone()
+
+                account_info['previous_seller_info_id'] = previous_seller_info_id['seller_info_no']
 
                 # 브랜디앱유저 검색 정보
                 brandi_app_user_data = {
@@ -648,17 +680,13 @@ class SellerDao:
                 # app_id 출력 결과 저장
                 app_id_result = db_cursor.fetchone()
 
-                # app_id가 있으면보 account_info 에 app_user_no 저장
+                # app_id가 있으면 account_info 에 app_user_no 저장
                 if app_id_result:
                     account_info['app_user_no'] = app_id_result['app_user_no']
 
                 # app_id가 없으면 app_id가 존재하지 않는다고 리턴
                 else:
                     return jsonify({'message': 'INVALID_APP_ID'}), 400
-
-                # list 인 manager_infos 가 SQL 에 들어가면 에러를 반환해 미리 manager_infos 에 저장하고 account_info 에서 삭제
-                manager_infos = account_info['manager_infos']
-                del account_info['manager_infos']
 
                 # 셀러 기본 정보 생성
                 # seller_infos 테이블 INSERT INTO
@@ -696,7 +724,8 @@ class SellerDao:
                     bank_name,
                     bank_holder_name,
                     account_number,
-                    modifier
+                    modifier,
+                    start_time
                 ) VALUES (
                     %(seller_account_id)s,
                     %(profile_image_url)s,
@@ -730,7 +759,8 @@ class SellerDao:
                     %(bank_name)s,
                     %(bank_holder_name)s,
                     %(account_number)s,
-                    %(decorator_account_no)s
+                    %(decorator_account_no)s,
+                    %(now)s
                 )"""
 
                 # 셀러 기본정보 insert 함
@@ -768,25 +798,28 @@ class SellerDao:
                     db_cursor.execute(insert_manager_info_statement, manager_info_data)
 
                 # 이전 셀러정보 수정일시, 종료일시 업데이트
-                previous_seller_info_data = {
-                    'previous_seller_info_no': account_info['previous_seller_info_no'],
-                    'new_seller_info_no': seller_info_no
-                }
-
                 # previous_seller_info 테이블 UPDATE
                 update_previous_seller_info_statement = """
                     UPDATE seller_infos
                     SET
-                    updated_at = 
-                    (SELECT a.start_time FROM 
-                    (SELECT start_time FROM seller_infos WHERE seller_info_no = %(new_seller_info_no)s) as a),
-                    close_time = 
-                    (SELECT b.start_time FROM 
-                    (SELECT start_time FROM seller_infos WHERE seller_info_no = %(new_seller_info_no)s) as b)
-                    WHERE seller_info_no = %(previous_seller_info_no)s
+                    close_time = %(now)s
+                    WHERE seller_info_no = %(previous_seller_info_id)s
                 """
 
-                db_cursor.execute(update_previous_seller_info_statement, previous_seller_info_data)
+                db_cursor.execute(update_previous_seller_info_statement, account_info)
+
+                # 이전 셀러정보의 셀러 상태값 가져오기
+                select_previous_seller_status_statement = """
+                    SELECT seller_status_id
+                    FROM seller_infos
+                    WHERE seller_info_no = %(previous_seller_info_id)s
+                """
+
+                db_cursor.execute(select_previous_seller_status_statement, account_info)
+
+                previous_seller_status_id = db_cursor.fetchone()
+
+                account_info['previous_seller_status_id'] = previous_seller_status_id['seller_status_id']
 
                 # 이전 셀러정보의 셀러 상태값과 새로운 셀러정보의 셀러 상태값이 다르면, 셀러 상태정보이력 테이블 INSERT INTO
                 if account_info['previous_seller_status_no'] != account_info['seller_status_no']:
@@ -796,7 +829,8 @@ class SellerDao:
                         'seller_account_id': account_info['seller_account_id'],
                         'new_seller_info_no': seller_info_no,
                         'seller_status_id': account_info['seller_status_no'],
-                        'modifier': account_info['decorator_account_no']
+                        'modifier': account_info['decorator_account_no'],
+                        'now': now['now()']
                     }
 
                     # seller_status_change_histories 테이블 INSERT INTO
@@ -808,7 +842,7 @@ class SellerDao:
                         modifier
                     ) VALUES (
                         %(seller_account_id)s,
-                        (SELECT start_time FROM seller_infos WHERE seller_info_no = %(new_seller_info_no)s),
+                        %(now)s,
                         %(seller_status_id)s,
                         %(modifier)s
                     )"""
