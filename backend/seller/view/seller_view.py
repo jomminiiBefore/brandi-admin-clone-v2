@@ -302,7 +302,6 @@ class SellerView:
         Param('account_number', JSON, str,
               rules=[MaxLength(45)]),
         Param('seller_account_id', JSON, int),
-        Param('previous_seller_info_no', JSON, int),
         Param('previous_seller_status_no', JSON, int),
 
         # int 를 str 로 인식해서 정규식 유효성 확인
@@ -375,7 +374,6 @@ class SellerView:
             bank_name 정산은행 str
             bank_holder_name 계좌주 str
             account_number 계좌번호 str
-            previous_seller_info_no 이전 셀러 정보번호(수정하려고 하는) int
             previous_seller_status_no 이전 셀러정보의 상태번호 int (상태변경이력 체크용)
 
         Returns: http 응답코드
@@ -383,7 +381,7 @@ class SellerView:
             400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
             400: VALIDATION_ERROR_MANAGER_INFO, NO_SPECIFIC_MANAGER_INFO,
                  INVALID_AUTH_TYPE_ID
-            403: NO_AUTHORIZATION
+            403: NO_AUTHORIZATION, NO_AUTHORIZATION_FOR_STATUS_CHANGE
             500: SERVER_ERROR, DB_CURSOR_ERROR, NO_DATABASE_CONNECTION
 
         Authors:
@@ -394,6 +392,8 @@ class SellerView:
             2020-04-04 (leejm3@brandi.co.kr): 이전 셀러 정보번호, 이전 셀러 정보 상태정보, 셀러 계정번호 추가
             2020-04-06 (leejm3@brandi.co.kr):
                 url path 변경('/<int:parameter_account_no>/info' -> '/<int:parameter_account_no>')
+            2020-04-08 (leejm3@brandi.co.kr):
+                마스터가 아닐 때 셀러 상태(입점 등)를 변경하려고 하면 에러 처리하는 내용 추가
 
         """
 
@@ -465,9 +465,13 @@ class SellerView:
             'bank_holder_name': args[37],
             'account_number': args[38],
             'seller_account_id': args[39],
-            'previous_seller_info_no': args[40],
-            'previous_seller_status_no': args[41]
+            'previous_seller_status_no': args[40]
         }
+
+        # 마스터 권한이 아닐 때 셀러 상태(입점 등)를 변경하려고 하면 에러 리턴
+        if account_info['auth_type_id'] != 1:
+            if account_info['seller_status_no'] != account_info['previous_seller_status_no']:
+                return jsonify({'message': 'NO_AUTHORIZATION_FOR_STATUS_CHANGE'}), 403
 
         # 데이터베이스 연결
         db_connection = get_db_connection()
