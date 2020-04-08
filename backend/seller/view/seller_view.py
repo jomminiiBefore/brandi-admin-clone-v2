@@ -750,7 +750,8 @@ class SellerView:
 
         # get_seller_info dao 를 같이 쓰기 위해 account_no를 아래와 같이 저장
         account_info = {
-            'parameter_account_no': g.account_info['account_no']
+            'parameter_account_no': g.account_info['account_no'],
+            'auth_type_id': g.account_info['auth_type_id']
         }
 
         db_connection = get_db_connection()
