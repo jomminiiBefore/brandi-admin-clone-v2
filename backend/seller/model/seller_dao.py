@@ -16,94 +16,6 @@ class SellerDao:
 
     """
 
-    def insert_seller(self, new_seller, db_connection):
-
-        """ 신규 셀러 계정 INSERT INTO DB
-
-        입력된 인자가 새로운 셀러로 가입됩니다.
-        가입된 셀러의 매니저 인포도 동시에 저장됩니다.
-        셀러 인포와 매니저 인포가 모두 정상 저장되어야만 계정 저장이 완료됩니다.
-
-        Args:
-            new_seller(dictionary): 신규 가입 셀러
-            db_connection: 데이터베이스 커넥션 객체
-
-        Returns: http 응답코드
-            200: 신규 셀러 계정 저장 완료
-            400: key error
-            500: server error
-
-        Authors:
-            leesh3@brandi.co.kr (이소헌)
-
-        History:
-            2020-03-25 (leesh3@brandi.co.kr): 초기 생성
-        """
-        try:
-            with db_connection.cursor() as db_cursor:
-
-                new_seller_info_data = {
-                    'name_kr': new_seller['name_kr'],
-                    'name_en': new_seller['name_en'],
-                    'site_url': new_seller['site_url'],
-                    'center_number': new_seller['center_number']
-                }
-
-                new_manager_info_data = {
-                    'contact_number': new_seller['contact_number'],
-                    'is_deleted': new_seller['is_deleted']
-                }
-
-                # 트랜잭션 시작
-                db_cursor.execute("START TRANSACTION")
-                # 자동 커밋 비활성화
-                db_cursor.execute("SET AUTOCOMMIT=0")
-
-                # seller_infos 테이블 INSERT INTO
-                insert_seller_info_statement = """
-                    INSERT INTO seller_infos (
-                    name_kr,
-                    name_en,
-                    site_url,
-                    center_number
-                ) VALUES (
-                    %(name_kr)s,
-                    %(name_en)s,
-                    %(site_url)s,
-                    %(center_number)s
-                )"""
-
-                db_cursor.execute(insert_seller_info_statement, new_seller_info_data)
-
-                new_manager_info_data['seller_id'] = db_cursor.lastrowid
-
-                # manager_infos 테이블 INSERT INTO
-                insert_manager_info_statement = ("""
-                    INSERT INTO manager_infos (
-                    contact_number,
-                    is_deleted,
-                    seller_id
-                ) VALUES (
-                    %(contact_number)s,
-                    %(is_deleted)s,
-                    %(seller_id)s
-                )""")
-
-                db_cursor.execute(insert_manager_info_statement, new_manager_info_data)
-
-                db_connection.commit()
-                return jsonify({'message': 'SUCCESS'}), 200
-
-        except KeyError as e:
-            print(f'KEY_ERROR_WITH {e}')
-            db_connection.rollback()
-            return jsonify({'message': 'INVALID_KEY'}), 400
-
-        except Error as e:
-            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
-            db_connection.rollback()
-            return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
-
     # noinspection PyMethodMayBeStatic
     def get_account_password(self, account_info, db_connection):
 
@@ -119,8 +31,7 @@ class SellerDao:
 
         Returns:
             200: 요청된 계정의 계정번호 및 암호화된 비밀번호
-            400: 존재하지 않는 계정 정보
-            500: SERVER ERROR
+            500: DB_CURSOR_ERROR, INVALID_KEY
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -153,7 +64,7 @@ class SellerDao:
 
         except KeyError as e:
             print(f'KEY_ERROR WITH {e}')
-            return jsonify({'message': 'INVALID_KEY'}), 400
+            return jsonify({'message': 'INVALID_KEY'}), 500
 
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
@@ -171,8 +82,7 @@ class SellerDao:
 
         Returns: http 응답코드
             200: SUCCESS 비밀번호 변경 완료
-            400: INVALID_KEY
-            500: DB_CURSOR_ERROR, SERVER_ERROR
+            500: DB_CURSOR_ERROR, INVALID_KEY
 
         Authors:
             leejm@brandi.co.kr (이종민)
@@ -228,8 +138,7 @@ class SellerDao:
 
         Returns:
             200: 요청된 계정의 셀러정보
-            400: 존재하지 않는 계정 정보
-            500: DB_CURSOR_ERROR, SERVER_ERROR
+            500: DB_CURSOR_ERROR, INVALID_KEY
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -438,7 +347,7 @@ class SellerDao:
 
         except KeyError as e:
             print(f'KEY_ERROR WITH {e}')
-            return jsonify({'message': 'INVALID_KEY'}), 400
+            return jsonify({'message': 'INVALID_KEY'}), 500
 
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
@@ -609,7 +518,7 @@ class SellerDao:
         Returns: http 응답코드
             200: 셀러정보 수정(새로운 이력 생성) 완료
             400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
-            500: SERVER_ERROR, DB_CURSOR_ERROR
+            500: DB_CURSOR_ERROR, INVALID_KEY
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -852,6 +761,10 @@ class SellerDao:
                 db_connection.commit()
                 return jsonify({'message': 'SUCCESS'}), 200
 
+        except KeyError as e:
+            print(f'KEY_ERROR WITH {e}')
+            return jsonify({'message': 'INVALID_KEY'}), 500
+
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
@@ -1077,8 +990,8 @@ class SellerDao:
 
         Returns:
             name_kr로 확인된 셀러정보 번호.
-            -> service 에서 셀러정보 번호가 검색된 경우 중복처리 진행
-            500: DB_CURSOR_ERROR
+                -> service 에서 셀러정보 번호가 검색된 경우 중복처리 진행
+            500: INVALID_KEY, DB_CURSOR_ERROR
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -1114,7 +1027,11 @@ class SellerDao:
                 select_result = db_cursor.fetchone()
                 return select_result
 
-        # 데이터베이스 error
+        except KeyError as e:
+            print(f'KEY_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'INVALID_KEY'}), 500
+
         except Exception as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
@@ -1130,9 +1047,9 @@ class SellerDao:
             db_connection: 연결된 database connection 객체
 
         Returns:
-            name_en로 확인된 셀러정보 번호.
-            -> service 에서 셀러정보 번호가 검색된 경우 중복처리 진행
-            500: DB_CURSOR_ERROR
+            200:name_en로 확인된 셀러정보 번호.
+                -> service 에서 셀러정보 번호가 검색된 경우 중복처리 진행
+            500: DB_CURSOR_ERROR, INVALID_KEY
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -1168,7 +1085,11 @@ class SellerDao:
                 select_result = db_cursor.fetchone()
                 return select_result
 
-        # 데이터베이스 error
+        except KeyError as e:
+            print(f'KEY_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'INVALID_KEY'}), 500
+
         except Exception as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
@@ -1200,8 +1121,7 @@ class SellerDao:
 
         Returns: http 응답코드
             200: SUCCESS 셀러 회원가입 완료
-            400: INVALID_KEY
-            500: DB_CURSOR_ERROR
+            500: INVALID_KEY, DB_CURSOR_ERROR
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -1320,7 +1240,7 @@ class SellerDao:
         except KeyError as e:
             print(f'KEY_ERROR_WITH {e}')
             db_connection.rollback()
-            return jsonify({'message': 'INVALID_KEY'}), 400
+            return jsonify({'message': 'INVALID_KEY'}), 500
 
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')

@@ -18,34 +18,6 @@ class SellerService:
         2020-03-25 (leesh3@brandi.co.kr): 초기 생성
 
     """
-    def create_new_seller(self, request, db_connection):
-
-        """ 신규 셀러 회원가입
-
-        인력된 인자가 신규 셀러로 가입됨
-
-        Args:
-            request: 신규 가입 셀러 정보가 담긴 요청
-            db_connection: 데이터 베이스 커넥션 객체
-
-        Returns: http 응답 코드
-            200: 신규 셀러 계정 저장 완료
-            400: key error
-            500: server error
-
-        Authors:
-            leesh3@brandi.co.kr (이소헌)
-            yoonhc@barndi.co.kr (윤희철)
-
-        History:
-            2020-03-25 (leesh3@brandi.co.kr): 초기 생성
-            2020-03-30 (yoonhc@barndi.co.kr): db_connection 인자 추가
-        """
-        seller_dao = SellerDao()
-        new_seller = request.json
-        new_seller_result = seller_dao.insert_seller(new_seller, db_connection)
-
-        return new_seller_result
 
     # noinspection PyMethodMayBeStatic
     def change_password(self, account_info, db_connection):
@@ -67,7 +39,7 @@ class SellerService:
             200: SUCCESS 비밀번호 변경 완료
             400: INVALID_AUTH_TYPE_ID
             401: INVALID_PASSWORD
-            500: DB_CURSOR_ERROR, SERVER_ERROR
+            500: DB_CURSOR_ERROR, INVALID_KEY
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -154,10 +126,10 @@ class SellerService:
             db_connection: 연결된 database connection 객체
 
         Returns: http 응답코드
-            200: SUCCESS 비밀번호 변경 완료
+            200: SUCCESS 셀러정보
             400: INVALID_AUTH_TYPE_ID
-            401: INVALID_PASSWORD
-            500: SERVER ERROR, DB_CURSOR_ERROR
+            403: NO_AUTHORIZATION
+            500: DB_CURSOR_ERROR, INVALID_KEY
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -221,7 +193,7 @@ class SellerService:
             400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
             400: INVALID_AUTH_TYPE_ID
             403: NO_AUTHORIZATION
-            500: SERVER_ERROR, DB_CURSOR_ERROR
+            500: INVALID_KEY, DB_CURSOR_ERROR
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -495,6 +467,37 @@ class SellerService:
             # 회원가입 절차 진행
             sign_up_result = seller_dao.sign_up(account_info, db_connection)
             return sign_up_result
+
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+    # noinspection PyMethodMayBeStatic
+    def get_my_page(self, account_info, db_connection):
+
+        """ 계정 셀러정보 표출(my_page)
+
+        데코레이터의 계정번호에 맞는 셀러정보를 표출해줍니다.
+
+        Args:
+            account_info: 엔드포인트에서 전달 받은 account 정보
+            db_connection: 연결된 database connection 객체
+
+        Returns: http 응답코드
+            200: SUCCESS 셀러정보
+            500: DB_CURSOR_ERROR, INVALID_KEY
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-08 (leejm3@brandi.co.kr) : 초기 생성
+
+        """
+
+        seller_dao = SellerDao()
+        try:
+            getting_seller_info_result = seller_dao.get_seller_info(account_info, db_connection)
+            return getting_seller_info_result
 
         except Exception as e:
             return jsonify({'message': f'{e}'}), 400

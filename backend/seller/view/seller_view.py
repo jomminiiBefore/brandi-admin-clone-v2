@@ -60,7 +60,8 @@ class SellerView:
             200: SUCCESS 비밀번호 변경 완료
             400: VALIDATION_ERROR, INVALID_AUTH_TYPE_ID, NO_ORIGINAL_PASSWORD
             401: INVALID_PASSWORD
-            500: DB_CURSOR_ERROR, SERVER_ERROR, NO_DATABASE_CONNECTION
+            403: NO_AUTHORIZATION
+            500: DB_CURSOR_ERROR, NO_DATABASE_CONNECTION
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -136,11 +137,11 @@ class SellerView:
             account_no: 데코레이터에서 확인된 계정번호
 
         Returns: http 응답코드
-            200: SUCCESS 비밀번호 변경 완료
-            400: INVALID_KEY
-            400: VALIDATION_ERROR, INVALID_AUTH_TYPE_ID
-            401: INVALID_PASSWORD
-            500: SERVER ERROR, DB_CURSOR_ERROR, NO_DATABASE_CONNECTION
+            200: SUCCESS 셀러정보 겟 완료
+            400: INVALID_ACCOUNT_NO, INVALID_AUTH_TYPE_ID
+            403: NO_AUTHORIZATION
+            500: NO_DATABASE_CONNECTION, DB_CURSOR_ERROR, INVALID_KEY
+
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -382,7 +383,7 @@ class SellerView:
             400: VALIDATION_ERROR_MANAGER_INFO, NO_SPECIFIC_MANAGER_INFO,
                  INVALID_AUTH_TYPE_ID
             403: NO_AUTHORIZATION, NO_AUTHORIZATION_FOR_STATUS_CHANGE
-            500: SERVER_ERROR, DB_CURSOR_ERROR, NO_DATABASE_CONNECTION
+            500: INVALID_KEY, DB_CURSOR_ERROR, NO_DATABASE_CONNECTION
 
         Authors:
             leejm3@brandi.co.kr (이종민)
@@ -715,5 +716,66 @@ class SellerView:
                     db_connection.close()
                 except Exception as e:
                     return jsonify({'message': f'{e}'}), 400
+        else:
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+    @seller_app.route('/mypage', methods=['GET'], endpoint='get_my_page')
+    @login_required
+    def get_my_page():
+
+        """ 계정 셀러정보 표출 엔드포인트(my_page)
+
+        mypage 셀러정보를 표출하는 엔드포인트 입니다.
+        로그인 데코레이터로 셀러의 계정 번호를 확인합니다.
+
+        확인된 계정 정보를 service 로 넘겨줍니다.
+
+        g.account_info: 데코레이터에서 넘겨받은 계정 정보
+            auth_type_id: 계정의 권한정보
+            account_no: 데코레이터에서 확인된 계정번호
+
+        Returns: http 응답코드
+            200: SUCCESS 셀러정보 겟 완료
+            400: INVALID_ACCOUNT_NO, INVALID_AUTH_TYPE_ID
+            403: NO_AUTHORIZATION
+            500: NO_DATABASE_CONNECTION, DB_CURSOR_ERROR, INVALID_KEY
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-08 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+
+        # get_seller_info dao 를 같이 쓰기 위해 account_no를 아래와 같이 저장
+        account_info = {
+            'parameter_account_no': g.account_info['account_no']
+        }
+
+        db_connection = get_db_connection()
+        if db_connection:
+            try:
+                seller_service = SellerService()
+
+                getting_seller_info_result = seller_service.get_my_page(account_info, db_connection)
+
+                # 셀러정보가 존재하면 리턴
+                if getting_seller_info_result:
+                    return getting_seller_info_result
+
+                # 셀러정보가 None 으로 들어오면 INVALID_ACCOUNT_NO 리턴
+                else:
+                    return jsonify({'message': 'INVALID_ACCOUNT_NO'}), 400
+
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 400
+
+            finally:
+                try:
+                    db_connection.close()
+                except Exception as e:
+                    return jsonify({'message': f'{e}'}), 400
+
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
