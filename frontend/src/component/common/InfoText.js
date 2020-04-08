@@ -16,6 +16,6 @@ const Container = styled.div``;
 
 const Text = styled.div`
   padding-top: 10px;
-  font-size: 12px;
+  font-size: 13px;
   color: ${style.color.infoBlue};
 `;

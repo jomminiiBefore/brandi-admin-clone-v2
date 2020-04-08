@@ -17,6 +17,8 @@ const InputContainer = ({
   validationText,
   inputText,
   isRequired,
+  type,
+  disabled,
 }) => {
   return (
     <div>
@@ -33,6 +35,9 @@ const InputContainer = ({
         validationText={validationText}
         inputText={inputText}
         isRequired={isRequired}
+        type={type}
+        // input 입력 활성화 유무
+        disabled={disabled}
       />
       <Validation
         validationText={validationText}

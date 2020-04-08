@@ -7,16 +7,16 @@ import styled from 'styled-components';
  * 커스텀 버튼
  */
 
-const CustomButton = ({
+const ManagerRemoveButton = ({
   name,
   color,
   textColor,
   onClickEvent,
-  managerLength,
+  index,
 }) => {
-  // console.log('onclicke:: ', onClickEvent);
+  console.log('index:: ', index);
   return (
-    <Container onClick={onClickEvent}>
+    <Container onClick={(e) => onClickEvent(e, index)}>
       <ButtonWrapper color={color}>
         <ButtonText textColor={textColor}>{name}</ButtonText>
       </ButtonWrapper>
@@ -24,7 +24,7 @@ const CustomButton = ({
   );
 };
 
-export default CustomButton;
+export default ManagerRemoveButton;
 
 const Container = styled.span`
   display: inline-block;

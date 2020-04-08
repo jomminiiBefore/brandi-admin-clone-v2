@@ -1,6 +1,6 @@
-import React from "react";
-import style from "src/utils/styles";
-import styled from "styled-components";
+import React from 'react';
+import style from 'src/utils/styles';
+import styled from 'styled-components';
 
 const Input = ({
   name,
@@ -14,7 +14,9 @@ const Input = ({
   valid,
   validationText,
   inputText,
-  isRequired
+  isRequired,
+  type,
+  disabled,
 }) => {
   /*
     setText: 텍스트가 바뀌었을 경우
@@ -36,22 +38,43 @@ const Input = ({
 
   return (
     <Container>
-      <InputBox
-        type="text"
-        placeholder={placeholder}
-        onChange={e => setText(e)}
-        onBlur={e => setBlur(e)}
-        width={width}
-        height={height}
-        name={name}
-        typed={typed}
-        blurred={blurred}
-        valid={valid}
-        isValid={isValid}
-        validationText={validationText}
-        inputText={inputText}
-        isRequired={isRequired}
-      />
+      {disabled ? (
+        <InputBox
+          type={type}
+          placeholder={placeholder}
+          onChange={(e) => setText(e)}
+          onBlur={(e) => setBlur(e)}
+          width={width}
+          height={height}
+          name={name}
+          typed={typed}
+          blurred={blurred}
+          valid={valid}
+          isValid={isValid}
+          validationText={validationText}
+          inputText={inputText}
+          isRequired={isRequired}
+          disabled
+          value={inputText}
+        />
+      ) : (
+        <InputBox
+          type={type}
+          placeholder={placeholder}
+          onChange={(e) => setText(e)}
+          onBlur={(e) => setBlur(e)}
+          width={width}
+          height={height}
+          name={name}
+          typed={typed}
+          blurred={blurred}
+          valid={valid}
+          isValid={isValid}
+          validationText={validationText}
+          inputText={inputText}
+          isRequired={isRequired}
+        />
+      )}
     </Container>
   );
 };
@@ -61,15 +84,15 @@ export default Input;
 const Container = styled.div``;
 
 const InputBox = styled.input`
-  width: ${props => props.width}px;
-  height: ${props => props.height}px;
+  width: ${(props) => props.width}px;
+  height: ${(props) => props.height}px;
   padding: 10px;
   border: 1px solid;
-  border-color: ${props => {
+  border-color: ${(props) => {
     // validation 유무
-    if (props.validationText === "none") {
+    if (props.validationText === 'none') {
       if (props.inputText || !props.typed) {
-        return "#e5e5e5";
+        return '#e5e5e5';
       } else {
         return style.color.validationRed;
       }
@@ -77,13 +100,13 @@ const InputBox = styled.input`
       // 필수 입력 유무
       if (props.isRequired) {
         if (props.isValid) {
-          return "#e5e5e5";
+          return '#e5e5e5';
         } else {
           return style.color.validationRed;
         }
       } else {
         if (props.isValid || !props.inputText) {
-          return "#e5e5e5";
+          return '#e5e5e5';
         } else {
           return style.color.validationRed;
         }
@@ -95,11 +118,11 @@ const InputBox = styled.input`
   font-size: 14px;
   &:focus {
     border: 1px solid;
-    border-color: ${props => {
+    border-color: ${(props) => {
       // validation 유무
-      if (props.validationText === "none") {
+      if (props.validationText === 'none') {
         if (props.inputText || !props.typed) {
-          return "#333333";
+          return '#333333';
         } else {
           return style.color.validationRed;
         }
@@ -107,13 +130,13 @@ const InputBox = styled.input`
         // 필수 입력 유무
         if (props.isRequired) {
           if (props.isValid) {
-            return "#e5e5e5";
+            return '#e5e5e5';
           } else {
             return style.color.validationRed;
           }
         } else {
           if (props.isValid || !props.inputText) {
-            return "#e5e5e5";
+            return '#e5e5e5';
           } else {
             return style.color.validationRed;
           }

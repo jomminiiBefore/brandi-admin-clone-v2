@@ -1,17 +1,17 @@
-import React from "react";
-import Header from "src/component/common/Header";
-import SideBar from "src/component/sideBar/SideBar";
-import Footer from "src/component/common/Footer";
-import styled from "styled-components";
+import React from 'react';
+import Header from 'src/component/common/Header';
+import SideBar from 'src/component/sideBar/SideBar';
+import Footer from 'src/component/common/Footer';
+import styled from 'styled-components';
 
-const Layout = props => {
+const Layout = (props) => {
   return (
     <>
       <Header />
-      <MainContentWrapper>
+      <MainContentContainer>
         <SideBar />
         <PageContainer>{props.children}</PageContainer>
-      </MainContentWrapper>
+      </MainContentContainer>
       <Footer />
     </>
   );
@@ -19,7 +19,7 @@ const Layout = props => {
 
 export default Layout;
 
-const MainContentWrapper = styled.div`
+const MainContentContainer = styled.div`
   display: flex;
   width: 100vw;
 `;

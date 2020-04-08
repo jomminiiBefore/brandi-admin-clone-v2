@@ -1,18 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import style from 'src/utils/styles';
 import styled from 'styled-components';
 import CustomButton from './CustomButton';
 import InfoText from './InfoText';
 
-const ImageUploader = () => {
-  const [file, setFile] = useState();
+const ImageUploader = ({ name, setImg, img }) => {
   const [imagePreviewUrl, setImagePreviewUrl] = useState();
+  useEffect(() => {
+    setImagePreviewUrl(img);
+  }, [img]);
 
-  const _handleSubmit = (e) => {
-    e.preventDefault();
-    // TODO: do something with -> this.state.file
-  };
-
+  // 이미지 변경
   const _handleImageChange = (e) => {
     e.preventDefault();
 
@@ -20,19 +18,20 @@ const ImageUploader = () => {
     let file = e.target.files[0];
 
     reader.onloadend = () => {
-      setFile(file);
       setImagePreviewUrl(reader.result);
+      setImg(name, reader.result);
     };
 
     reader.readAsDataURL(file);
   };
 
+  // 이미지 삭제
   const onRemove = () => {
     console.log('onRemove');
     setImagePreviewUrl(null);
+    setImg(name, null);
   };
 
-  // console.log('file:: ', file);
   return (
     <div>
       {imagePreviewUrl ? (
@@ -58,7 +57,7 @@ const ImageUploader = () => {
           />
         </>
       ) : (
-        // 이미지를 선택하지 않음
+        // 이미지를 선택하지 않음 (기본 이미지)
         <>
           <div>
             <DefaultImage src="http://image.brandi.me/seller/noimage.png" />
