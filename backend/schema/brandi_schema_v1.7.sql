@@ -161,18 +161,6 @@ INSERT INTO seller_accounts
 ),(
 	5,
 	5
-),(
-	6,
-	6
-),(
-	7,
-	7
-),(
-	8,
-	8
-),(
-	9,
-	9
 );
 
 
@@ -325,7 +313,6 @@ CREATE TABLE seller_infos
     `bank_holder_name`           VARCHAR(45)      NULL        COMMENT '계좌주명',
     `account_number`             VARCHAR(45)      NULL        COMMENT '계좌번호',
     `modifier`                   INT              NOT NULL    COMMENT '변경실행자 계정 외래키',
-    `updated_at`                 DATETIME         NULL        ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
     `start_time`                 DATETIME         NOT NULL    DEFAULT CURRENT_TIMESTAMP COMMENT '시작일시',
     `close_time`                 DATETIME         NOT NULL    DEFAULT '2037-12-31 23:59:59' COMMENT '종료일시',
     `is_deleted`                 TINYINT          NOT NULL    DEFAULT FALSE COMMENT '삭제여부',
@@ -391,7 +378,9 @@ INSERT INTO seller_infos
     bank_name,
     bank_holder_name,
     account_number,
-    modifier
+    modifier,
+    start_time,
+    close_time
 ) VALUES (
     1,
     1, -- seller_account_id
@@ -426,7 +415,9 @@ INSERT INTO seller_infos
     '하나은행', -- bank_name
     '브랜디', -- bank_holder_name
     '12-12345-12345123', -- account_number
-    1 -- modifier
+    1, -- modifier
+    '2020-04-05 23:59:59', -- start_time
+    '2037-12-31 23:59:59' -- close_time
 ),
 (
     2,
@@ -462,7 +453,9 @@ INSERT INTO seller_infos
     '하나은행', -- bank_name
     '브랜디', -- bank_holder_name
     '12-12345-12345123', -- account_number
-    2 -- modifier
+    2, -- modifier
+    '2020-04-03 23:59:59', -- start_time
+    '2020-04-05 23:59:59' -- close_time
 ),
 (
     3,
@@ -498,7 +491,9 @@ INSERT INTO seller_infos
     '하나은행', -- bank_name
     '브랜디', -- bank_holder_name
     '12-12345-12345123', -- account_number
-    3 -- modifier
+    3, -- modifier
+    '2020-04-05 23:59:59', -- start_time
+    '2037-12-31 23:59:59' -- close_time
 ),
 (
     4,
@@ -534,7 +529,9 @@ INSERT INTO seller_infos
     '하나은행', -- bank_name
     '브랜디', -- bank_holder_name
     '12-12345-12345123', -- account_number
-    4 -- modifier
+    4, -- modifier
+    '2020-04-05 23:59:59', -- start_time
+    '2037-12-31 23:59:59' -- close_time
 ),
 (
     5,
@@ -570,7 +567,9 @@ INSERT INTO seller_infos
     '하나은행', -- bank_name
     '브랜디', -- bank_holder_name
     '12-12345-12345123', -- account_number
-    5 -- modifier
+    5, -- modifier
+    '2020-04-03 23:59:59', -- start_time
+    '2037-12-31 23:59:59' -- close_time
 ),
 (
     6,
@@ -606,7 +605,9 @@ INSERT INTO seller_infos
     '하나은행2', -- bank_name
     '브랜디2', -- bank_holder_name
     '12-12345-12345123', -- account_number
-    2 -- modifier
+    2, -- modifier
+    '2020-04-05 23:59:59', -- start_time
+    '2037-12-31 23:59:59' -- close_time
 );
 
 
@@ -1382,14 +1383,43 @@ INSERT INTO style_filters
 CREATE TABLE products
 (
     `product_no`  INT         NOT NULL    AUTO_INCREMENT COMMENT 'id',
+    `uploader`    INT         NOT NULL    COMMENT '등록자',
     `created_at`  DATETIME    NOT NULL    DEFAULT CURRENT_TIMESTAMP COMMENT '최초 등록일시',
     `is_deleted`  TINYINT     NOT NULL    DEFAULT FALSE COMMENT '삭제여부',
     PRIMARY KEY (product_no)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '상품 번호';
 
+ALTER TABLE products
+    ADD CONSTRAINT FK_uploader FOREIGN KEY (uploader)
+        REFERENCES accounts (account_no);
 
-INSERT INTO products (product_no) VALUES (1), (2), (3), (4), (5), (6);
-
+INSERT INTO products (
+    product_no,
+    uploader
+) VALUES (
+    1, -- product_no
+    1 -- uploader
+),
+(
+    2, -- product_no
+    3 -- uploader
+),
+(
+    3, -- product_no
+    4 -- uploader
+),
+(
+    4, -- product_no
+    4 -- uploader
+),
+(
+    5, -- product_no
+    4 -- uploader
+),
+(
+    6, -- product_no
+    5 -- uploader
+);
 
 -- product_infos Table Create SQL
 CREATE TABLE product_infos
@@ -1414,10 +1444,8 @@ CREATE TABLE product_infos
     `discount_end_time`    DATETIME         NULL        COMMENT '할인기간_종료',
     `min_unit`             INT              NULL        COMMENT '최소판매수량',
     `max_unit`             INT              NULL        COMMENT '최대판매수량',
-    `updated_at`           DATETIME         NULL        ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
     `start_time`           DATETIME         NOT NULL    DEFAULT CURRENT_TIMESTAMP COMMENT '시작일시',
     `close_time`           DATETIME         NOT NULL    DEFAULT '2037-12-31 23:59:59' COMMENT '종료일시',
-    `uploader`             INT              NOT NULL    COMMENT '등록자',
     `modifier`             INT              NOT NULL    COMMENT '수정자',
     `is_deleted`           TINYINT          NOT NULL    DEFAULT FALSE COMMENT '삭제여부',
     `product_id`           INT              NOT NULL    COMMENT '상품 아이디',
@@ -1449,10 +1477,6 @@ ALTER TABLE product_infos
         REFERENCES products (product_no);
 
 ALTER TABLE product_infos
-    ADD CONSTRAINT FK_uploader FOREIGN KEY (uploader)
-        REFERENCES accounts (account_no);
-
-ALTER TABLE product_infos
     ADD CONSTRAINT FK_product_info_modifier FOREIGN KEY (modifier)
         REFERENCES accounts (account_no);
 
@@ -1481,7 +1505,6 @@ INSERT INTO product_infos
     discount_end_time,
     min_unit,
     max_unit,
-    uploader,
     modifier,
     product_id
 ) VALUES
@@ -1506,7 +1529,6 @@ INSERT INTO product_infos
     '2020-06-12 23:59:59', -- discount_end_time
     1, -- min_unit
     10, -- max_unit
-    2, -- uploader, account_no
     1, -- modifier, account_no
     1 -- product_id
 ),
@@ -1531,8 +1553,7 @@ INSERT INTO product_infos
     '2020-06-12 23:59:59', -- discount_end_time
     1, -- min_unit
     10, -- max_unit
-    3, -- uploader, account_no
-    1, -- modifier, account_no
+    3, -- modifier, account_no
     2 -- product_id
 ),
 (
@@ -1556,8 +1577,7 @@ INSERT INTO product_infos
     '2020-06-12 23:59:59', -- discount_end_time
     1, -- min_unit
     10, -- max_unit
-    4, -- uploader, account_no
-    1, -- modifier, account_no
+    4, -- modifier, account_no
     3 -- product_id
 ),
 (
@@ -1581,8 +1601,7 @@ INSERT INTO product_infos
     '2020-06-12 23:59:59', -- discount_end_time
     1, -- min_unit
     10, -- max_unit
-    4, -- uploader, account_no
-    1, -- modifier, account_no
+    4, -- modifier, account_no
     4 -- product_id
 ),
 (
@@ -1606,8 +1625,7 @@ INSERT INTO product_infos
     '2020-06-12 23:59:59', -- discount_end_time
     1, -- min_unit
     10, -- max_unit
-    4, -- uploader, account_no
-    1, -- modifier, account_no
+    4, -- modifier, account_no
     5 -- product_id
 ),
 (
@@ -1631,8 +1649,7 @@ INSERT INTO product_infos
     '2020-06-12 23:59:59', -- discount_end_time
     1, -- min_unit
     10, -- max_unit
-    5, -- uploader, account_no
-    1, -- modifier, account_no
+    5, -- modifier, account_no
     6 -- product_id
 );
 
@@ -1748,13 +1765,43 @@ INSERT INTO event_sorts
 CREATE TABLE events
 (
     `event_no`    INT         NOT NULL    AUTO_INCREMENT COMMENT 'id',
+    `uploader`    INT         NOT NULL    COMMENT '등록자',
     `created_at`  DATETIME    NOT NULL    DEFAULT CURRENT_TIMESTAMP COMMENT '최초 등록일시',
     `is_deleted`  TINYINT     NOT NULL    DEFAULT FALSE COMMENT '삭제여부',
     PRIMARY KEY (event_no)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '기획전';
 
-INSERT INTO events (event_no) VALUES (1), (2), (3), (4);
+ALTER TABLE events
+    ADD CONSTRAINT FK_event_uploader FOREIGN KEY (uploader)
+        REFERENCES accounts (account_no);
 
+INSERT INTO events (
+    event_no,
+    uploader
+) VALUES (
+    1, -- event_no
+    1 -- uploader
+),
+(
+    2, -- event_no
+    2 -- uploader
+),
+(
+    3, -- event_no
+    3 -- uploader
+),
+(
+    4, -- event_no
+    4 -- uploader
+),
+(
+    5, -- event_no
+    5 -- uploader
+),
+(
+    6, -- event_no
+    6 -- uploader
+);
 
 -- event_infos Table Create SQL
 CREATE TABLE event_infos
@@ -1772,10 +1819,8 @@ CREATE TABLE event_infos
     `youtube_url`        VARCHAR(100)    NULL        COMMENT '유튜브 url',
     `event_type_id`      INT             NOT NULL    COMMENT '기획전 타입 아이디',
     `event_sort_id`      INT             NOT NULL    COMMENT '기획전 종류 아이디',
-    `updated_at`         DATETIME        NULL        ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
     `start_time`         DATETIME        NOT NULL    DEFAULT CURRENT_TIMESTAMP COMMENT '시작일시',
     `close_time`         DATETIME        NOT NULL    DEFAULT '2037-12-31 23:59:59' COMMENT '종료일시',
-    `uploader`           INT             NOT NULL    COMMENT '등록자',
     `modifier`           INT             NOT NULL    COMMENT '수정자',
     `is_deleted`         TINYINT         NOT NULL    DEFAULT FALSE COMMENT '삭제여부',
     `event_id`           INT             NOT NULL    COMMENT '이벤트 아이디',
@@ -1793,10 +1838,6 @@ ALTER TABLE event_infos
 ALTER TABLE event_infos
     ADD CONSTRAINT FK_event_id FOREIGN KEY (event_id)
         REFERENCES events (event_no);
-
-ALTER TABLE event_infos
-    ADD CONSTRAINT FK_event_info_uploader FOREIGN KEY (uploader)
-        REFERENCES accounts (account_no);
 
 ALTER TABLE event_infos
     ADD CONSTRAINT FK_event_info_modifier FOREIGN KEY (modifier)
@@ -1818,7 +1859,6 @@ INSERT INTO event_infos
 	event_type_id,
 	event_sort_id,
 	start_time,
-	uploader,
 	modifier,
 	event_id
 ) VALUES (
@@ -1836,7 +1876,6 @@ INSERT INTO event_infos
 	1, -- event_type_id
 	1, -- event_sort_id
 	(SELECT created_at FROM events WHERE event_no=1), -- start_time
-	2, -- uploader, account_no
 	1, -- modifier, account_no
 	1 -- event_id
 ),(
@@ -1854,7 +1893,6 @@ INSERT INTO event_infos
 	2, -- event_type_id
 	3, -- event_sort_id
 	(SELECT created_at FROM events WHERE event_no=2), -- start_time
-	1, -- uploader, account_no
 	2, -- modifier, account_no
 	2 -- event_id
 ),(
@@ -1872,7 +1910,6 @@ INSERT INTO event_infos
 	2, -- event_type_id
 	3, -- event_sort_id
 	(SELECT created_at FROM events WHERE event_no=3), -- start_time
-	1, -- uploader, account_no
 	2, -- modifier, account_no
 	3 -- event_id
 ),(
@@ -1890,7 +1927,6 @@ INSERT INTO event_infos
 	2, -- event_type_id
 	3, -- event_sort_id
 	(SELECT created_at FROM events WHERE event_no=4), -- start_time
-	1, -- uploader, account_no
 	2, -- modifier, account_no
 	4 -- event_id
 );
@@ -1951,13 +1987,13 @@ INSERT INTO event_button_link_types
 	'GNB 홈 - tab 쇼핑몰*마켓'
 ),(
 	4,
-	'GNB 홈 - tab 브랜드'
+	'웹링크(웹뷰)'
 ),(
 	5,
-	'GNB 홈 - tab 뷰티'
+	'웹링크(외부)'
 ),(
 	6,
-	'GNB 홈 - tab 특가'
+	'쿠폰다운로드'
 );
 
 
@@ -2087,7 +2123,7 @@ CREATE TABLE product_tags
 (
     `product_tag_no`  INT            NOT NULL    AUTO_INCREMENT COMMENT 'id',
     `name`            VARCHAR(20)    NOT NULL    COMMENT '태그명',
-    `product_info_id`      INT       NOT NULL    COMMENT '상품 정보 외래키',
+    `product_info_id` INT            NOT NULL    COMMENT '상품 정보 외래키',
     `is_deleted`      TINYINT        NOT NULL    DEFAULT FALSE COMMENT '삭제여부',
     PRIMARY KEY (product_tag_no)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '상품 태그 관리';
@@ -2129,30 +2165,100 @@ INSERT INTO product_tags
 
 
 -- product_change_histories Table Create SQL
--- CREATE TABLE product_change_histories
--- (
---     `product_change_history_no`  INT              NOT NULL    AUTO_INCREMENT COMMENT 'id',
---     `product_id`                 INT              NOT NULL    COMMENT '변경된 상품 아이디',
---     `changing_seller_id`         INT              NOT NULL    COMMENT '수정자',
---     `changed_time`               DATETIME         NOT NULL    COMMENT '수정 날짜',
---     `is_sold_out`                TINYINT          NOT NULL    COMMENT '판매여부',
---     `is_on_display`              TINYINT          NOT NULL    COMMENT '진열여부',
---     `price`                      INT              NOT NULL    COMMENT '판매가격',
---     `discount_rate`              DECIMAL(2, 2)    NOT NULL    COMMENT '할인율',
---     `is_deleted`                 TINYINT          NOT NULL    COMMENT '삭제여부',
---     PRIMARY KEY (product_change_history_no)
--- );
+CREATE TABLE product_change_histories
+(
+    `product_change_history_no`  INT              NOT NULL    AUTO_INCREMENT COMMENT 'id',
+    `product_id`                 INT              NOT NULL    COMMENT '변경된 상품 아이디',
+    `modifier`                   INT              NOT NULL    COMMENT '수정자',
+    `changed_time`               DATETIME         NOT NULL    COMMENT '수정 날짜',
+    `is_available`               TINYINT          NOT NULL    COMMENT '판매여부',
+    `is_on_display`              TINYINT          NOT NULL    COMMENT '진열여부',
+    `price`                      INT              NOT NULL    COMMENT '판매가격',
+    `discount_rate`              DECIMAL(2, 2)    NOT NULL    COMMENT '할인율',
+    `is_deleted`                 TINYINT          DEFAULT FALSE NOT NULL    COMMENT '삭제여부',
+    PRIMARY KEY (product_change_history_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '상품의 경우 전체 수량이 많아 이력 테이블 따로 관리';
 
--- ALTER TABLE product_change_histories COMMENT '상품의 경우 전체 수량이 많아 이력 테이블 따로 관리';
+ALTER TABLE product_change_histories
+    ADD CONSTRAINT FK_product_change_histories_product_id FOREIGN KEY (product_id)
+        REFERENCES products (product_no);
 
--- ALTER TABLE product_change_histories
---     ADD CONSTRAINT FK_product_change_histories_product_i력d_product_infos_product_info_no FOREIGN KEY (product_id)
---         REFERENCES product_infos (product_info_no);
+ALTER TABLE product_change_histories
+    ADD CONSTRAINT FK_product_change_histories_modifier FOREIGN KEY (modifier)
+        REFERENCES accounts (account_no);
 
--- ALTER TABLE product_change_histories
---     ADD CONSTRAINT FK_product_change_history_modifier FOREIGN KEY (modifier)
---         REFERENCES accounts (account_no);
-
+INSERT INTO product_change_histories
+(
+    product_change_history_no,
+    product_id,
+    modifier,
+    changed_time,
+    is_available,
+    is_on_display,
+    price,
+    discount_rate,
+    is_deleted
+) VALUES (
+    1, -- product_change_history_no
+    1, -- product_id
+    1, -- modifier
+    '2020-03-31 09:00:00', -- changed_time
+    1, -- is_available
+    1, -- is_on_display
+    12000, -- price
+    0.3, -- discount_rate
+    0 -- is_deleted
+),(
+    2, -- product_change_history_no
+    2, -- product_id
+    3, -- modifier
+    '2020-04-01 09:00:00', -- changed_time
+    1, -- is_available
+    1, -- is_on_display
+    15000, -- price
+    0.5, -- discount_rate
+    0 -- is_deleted
+),(
+    3, -- product_change_history_no
+    3, -- product_id
+    4, -- modifier
+    '2020-04-02 09:00:00', -- changed_time
+    1, -- is_available
+    1, -- is_on_display
+    15000, -- price
+    0.4, -- discount_rate
+    0 -- is_deleted
+),(
+    4, -- product_change_history_no
+    4, -- product_id
+    4, -- modifier
+    '2020-04-03 09:00:00', -- changed_time
+    1, -- is_available
+    1, -- is_on_display
+    12080, -- price
+    0.3, -- discount_rate
+    0 -- is_deleted
+),(
+    5, -- product_change_history_no
+    5, -- product_id
+    4, -- modifier
+    '2020-04-04 09:00:00', -- changed_time
+    1, -- is_available
+    1, -- is_on_display
+    129000, -- price
+    0.45, -- discount_rate
+    0 -- is_deleted
+),(
+    6, -- product_change_history_no
+    6, -- product_id
+    5, -- modifier
+    '2020-03-31 09:00:00', -- changed_time
+    1, -- is_available
+    1, -- is_on_display
+    18000, -- price
+    0.15, -- discount_rate
+    0 -- is_deleted
+);
 
 -- event_detail_infos Table Create SQL
 CREATE TABLE event_detail_infos

@@ -479,8 +479,8 @@ class SellerView:
         if db_connection:
             try:
                 seller_service = SellerService()
-
                 changing_seller_info_result = seller_service.change_seller_info(account_info, db_connection)
+
                 return changing_seller_info_result
 
             except Exception as e:

@@ -431,7 +431,7 @@ class SellerDao:
             filter_query += f" AND seller_accounts.created_at > '{start_date}' AND seller_accounts.created_at < '{end_date}'"
 
         try:
-            with db_connection.cursor() as db_cursor:
+            with db_connection as db_cursor:
 
                 # 상품 개수를 가져오는 sql 명령문
                 select_product_count_statement = '''
@@ -447,7 +447,7 @@ class SellerDao:
                 product_count = db_cursor.fetchall()
 
                 # 셀러 리스트를 가져오는 sql 명령문, 쿼리가 들어오면 쿼리문을 포메팅해서 검색 실행
-                select_seller_list_statement = f'''
+                select_seller_list_statement = '''
                     SELECT 
                     seller_account_id, 
                     accounts.login_id,
@@ -469,12 +469,13 @@ class SellerDao:
                     LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
                     LEFT JOIN manager_infos on manager_infos.seller_info_id = seller_infos.seller_info_no 
                     WHERE seller_infos.close_time = '2037-12-31 23:59:59.0' 
-                    AND manager_infos.ranking = 1{filter_query}
+                    AND manager_infos.ranking = 1%(filter_query)s
                     LIMIT %(limit)s OFFSET %(offset)s                   
                 '''
                 parameter = {
                     'limit' : limit,
-                    'offset' : offset
+                    'offset' : offset,
+                    'filter_query' : filter_query
                 }
 
                 # sql 쿼리와 pagination 데이터 바인딩
@@ -798,10 +799,11 @@ class SellerDao:
         try:
             with db_connection.cursor() as db_cursor:
                 get_stmt = """
-                    SELECT seller_info_no, profile_image_url, name_kr
+                    SELECT seller_account_id, profile_image_url, name_kr, account_id, product_sort_id
                     FROM seller_infos 
-                    WHERE name_kr 
-                    LIKE '%"""+keyword+"""%'
+                    INNER JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
+                    WHERE seller_infos.name_kr 
+                    LIKE '%"""+keyword+"""%' AND close_time='2037-12-31 23:59:59.0'
                 """
                 db_cursor.execute(get_stmt)
 

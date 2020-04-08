@@ -60,14 +60,14 @@ class ProductService:
         return categories
 
     # noinspection PyMethodMayBeStatic
-    def get_product_detail(self, product_info_no, db_connection):
+    def get_product_detail(self, product_no, db_connection):
 
         """ 상품 등록/수정시 나타나는 개별 상품의 기존 정보 표출
 
         상품의 번호를 받아 해당하는 상품의 상세 정보를 표출.
 
         Args:
-            product_info_no(integer): 동일 상품 변경 이력의 가장 최신 버전 인덱스 번호
+            product_no(integer): 동일 상품 변경 이력의 가장 최신 버전 인덱스 번호
             db_connection(DatabaseConnection): 데이터베이스 커넥션 객체
 
         Returns:
@@ -83,6 +83,57 @@ class ProductService:
         """
 
         product_dao = ProductDao()
-        product_infos = product_dao.get_product_detail(product_info_no, db_connection)
+        product_infos = product_dao.get_product_detail(product_no, db_connection)
 
         return product_infos
+
+    # noinspection PyMethodMayBeStatic
+    def insert_new_product(self, product_info, db_connection):
+
+        """ 신규 상품 등록
+
+        등록하려는 셀러의 정보에 따라 내부 내용이 달라지므로, 데코레이터에서 셀러 정보를 먼저 읽어옴.
+        등록 상세 정보는 request.body 내부에 존재함.
+        유효성 검사를 위한 조건 통과 후 product_info 변수에 내용을 담아 product_service로 전달.
+
+        Args:
+            product_info: 등록하려는 신규 상품 정보
+            db_connection: 데이터베이스 커넥션 객체
+
+        Returns: Http 응답코드
+            200: 신규 상품 등록 성공
+
+        Authors:
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+            2020-04-06 (leesh3@brandi.co.kr): 초기 생성
+        """
+        product_dao = ProductDao()
+        insert_new_product_result = product_dao.insert_new_product(product_info, db_connection)
+        return insert_new_product_result
+
+    def update_product_info(self, product_info, db_connection):
+
+        """ 상품 정보 수
+
+        등록하려는 셀러의 정보에 따라 내부 내용이 달라지므로, 데코레이터에서 셀러 정보를 먼저 읽어옴.
+        상세 수정 정보는 request.body 내부에 존재함.
+
+        Args:
+            product_info: 상품 수정 정보
+            db_connection: 데이터베이스 커넥션 객체
+
+        Returns: Http 응답코드
+            200: 상품 정보 수정 완료
+
+        Authors:
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+            2020-04-08 (leesh3@brandi.co.kr): 초기 생성
+        """
+
+        product_dao = ProductDao()
+        update_product_result = product_dao.update_product_info(product_info, db_connection)
+        return update_product_result
