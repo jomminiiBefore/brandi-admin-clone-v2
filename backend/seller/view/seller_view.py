@@ -295,13 +295,13 @@ class SellerView:
         Param('detail_address', FORM, str,
               rules=[MaxLength(100)]),
         Param('weekday_start_time', FORM, str,
-              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}$")]),
+              rules=[Pattern(r"^(00|[0-9]|1[0-9]|2[0-3]):([0-9]|[0-5][0-9]):([0-9]|[0-5][0-9])$")]),
         Param('weekday_end_time', FORM, str,
-              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}$")]),
+              rules=[Pattern(r"^(00|[0-9]|1[0-9]|2[0-3]):([0-9]|[0-5][0-9]):([0-9]|[0-5][0-9])$")]),
         Param('weekend_start_time', FORM, str, required=False,
-              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}$")]),
+              rules=[Pattern(r"^(00|[0-9]|1[0-9]|2[0-3]):([0-9]|[0-5][0-9]):([0-9]|[0-5][0-9])$")]),
         Param('weekend_end_time', FORM, str, required=False,
-              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}$")]),
+              rules=[Pattern(r"^(00|[0-9]|1[0-9]|2[0-3]):([0-9]|[0-5][0-9]):([0-9]|[0-5][0-9])$")]),
         Param('bank_name', FORM, str,
               rules=[MaxLength(45)]),
         Param('bank_holder_name', FORM, str,
@@ -314,7 +314,25 @@ class SellerView:
         Param('seller_status_no', FORM, str,
               rules=[Pattern(r"^[1-5]{1}$")]),
         Param('seller_type_no', FORM, str,
-              rules=[Pattern(r"^[1-7]{1}$")])
+              rules=[Pattern(r"^[1-7]{1}$")]),
+
+        # 이미지 url 이 들어올 경우 유효성 확인
+        Param('profile_image_url', FORM, str, required=False,
+              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
+        Param('certificate_image_url', FORM, str, required=False,
+              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
+        Param('online_business_image_url', FORM, str, required=False,
+              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
+        Param('background_image_url', FORM, str, required=False,
+              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
+        Param('profile_image_url', FORM, str, required=False,
+              rules=[MaxLength(200)]),
+        Param('certificate_image_url', FORM, str, required=False,
+              rules=[MaxLength(200)]),
+        Param('online_business_image_url', FORM, str, required=False,
+              rules=[MaxLength(200)]),
+        Param('background_image_url', FORM, str, required=False,
+              rules=[MaxLength(200)])
     )
     def change_seller_info(*args):
         """ 계정 셀러정보 수정 엔드포인트
@@ -379,8 +397,8 @@ class SellerView:
             200: SUCCESS 셀러정보 수정(새로운 이력 생성) 완료
             400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
             400: VALIDATION_ERROR_MANAGER_INFO, NO_SPECIFIC_MANAGER_INFO,
-                 INVALID_AUTH_TYPE_ID
-            403: NO_AUTHORIZATION, NO_AUTHORIZATION_FOR_STATUS_CHANGE
+                 INVALID_AUTH_TYPE_ID, NO_PROFILE_IMAGE, NO_CERTIFICATE_IMAGE
+            403: NO_AUTHORIZATION, NO_AUTHORIZATION_FOR_STATUS_CHANGE, NO_ONLINE_BUSINESS_IMAGE
             500: INVALID_KEY, DB_CURSOR_ERROR, NO_DATABASE_CONNECTION
 
         Authors:
@@ -393,6 +411,12 @@ class SellerView:
                 url path 변경('/<int:parameter_account_no>/info' -> '/<int:parameter_account_no>')
             2020-04-08 (leejm3@brandi.co.kr):
                 마스터가 아닐 때 셀러 상태(입점 등)를 변경하려고 하면 에러 처리하는 내용 추가
+            2020-04-09 (yoonhc@barndi.co.kr):
+                이미지 업로더 적용
+            2020-04-09 (leejm3@brandi.co.kr):
+                 이미지 파일을 새로 업로드하면, 이 파일을 저장한 s3 url 을 저장하고,
+                 수정을 안해서 기존에 DB에 저장된 url 을 보내주면, 해당 url 을 저장함
+                 필수값인 셀러 프로필, 등록증 2개가 들어오지 않으면 에러처
 
         """
 
@@ -435,7 +459,7 @@ class SellerView:
             'auth_type_id': g.account_info['auth_type_id'],
             'decorator_account_no': g.account_info['account_no'],
             'parameter_account_no': args[0],
-            'profile_image_url': seller_image.get('profile_image_url', None),
+            'profile_image_url': seller_image.get('s3_profile_image_url', None),
             'seller_status_no': args[1],
             'seller_type_no': args[2],
             'name_kr': args[3],
@@ -445,10 +469,10 @@ class SellerView:
             'ceo_name': args[7],
             'company_name': args[8],
             'business_number': args[9],
-            'certificate_image_url': seller_image.get('certificate_image_url', None),
+            'certificate_image_url': seller_image.get('s3_certificate_image_url', None),
             'online_business_number': args[10],
-            'online_business_image_url': seller_image.get('online_business_image_url', None),
-            'background_image_url': seller_image.get('background_image_url', None),
+            'online_business_image_url': seller_image.get('s3_online_business_image_url', None),
+            'background_image_url': seller_image.get('s3_background_image_url', None),
             'short_description': args[11],
             'long_description': args[12],
             'site_url': args[14],
@@ -469,6 +493,29 @@ class SellerView:
             'account_number': args[30],
             'seller_account_id': args[31]
         }
+
+        # file 로 이미지가 안들어올 경우, FORM 으로 받은 이미지 url로 대체
+        if not account_info['profile_image_url']:
+            account_info['profile_image_url'] = args[34]
+
+        if not account_info['certificate_image_url']:
+            account_info['certificate_image_url'] = args[35]
+
+        if not account_info['online_business_image_url']:
+            account_info['online_business_image_url'] = args[36]
+
+        if not account_info['background_image_url']:
+            account_info['background_image_url'] = args[37]
+
+        # 이미지 url 필수값 3개가 안들어오면 에러 리턴
+        if not account_info['profile_image_url']:
+            return jsonify({'message': 'NO_PROFILE_IMAGE'}), 400
+
+        if not account_info['certificate_image_url']:
+            return jsonify({'message': 'NO_CERTIFICATE_IMAGE'}), 400
+
+        if not account_info['online_business_image_url']:
+            return jsonify({'message': 'NO_ONLINE_BUSINESS_IMAGE'}), 400
 
         # 데이터베이스 연결
         db_connection = get_db_connection()
