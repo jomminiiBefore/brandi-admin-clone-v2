@@ -472,7 +472,6 @@ class SellerView:
         # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url을 사전형으로 가져옴.
         image_upload = ImageUpload()
         seller_image = image_upload.upload_seller_image(request)
-        print(seller_image)
 
         # validation 확인이 된 data 를 account_info 로 재정의
         account_info = {

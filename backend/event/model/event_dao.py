@@ -665,3 +665,89 @@ class EventDao:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
+
+    # noinspection PyMethodMayBeStatic
+    def get_event_infos(self, event_no, db_connection):
+
+        """ 기획전 정보 표출 DAO
+
+        기획전 정보를 가져오는 DAO 입니다.
+
+        Args:
+            event_no: 기획전 번호
+            db_connection: 데이터베이스 커넥션 객체
+
+        Returns:
+            200: 기획전 정보
+            400: INVALID_EVENT_NO
+            500: INVALID_KEY, DB_CURSOR_ERROR
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-10 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+        try:
+            with db_connection.cursor() as db_cursor:
+                select_statement = """
+                SELECT
+                a.event_no,
+                b.event_type_id,
+                c.name as event_type_name,
+                b.event_sort_id,
+                d.name as event_sort_name,
+                b.is_on_main,
+                b.is_on_event,
+                b.name as event_name,
+                b.event_start_time,
+                b.event_end_time,
+                b.short_description,
+                b.long_description,
+                b.banner_image_url,
+                b.detail_image_url,
+                e.button_name,
+                e.button_link_type_id,
+                f.name as button_link_type_name,
+                b.youtube_url
+                
+                FROM
+                events as a
+                INNER JOIN
+                event_infos as b
+                ON a.event_no = b.event_id
+                INNER JOIN
+                event_types as c
+                ON b.event_type_id = c.event_type_no
+                INNER JOIN
+                event_sorts as d
+                ON b.event_sort_id = d.event_sort_no
+                LEFT JOIN
+                event_detail_infos as e
+                ON b.event_info_no = e.event_info_id
+                INNER JOIN
+                event_button_link_types as f
+                ON e.button_link_type_id = f.event_button_link_type_no
+                
+                -- 해당 기획전 번호의 가장 최신 이력 정보를 가져옴
+                WHERE a.event_no = %(event_no)s 
+                AND b.close_time = '2037-12-31 23:59:59'
+                """
+
+                db_cursor.execute(select_statement, {'event_no': event_no})
+                info = db_cursor.fetchone()
+
+                # 쿼리 값이 나오지 않으면 에러 메시지 리턴
+                if not info:
+                    return jsonify({'message': 'INVALID_EVENT_NO'}), 400
+
+                return jsonify({'event_info': info}), 200
+
+        except KeyError as e:
+            print(f'KEY_ERROR_WITH {e}')
+            return jsonify({'message': 'INVALID_KEY'}), 500
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
