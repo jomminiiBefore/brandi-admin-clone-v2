@@ -73,6 +73,7 @@ const Input = ({
           validationText={validationText}
           inputText={inputText}
           isRequired={isRequired}
+          value={inputText}
         />
       )}
     </Container>
