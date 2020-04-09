@@ -9,6 +9,7 @@ import {
   lower_number_underline_dot_case,
   number_hypen_case,
   two_length_case,
+  four_length_case,
   only_number_case,
 } from 'src/utils/regexp';
 import TableBox from 'src/component/common/TableBox';
@@ -20,28 +21,13 @@ import SmallButton from 'src/component/common/SmallButton';
 import Input from 'src/component/common/Input';
 import CustomButton from 'src/component/common/CustomButton';
 import ManagerRemoveButton from 'src/component/sellerInfoEdit/ManagerRemoveButton';
-import InputContainer from '../common/InputContainer';
-import ManagerInfoItem from './ManagerInfoItem';
+import InputContainer from 'src/component/common/InputContainer';
+import PasswordModal from 'src/component/sellerInfoEdit/PasswordModal';
 import BusinessHour from './BusinessHour';
 import { makeStyles } from '@material-ui/core/styles';
-import TextField from '@material-ui/core/TextField';
 import { JMURL } from 'src/utils/config';
 import style from 'src/utils/styles';
 import styled from 'styled-components';
-import PasswordModal from 'src/component/sellerInfoEdit/PasswordModal';
-
-// TimePicker
-const useStyles = makeStyles((theme) => ({
-  container: {
-    display: 'flex',
-    flexWrap: 'wrap',
-  },
-  textField: {
-    marginLeft: theme.spacing(1),
-    marginRight: theme.spacing(1),
-    width: 110,
-  },
-}));
 
 const Main = () => {
   // 비밀번호 변경 Modal
@@ -55,6 +41,7 @@ const Main = () => {
   const [input, setInput] = useState({
     // 기본 정보
     profileImage: null,
+    profileImageFile: null,
     status: '',
     property: '',
     koreanName: '',
@@ -66,10 +53,13 @@ const Main = () => {
     businessName: '',
     businessNumber: '',
     businessRegistration: null,
+    businessRegistrationFile: null,
     telecommunicationsSalesNumber: '',
-    telecommunicationsSalesReport: '',
+    telecommunicationsSalesReport: null,
+    telecommunicationsSalesReportFile: null,
     // 상세 정보
     sellerPageBackgroundImage: null,
+    sellerPageBackgroundImageFile: null,
     sellerIntroduction: '',
     sellerDetailIntroduction: '',
     siteUrl: '',
@@ -89,10 +79,12 @@ const Main = () => {
     bankName: '',
     accountHolder: '',
     accountNumber: '',
+    sellerStatusChangeHistories: [],
   });
 
   const {
     profileImage,
+    profileImageFile,
     status,
     property,
     koreanName,
@@ -103,7 +95,10 @@ const Main = () => {
     businessName,
     businessNumber,
     businessRegistration,
+    businessRegistrationFile,
     telecommunicationsSalesNumber,
+    telecommunicationsSalesReport,
+    telecommunicationsSalesReportFile,
     sellerPageBackgroundImage,
     sellerIntroduction,
     sellerDetailIntroduction,
@@ -124,6 +119,7 @@ const Main = () => {
     bankName,
     accountHolder,
     accountNumber,
+    sellerStatusChangeHistories,
   } = input;
 
   // input 안에 값이 한번이라도 들어오면 true로 변경
@@ -293,7 +289,7 @@ const Main = () => {
 
   const setImg = (name, imageResult) => {
     console.log('imageResult::', name, imageResult);
-    // setInput({ ...input, [name]: value });
+    setInput({ ...input, [name]: imageResult });
   };
 
   // 주소 찾기
@@ -328,14 +324,15 @@ const Main = () => {
     }
   };
 
-  const onChangeBusinessHour = (e) => {
-    const { id, value } = e.target;
-    setInput({ ...input, [id]: value });
+  const onChangeBusinessHour = (id, value) => {
+    console.log('id:: ', id);
+    console.log('value:: ', value);
+    setInput({ ...input, [id]: `${value}:00` });
   };
 
   const [sellerTypes, setSellerTypes] = useState([]);
   useEffect(() => {
-    fetch(`${JMURL}/seller/5`, {
+    fetch(`http://localhost:5000/seller/2`, {
       headers: {
         Authorization:
           'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
@@ -343,15 +340,51 @@ const Main = () => {
     })
       .then((res) => res.json())
       .then((res) => {
+        console.log('res: ', res);
         setInput({
           ...input,
           profileImage: res.profile_image_url,
           status: res.seller_status_no,
           property: res.seller_type_no,
+          koreanName: res.name_kr,
+          englishName: res.name_en,
+          brandiAppId: res.brandi_app_user_app_id,
+          ceoName: res.ceo_name,
+          businessName: res.company_name,
+          businessNumber: res.business_number,
+          businessRegistration: res.certificate_image_url,
+          telecommunicationsSalesNumber: res.online_business_number,
+          telecommunicationsSalesReport: res.online_business_image_url,
+          sellerPageBackgroundImage: res.background_image_url,
+          sellerIntroduction: res.short_description,
+          sellerDetailIntroduction: res.long_description,
+          siteUrl: res.site_url,
+          instagramId: res.insta_id,
+          serviceCenterPhoneNumber: res.center_number,
+          kakaoId: res.kakao_id,
+          yellowId: res.yellow_id,
+          postNumber: res.zip_code,
+          parcelAddress: res.address,
+          parcelDetailAddress: res.detail_address,
+          bankName: res.bank_name,
+          accountHolder: res.bank_holder_name,
+          accountNumber: res.account_number,
+          openingWeekdayTime: res.weekday_start_time,
+          closingWeekdayTime: res.weekday_end_time,
+          openingWeekendTime: res.weekend_start_time,
+          closingWeekendTime: res.weekend_end_time,
+          sellerStatusChangeHistories: res.seller_status_change_histories,
         });
+        setManagerInfo(res.manager_infos);
         setSellerTypes({ ...sellerTypes, sellerTypes: res.seller_types });
       });
   }, []);
+
+  const onCheckBrandiAppId = (e) => {};
+
+  useEffect(() => {
+    openingWeekendTime && setWeekend(true);
+  }, [openingWeekendTime]);
 
   // 셀러 상태
   let seller_status;
@@ -374,7 +407,14 @@ const Main = () => {
     default:
     // code block
   }
+
+  const onChangeRadio = (e) => {
+    console.log('radio: ', e.target.value);
+    setInput({ ...input, [e.target.id]: e.target.value });
+  };
+
   console.log('managerInfo: ', managerInfo);
+  console.log('input: ', input);
   return (
     <>
       <Container>
@@ -383,6 +423,7 @@ const Main = () => {
           <TableItem title="셀러 프로필" isRequired={true}>
             <ImageUploader
               name="profileImage"
+              fileName="profileImageFile"
               setImg={setImg}
               img={profileImage}
             />
@@ -392,7 +433,11 @@ const Main = () => {
             {seller_status}
           </TableItem>
           <TableItem title="셀러 속성" isRequired={true}>
-            <SellerProperty sellerTypes={sellerTypes.sellerTypes} />
+            <SellerProperty
+              sellerTypes={sellerTypes.sellerTypes}
+              type={property}
+              onChangeRadio={onChangeRadio}
+            />
           </TableItem>
           <TableItem title="셀러 한글명" isRequired={true}>
             <InputContainer
@@ -431,7 +476,7 @@ const Main = () => {
             <SmallButton
               name="비밀번호 변경하기"
               color={style.color.validationRed}
-              textColor="red"
+              textColor="#fff"
               onClickEvent={showPasswordModal}
             />
           </TableItem>
@@ -444,6 +489,7 @@ const Main = () => {
               name="brandiAppId"
               setText={setValue}
             />
+            <InfoText content="'브랜디' 어플을 설치하여 회원가입하고, 브랜디 어플 아이디를 입력해 주세요. 어플 아이디는 어플 > MY > 설정 > 프로필 편집에서 확인 가능합니다." />
           </TableItem>
         </TableBox>
 
@@ -498,7 +544,12 @@ const Main = () => {
             />
           </TableItem>
           <TableItem title="사업자등록증" isRequired={true}>
-            <ImageUploader name="businessRegistration" setImg={setImg} />
+            <ImageUploader
+              name="businessRegistration"
+              fileName="businessRegistrationFile"
+              setImg={setImg}
+              img={businessRegistration}
+            />
             <InfoText content="사업자등록증 확장자는 jpg, jpeg, png 만 가능하며, 허용 가능한 최대 파일사이즈 크기는 5MB 입니다." />
           </TableItem>
           <TableItem title="통신판매업번호" isRequired={true}>
@@ -520,7 +571,9 @@ const Main = () => {
           <TableItem title="통신판매업신고필증" isRequired={true}>
             <ImageUploader
               name="telecommunicationsSalesReport"
+              fileName="telecommunicationsSalesReportFile"
               setImg={setImg}
+              img={telecommunicationsSalesReport}
             />
             <InfoText content="통신판매업신고필증 확장자는 jpg, jpeg, png 만 가능하며, 허용 가능한 최대 파일사이즈 크기는 5MB 입니다." />
           </TableItem>
@@ -529,7 +582,12 @@ const Main = () => {
         {/* 상세 정보 */}
         <TableBox title="상세 정보">
           <TableItem title="셀러페이지 배경이미지" isRequired={false}>
-            <ImageUploader name="profileImage" setImg={setImg} />
+            <ImageUploader
+              name="sellerPageBackgroundImage"
+              fileName="sellerPageBackgroundImageFile"
+              setImg={setImg}
+              img={sellerPageBackgroundImage}
+            />
             <InfoText content="셀러 프로필 확장자는 jpg, jpeg, png 만 가능하며, 허용 가능한 최대 파일사이즈 크기는 5MB 입니다." />
             <InfoText content="배경이미지는 1200 * 850 사이즈 이상으로 등록해주세요." />
             <InfoText content="확장자는 jpg, jpeg, png 만 가능하며, 허용 가능한 최대 파일사이즈 크기는 5MB 입니다." />
@@ -551,7 +609,15 @@ const Main = () => {
             />
           </TableItem>
           <TableItem title="셀러 상세 소개" isRequired={true}>
-            <textarea name="" id="" cols="30" rows="10"></textarea>
+            <textarea
+              name=""
+              id=""
+              cols="30"
+              rows="10"
+              value={sellerDetailIntroduction}
+              onChange={(e) => setValue(e)}
+              name="sellerDetailIntroduction"
+            ></textarea>
             <InfoText content="셀러 상세 소개 글은 최소10자 이상 입니다." />
           </TableItem>
           <TableItem title="사이트 URL" isRequired={true}>
@@ -587,7 +653,7 @@ const Main = () => {
                     // blurred={isBlurred.koreanName}
                     valid={isValid.koreanName}
                     validationText="none"
-                    inputText={koreanName}
+                    inputText={e.name}
                     isRequired={true}
                   />
                   <InputWrapper>
@@ -602,7 +668,7 @@ const Main = () => {
                       // blurred={isBlurred.koreanName}
                       valid={isValid.koreanName}
                       validationText="한글, 영문, 숫자만 입력해주세요."
-                      inputText={koreanName}
+                      inputText={e.contact_number}
                       isRequired={true}
                     />
                   </InputWrapper>
@@ -618,7 +684,7 @@ const Main = () => {
                       // blurred={isBlurred.koreanName}
                       valid={isValid.koreanName}
                       validationText="한글, 영문, 숫자만 입력해주세요."
-                      inputText={koreanName}
+                      inputText={e.email}
                       isRequired={true}
                     />
                   </InputWrapper>
@@ -627,7 +693,6 @@ const Main = () => {
             })}
 
             <InputWrapper>
-              {console.log('managerInfo??: ', managerInfo.length)}
               {managerInfo.length === 1 || managerInfo.length === 2 ? (
                 <CustomButton
                   name="+"
@@ -725,12 +790,12 @@ const Main = () => {
                 width={195}
                 height={34}
                 placeholder="우편번호"
-                name="instagramId"
+                name="postNumber"
                 setText={setValue}
                 setBlur={setBlur}
-                typed={isTyped.instagramId}
-                blurred={isBlurred.instagramId}
-                valid={isValid.instagramId}
+                typed={isTyped.postNumber}
+                blurred={isBlurred.postNumber}
+                valid={isValid.postNumber}
                 validationText="none"
                 inputText={postNumber}
                 isRequired={false}
@@ -752,12 +817,12 @@ const Main = () => {
                 width={345}
                 height={34}
                 placeholder="주소 (택배 수령지)"
-                name="instagramId"
+                name="parcelAddress"
                 setText={setValue}
                 setBlur={setBlur}
-                typed={isTyped.instagramId}
-                blurred={isBlurred.instagramId}
-                valid={isValid.instagramId}
+                typed={isTyped.parcelAddress}
+                blurred={isBlurred.parcelAddress}
+                valid={isValid.parcelAddress}
                 validationText="none"
                 inputText={parcelAddress}
                 isRequired={false}
@@ -787,15 +852,20 @@ const Main = () => {
               onChangeBusinessHour={onChangeBusinessHour}
               openingName="openingWeekdayTime"
               closingName="closingWeekdayTime"
+              defaultOpeningTime={openingWeekdayTime}
+              defaultClosingTime={closingWeekdayTime}
+              isWeekendChecked={weekend}
             />
           </TableItem>
           {weekend && (
             <TableItem title="고객센터 운영시간(주말)" isRequired={false}>
               <BusinessHour
                 onCheckWeekend={onCheckWeekend}
-                onChangeBusinessHour={onChangeBusinessHour}
                 openingName="openingWeekendTime"
                 closingName="closingWeekendTime"
+                onChangeBusinessHour={onChangeBusinessHour}
+                defaultOpeningTime={openingWeekendTime}
+                defaultClosingTime={closingWeekendTime}
               />
             </TableItem>
           )}
@@ -848,6 +918,33 @@ const Main = () => {
               />
             </InputWrapper>
           </TableItem>
+          <TableItem title="셀러상태 변경기록" isRequired={true}>
+            <SellerStateContainer>
+              <SellerStateContentContainer>
+                <SellerStateApplyDate>
+                  셀러상태 변경 적용일시
+                </SellerStateApplyDate>
+                <SellerState>셀러 상태</SellerState>
+                <SellerStateChangeUser>변경 실행자</SellerStateChangeUser>
+              </SellerStateContentContainer>
+              {/* changed_time: "Tue, 31 Mar 2020 23:59:59 GMT"
+                  modifier: "seller"
+                  seller_status_name: "입점대기" */}
+              {sellerStatusChangeHistories.map((item) => {
+                return (
+                  <SellerStateContentContainer>
+                    <SellerStateApplyDate>
+                      {item.changed_time}
+                    </SellerStateApplyDate>
+                    <SellerState>{item.seller_status_name}</SellerState>
+                    <SellerStateChangeUser>
+                      {item.modifier}
+                    </SellerStateChangeUser>
+                  </SellerStateContentContainer>
+                );
+              })}
+            </SellerStateContainer>
+          </TableItem>
         </TableBox>
       </Container>
       {passwordModal && <PasswordModal showPasswordModal={showPasswordModal} />}
@@ -882,4 +979,38 @@ const ManagerLine = styled.div`
   height: 1px;
   background-color: #bdbdbd;
   margin: 25px 0px;
+`;
+
+const SellerStateContainer = styled.div``;
+
+const SellerStateContentContainer = styled.div`
+  display: flex;
+  width: 100%;
+  height: 35px;
+  border: 1px solid #bdbdbd;
+  margin-top: -1px;
+`;
+
+const SellerStateApplyDate = styled.div`
+  flex: 2;
+  font-size: 13px;
+  padding: 8px;
+  align-self: center;
+`;
+
+const SellerState = styled.div`
+  flex: 1;
+  font-size: 13px;
+  padding: 8px;
+  height: 100%;
+  align-self: center;
+  border-left: 1px solid #bdbdbd;
+  border-right: 1px solid #bdbdbd;
+`;
+
+const SellerStateChangeUser = styled.div`
+  flex: 2;
+  font-size: 13px;
+  padding: 8px;
+  align-self: center;
 `;

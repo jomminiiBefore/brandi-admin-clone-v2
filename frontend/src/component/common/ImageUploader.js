@@ -4,8 +4,10 @@ import styled from 'styled-components';
 import CustomButton from './CustomButton';
 import InfoText from './InfoText';
 
-const ImageUploader = ({ name, setImg, img }) => {
+const ImageUploader = ({ name, setImg, img, fileName }) => {
   const [imagePreviewUrl, setImagePreviewUrl] = useState();
+
+  // API로 부터 처음에 받는 이미지
   useEffect(() => {
     setImagePreviewUrl(img);
   }, [img]);
@@ -18,8 +20,10 @@ const ImageUploader = ({ name, setImg, img }) => {
     let file = e.target.files[0];
 
     reader.onloadend = () => {
+      // 프리뷰 이미지 변경
       setImagePreviewUrl(reader.result);
-      setImg(name, reader.result);
+      // 이미지 파일
+      setImg(fileName, file);
     };
 
     reader.readAsDataURL(file);

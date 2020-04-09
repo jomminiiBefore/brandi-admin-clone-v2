@@ -2,25 +2,37 @@ import React, { useState } from 'react';
 import style from 'src/utils/styles';
 import styled from 'styled-components';
 
-const SellerProperty = ({ sellerTypes }) => {
-  const onChangeRadio = (e) => {
-    console.log(e.target.value);
-  };
-
+const SellerProperty = ({ sellerTypes, type, onChangeRadio }) => {
   return (
     <Container>
       {sellerTypes
         ? sellerTypes.map((item, key) => (
-            <InputButtonContainer key={key}>
-              <input
-                type="radio"
-                id={item.seller_type_no}
-                name="brand"
-                value={item.seller_type_no}
-                onChange={onChangeRadio}
-              />
-              <LabelText>{item.seller_type_name}</LabelText>
-            </InputButtonContainer>
+            <React.Fragment key={key}>
+              {type === item.seller_type_no ? (
+                <InputButtonContainer>
+                  <input
+                    type="radio"
+                    id="property"
+                    name="brand"
+                    value={item.seller_type_no}
+                    onChange={onChangeRadio}
+                    checked
+                  />
+                  <LabelText>{item.seller_type_name}</LabelText>
+                </InputButtonContainer>
+              ) : (
+                <InputButtonContainer>
+                  <input
+                    type="radio"
+                    id="property"
+                    name="brand"
+                    value={item.seller_type_no}
+                    onChange={onChangeRadio}
+                  />
+                  <LabelText>{item.seller_type_name}</LabelText>
+                </InputButtonContainer>
+              )}
+            </React.Fragment>
           ))
         : ''}
     </Container>

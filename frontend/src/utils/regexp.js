@@ -20,6 +20,8 @@ export const lower_number_underline_dot_case = /^[a-z|0-9|_|.]+$/;
 export const number_hypen_case = /^[0-9|-]+$/;
 // 2글자 이상
 export const two_length_case = /^.{2}/;
+// 4글자 이상
+export const four_length_case = /^.{4}/;
 // 숫자만
 export const only_number_case = /^[0-9]*$/;
 // 3자리
@@ -31,12 +33,6 @@ export const numberFormat = (x) => {
 export const removeComma = (str) => {
   return parseInt(str.replace(/,/g, ''));
 };
-
-// id 시작글자
-export const id_start = /^[a-z]+[a-z0-9]/;
-
-// 한글 영문 숫자 허용 정규식
-export const korean_english_number = /^[ㄱ-ㅎ|가-힣|a-z|A-Z|0-9|\*]+$/;
 
 // id 정규식
 export const check_id = /[a-zA-Z0-9-_]{5,20}/;

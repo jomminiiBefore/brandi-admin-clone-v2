@@ -14,7 +14,6 @@ const ManagerRemoveButton = ({
   onClickEvent,
   index,
 }) => {
-  console.log('index:: ', index);
   return (
     <Container onClick={(e) => onClickEvent(e, index)}>
       <ButtonWrapper color={color}>
