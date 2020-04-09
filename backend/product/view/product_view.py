@@ -1,4 +1,4 @@
-import re
+import re, json
 
 from flask import request, Blueprint, jsonify, g
 from flask_request_validator import (
@@ -176,7 +176,6 @@ class ProductView():
         Param('selected_account_no', FORM, int)
     )
     def insert_new_product(*args):
-        print(args)
         """ 상품 등록 엔드포인트
 
         새로운 상품을 등록하는 엔드포인트.
@@ -228,7 +227,7 @@ class ProductView():
             'discount_end_time': args[14],
             'min_unit': args[15],
             'max_unit': args[16],
-            'tags': args[17],
+            'tags': json.loads(args[17]),
             'selected_account_no': args[18],
             'images': uploaded_images,
         }
@@ -255,28 +254,28 @@ class ProductView():
     @product_app.route("/<int:product_id>", methods=['PUT'], endpoint='update_product_info')
     @login_required
     @validate_params(
-        Param('is_available', JSON, int),
-        Param('is_on_display', JSON, int),
-        Param('product_sort_id', JSON, int),
-        Param('first_category_id', JSON, int),
-        Param('second_category_id', JSON, int),
-        Param('name', JSON, str,
+        Param('is_available', FORM, int),
+        Param('is_on_display', FORM, int),
+        Param('product_sort_id', FORM, int),
+        Param('first_category_id', FORM, int),
+        Param('second_category_id', FORM, int),
+        Param('name', FORM, str,
               rules=[Pattern(r"^((?!(?=.*\")(?=.*\')).)*$")]),
-        Param('short_description', JSON, str, required=False),
-        Param('color_filter_id', JSON, int),
-        Param('style_filter_id', JSON, int),
-        Param('long_description', JSON, str),
-        Param('youtube_url', JSON, str, required=False),
-        Param('stock', JSON, int),
-        Param('price', JSON, int),
-        Param('discount_rate', JSON, float),
-        Param('discount_start_time', JSON, str, required=False),
-        Param('discount_end_time', JSON, str, required=False),
-        Param('min_unit', JSON, int),
-        Param('max_unit', JSON, int),
-        Param('tags', JSON, list, required=False),
+        Param('short_description', FORM, str, required=False),
+        Param('color_filter_id', FORM, int),
+        Param('style_filter_id', FORM, int),
+        Param('long_description', FORM, str),
+        Param('youtube_url', FORM, str, required=False),
+        Param('stock', FORM, int),
+        Param('price', FORM, int),
+        Param('discount_rate', FORM, float),
+        Param('discount_start_time', FORM, str, required=False),
+        Param('discount_end_time', FORM, str, required=False),
+        Param('min_unit', FORM, int),
+        Param('max_unit', FORM, int),
+        Param('tags', FORM, str, required=False),
         Param('product_id', PATH, int),
-        Param('seller_account_no', JSON, int),
+        Param('seller_account_no', FORM, int),
     )
     def update_product_info(*args):
 
@@ -329,12 +328,12 @@ class ProductView():
             'youtube_url': args[10],
             'stock': args[11],
             'price': args[12],
-            'discount_rate': args[13],
+            'discount_rate': args[13]/100,
             'discount_start_time': args[14],
             'discount_end_time': args[15],
             'min_unit': args[16],
             'max_unit': args[17],
-            'tags': args[18],
+            'tags': json.loads(args[18]),
             'product_id': args[19],
             'seller_account_id': args[20],
             'images': uploaded_images,
@@ -348,6 +347,39 @@ class ProductView():
 
                 return product_update_result
 
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 500
+
+            finally:
+                try:
+                    db_connection.close()
+                except Exception as e:
+                    return jsonify({'message': f'{e}'}), 500
+        else:
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+    @product_app.route("/color", methods=["GET"])
+    def get_color_filters():
+
+        """ 상품 등록시 컬러 필터 표출 엔드포인트
+
+        Returns:
+            200: 상품 등록시 선택할 수 있는 색상 필터
+            500: 데이터 베이스 에러
+
+        Authors:
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+            2020-04-09 (leesh3@brandi.co.kr): 초기 생성
+        """
+        db_connection = get_db_connection()
+        if db_connection:
+            try:
+                product_service = ProductService()
+                get_color_result = product_service.get_color_filters(db_connection)
+
+                return get_color_result
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 500
 
