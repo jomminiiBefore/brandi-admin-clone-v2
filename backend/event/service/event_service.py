@@ -47,7 +47,7 @@ class EventService:
                 return registering_event_result
 
             # 기획전 타입이 쿠폰일 경우
-            if event_info['event_type_id'] == 2:
+            if event_info['event_type_id'] == "2":
                 registering_event_result = event_dao.register_coupon_event(event_info, db_connection)
                 return registering_event_result
 
