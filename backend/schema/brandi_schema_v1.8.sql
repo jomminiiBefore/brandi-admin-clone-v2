@@ -1,4 +1,5 @@
 drop database brandi;
+
 create database brandi character set utf8mb4 collate utf8mb4_general_ci;
 use brandi;
 
@@ -1395,30 +1396,37 @@ ALTER TABLE products
 
 INSERT INTO products (
     product_no,
-    uploader
+    uploader,
+    created_at
 ) VALUES (
     1, -- product_no
-    1 -- uploader
+    1, -- uploader
+    '2020-03-31 09:00:00' -- created_at
 ),
 (
     2, -- product_no
-    3 -- uploader
+    3, -- uploader
+    '2020-04-01 09:00:00' -- created_at
 ),
 (
     3, -- product_no
-    4 -- uploader
+    4, -- uploader
+    '2020-04-02 09:00:00' -- created_at
 ),
 (
     4, -- product_no
-    4 -- uploader
+    4, -- uploader
+    '2020-04-03 09:00:00' -- created_at
 ),
 (
     5, -- product_no
-    4 -- uploader
+    4, -- uploader
+    '2020-04-04 09:00:00' -- created_at
 ),
 (
     6, -- product_no
-    5 -- uploader
+    5, -- uploader
+    '2020-04-05 09:00:00' -- created_at
 );
 
 -- product_infos Table Create SQL

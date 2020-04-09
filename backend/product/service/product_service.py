@@ -110,9 +110,23 @@ class ProductService:
             2020-04-06 (leesh3@brandi.co.kr): 초기 생성
         """
         product_dao = ProductDao()
-        insert_new_product_result = product_dao.insert_new_product(product_info, db_connection)
-        return insert_new_product_result
+        auth_type = product_info['auth_type_id']
 
+        if auth_type == 1:
+            insert_new_product_result = product_dao.insert_new_product(product_info, db_connection)
+
+            return insert_new_product_result
+
+        elif auth_type == 2:
+            if product_info['account_no'] == product_info['selected_account_no']:
+                insert_new_product_result = product_dao.insert_new_product(product_info, db_connection)
+                return insert_new_product_result
+
+            return jsonify({'message': 'NO_AUTHORIZATION'}), 403
+
+        return jsonify({'message': 'INVALID_AUTH_ID'}), 400
+
+    # noinspection PyMethodMayBeStatic
     def update_product_info(self, product_info, db_connection):
 
         """ 상품 정보 수
@@ -135,5 +149,17 @@ class ProductService:
         """
 
         product_dao = ProductDao()
-        update_product_result = product_dao.update_product_info(product_info, db_connection)
-        return update_product_result
+        auth_type = product_info['auth_type_id']
+        if auth_type == 1:
+            update_product_result = product_dao.update_product_info(product_info, db_connection)
+
+            return update_product_result
+
+        elif auth_type == 2:
+            if product_info['token_account_no'] == product_info['seller_account_id']:
+                update_product_result = product_dao.update_product_info(product_info, db_connection)
+                return update_product_result
+
+            return jsonify({'message': 'NO_AUTHORIZATION'}), 403
+
+        return jsonify({'message': 'INVALID_AUTH_ID'}), 400

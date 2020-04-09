@@ -45,7 +45,7 @@ class ProductDao:
                 db_cursor.execute(get_stmt, {'account_no': account_no})
                 first_categories = db_cursor.fetchall()
 
-                return jsonify({'first_categories': first_categories}), 200
+                return jsonify(first_categories), 200
 
         except KeyError as e:
             print(f'KEY_ERROR_WITH {e}')
@@ -89,8 +89,7 @@ class ProductDao:
                 """
                 db_cursor.execute(get_stmt, {'first_category_no': first_category_no})
                 second_categories = db_cursor.fetchall()
-
-                return jsonify({'second_categories': second_categories}), 200
+                return jsonify(second_categories), 200
 
         except KeyError as e:
             print(f'KEY_ERROR_WITH {e}')
@@ -115,8 +114,9 @@ class ProductDao:
 
         Returns:
             200: 상품별 상세 정보
-            400: key error
-            400: database cursor error
+            400: key_error
+            404: page_not_found
+            500: database_error
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
@@ -126,18 +126,76 @@ class ProductDao:
         """
         try:
             with db_connection.cursor() as db_cursor:
+                product_info = {
+                    'product_id': product_no
+                }
+
                 get_stmt = """
-                    SELECT * FROM product_infos 
-                    INNER JOIN seller_accounts   ON product_infos.seller_id = seller_accounts.seller_account_no
-                    INNER JOIN product_tags      ON product_infos.product_info_no = product_tags.product_info_id
-                    INNER JOIN product_images    ON product_infos.product_info_no = product_images.product_info_id
-                    WHERE product_id=%(product_id)s AND close_time='2037-12-31 23:59:59.0'
-                    GROUP BY product_infos.product_info_no
+                    SELECT
+                        seller_id,
+                        is_available,
+                        is_on_display,
+                        product_sort_id,
+                        first_category_id,
+                        second_category_id,
+                        product_infos.name,
+                        short_description,
+                        color_filter_id,
+                        style_filter_id,
+                        long_description,
+                        youtube_url,
+                        stock,
+                        price,
+                        discount_rate,
+                        discount_start_time,
+                        discount_end_time,
+                        min_unit,
+                        max_unit,
+                        product_id,
+                        product_info_no,
+                        seller_account_no
+                    FROM 
+                        product_infos 
+                    INNER JOIN 
+                        seller_accounts   ON product_infos.seller_id = seller_accounts.seller_account_no
+                    WHERE 
+                        product_id=%(product_id)s 
+                    AND
+                        close_time='2037-12-31 23:59:59.0'
+                    GROUP BY
+                        product_infos.product_info_no
                 """
-                db_cursor.execute(get_stmt, {'product_id': product_no})
-                product_information = db_cursor.fetchall()
+                db_cursor.execute(get_stmt, product_info)
+                product_information = db_cursor.fetchone()
 
                 if product_information:
+                    get_tag_stmt = """
+                        SELECT
+                            name
+                        FROM
+                            product_tags
+                        WHERE
+                            product_info_id = %(product_info_no)s
+                    """
+                    db_cursor.execute(get_tag_stmt, product_information)
+                    tags = db_cursor.fetchall()
+                    product_information['tags'] = [tag['name'] for tag in tags]
+
+                    get_image_stmt = """
+                        SELECT
+                            image_order,
+                            image_url
+                        FROM
+                            product_images
+                        WHERE
+                            product_info_id = %(product_info_no)s
+                        AND
+                            image_size_id = 3                            
+                    """
+                    db_cursor.execute(get_image_stmt, product_information)
+                    images = db_cursor.fetchall()
+                    product_information['images'] = images
+
                     return jsonify(product_information), 200
                 return jsonify({'message': 'PRODUCT_DOES_NOT_EXIST'}), 404
 
@@ -171,13 +229,15 @@ class ProductDao:
                 4. product_tags
                 5. product_change_histories
 
-            400: database cursor error
+            400: key_error
+            500: database_error
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
 
         History:
             2020-04-06 (leesh3@brandi.co.kr): 초기 생성
+            2020-04-09 (leesh3@brandi.co.kr): tag, image 정보 추가 부분 리스트 표현식으로 수
         """
 
         try:
@@ -190,10 +250,15 @@ class ProductDao:
 
                 # 토큰에서 확인한 account_no를 기준으로, product 에 매칭할 seller_id를 찾음
                 get_seller_account_stmt = """
-                    SELECT seller_account_no, product_sort_id
-                    FROM seller_accounts
-                    INNER JOIN seller_infos ON seller_infos.seller_account_id = seller_accounts.seller_account_no
-                    WHERE account_id=%(account_no)s  
+                    SELECT
+                        seller_account_no,
+                        product_sort_id
+                    FROM
+                        seller_accounts
+                    INNER JOIN
+                        seller_infos ON seller_infos.seller_account_id = seller_accounts.seller_account_no
+                    WHERE
+                        account_id=%(account_no)s  
                 """
                 db_cursor.execute(get_seller_account_stmt, {'account_no': product_info['selected_account_no']})
                 seller_account = db_cursor.fetchone()
@@ -356,8 +421,9 @@ class ProductDao:
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
-            return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
+    # noinspection PyMethodMayBeStatic
     def update_product_info(self, product_info, db_connection):
 
         """ 상품 정보 수정
@@ -370,7 +436,8 @@ class ProductDao:
 
         Returns:
             200: 상품 정보 수정됨.
-            400: database cursor error
+            400: key_error
+            500: database_error
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
@@ -393,8 +460,14 @@ class ProductDao:
                 product_info['start_time'] = now
 
                 update_previous_product_info_stmt = """
-                        UPDATE product_infos SET close_time=%(close_time)s 
-                        WHERE product_id=%(product_id)s AND close_time='2037-12-31 23:59:59.0'
+                        UPDATE
+                            product_infos
+                        SET
+                            close_time=%(close_time)s 
+                        WHERE
+                            product_id=%(product_id)s
+                        AND
+                            close_time='2037-12-31 23:59:59.0'
                     """
                 db_cursor.execute(update_previous_product_info_stmt,
                                   {'close_time': now, 'product_id': product_info['product_id']})
@@ -447,7 +520,7 @@ class ProductDao:
                         %(min_unit)s,
                         %(max_unit)s,
                         %(modifier)s,
-                        %(seller_id)s,
+                        %(seller_account_id)s,
                         %(product_id)s,
                         %(start_time)s
                     )"""
@@ -460,29 +533,69 @@ class ProductDao:
                 images = product_info['images']
                 for image_set in images.keys():
                     image_order = image_set[-1]
+                    image_sizes = ['big', 'medium', 'small']
 
-                    for size in ['big', 'medium', 'small']:
-                        image_info = {
-                            'image_url': images[image_set][f'{size}_size_url'],
-                            'product_info_id': product_info_id,
-                            'image_size_id': images[image_set][f'{size}_image_size_id'],
-                            'image_order': image_order,
-                        }
+                    if images[image_set]:
+                        for size in image_sizes:
+                            image_info = {
+                                'image_url': images[image_set][f'{size}_size_url'],
+                                'product_info_id': product_info_id,
+                                'image_size_id': images[image_set][f'{size}_image_size_id'],
+                                'image_order': image_order
+                            }
 
-                        insert_image_stmt = """
-                            INSERT INTO product_images(
-                                image_url,
-                                product_info_id,
-                                image_size_id,
-                                image_order
-                            ) VALUES (
-                                %(image_url)s,
-                                %(product_info_id)s,
-                                %(image_size_id)s,
-                                %(image_order)s
-                            )
-                        """
-                        db_cursor.execute(insert_image_stmt, image_info)
+                            insert_image_stmt = """
+                                INSERT INTO product_images(
+                                    image_url,
+                                    product_info_id,
+                                    image_size_id,
+                                    image_order
+                                ) VALUES (
+                                    %(image_url)s,
+                                    %(product_info_id)s,
+                                    %(image_size_id)s,
+                                    %(image_order)s
+                                )
+                            """
+                            db_cursor.execute(insert_image_stmt, image_info)
+                    else:
+                        for image_size_id in range(1, len(image_sizes)+1):
+
+                            image_info = {
+                                'product_info_id': product_info_id,
+                                'product_id': product_info['product_id'],
+                                'image_size_id': image_size_id,
+                                'image_order': image_order,
+                                'previous_close_time': now
+                            }
+
+                            insert_image_stmt = """
+                                INSERT INTO product_images(
+                                    image_url,
+                                    image_size_id,
+                                    image_order,
+                                    product_info_id
+                                ) SELECT 
+                                    image_url,
+                                    image_size_id,
+                                    image_order,
+                                    %(product_info_id)s
+                                FROM
+                                    product_images
+                                WHERE
+                                    product_info_id=(
+                                        SELECT 
+                                            product_info_no
+                                        FROM 
+                                            product_infos 
+                                        WHERE 
+                                            product_id = %(product_id)s
+                                        AND
+                                            close_time = %(previous_close_time)s)                                        
+                                AND
+                                    image_order=%(image_order)s AND image_size_id=%(image_size_id)s                                
+                            """
+                            db_cursor.execute(insert_image_stmt, image_info)
 
                 # 3. TABLE product_tags
                 for tag in product_info['tags']:
@@ -544,4 +657,4 @@ class ProductDao:
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
-            return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
