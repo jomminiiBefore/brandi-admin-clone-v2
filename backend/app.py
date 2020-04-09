@@ -11,6 +11,7 @@ from product.view.product_view import ProductView
 from image.view.image_view import ImageView
 from event.view.event_view import EventView
 
+
 class CustomJSONEncoder(JSONEncoder):
 
     """

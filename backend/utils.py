@@ -165,6 +165,7 @@ class ImageUpload:
 
         # 파일의 존재여부 확인, 이미지 순서를 파일 이름으로 받음.
         image_file_1 = request.files.get('image_file_1', None)
+        print(image_file_1)
         image_file_2 = request.files.get('image_file_2', None)
         image_file_3 = request.files.get('image_file_3', None)
         image_file_4 = request.files.get('image_file_4', None)
@@ -179,16 +180,16 @@ class ImageUpload:
 
                 # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
                 if not ('image' in image_file_form):
-                    return jsonify({'message': 'INVALID_FILE'})
+                    return jsonify({'message': 'INVALID_FILE'}), 400
 
                 # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
                 if image_file_size > 10485760:
-                    return jsonify({'message': 'INVALID_IMAGE1'})
+                    return jsonify({'message': 'INVALID_IMAGE1'}), 405
 
                 # big_size 업로드
                 big_size_buffer = self.resize_to_big(image_file_1)
                 if not big_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
+                    return jsonify({"message": "INVALID_IMAGE"}), 401
                 s3.put_object(Body=big_size_buffer[0], Bucket="brandi-intern", Key=big_size_buffer[1],
                               ContentType='image/jpeg')
                 big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
@@ -198,7 +199,7 @@ class ImageUpload:
                 # medium_size 업로드
                 medium_size_buffer = self.resize_to_medium(image_file_1)
                 if not medium_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
+                    return jsonify({"message": "INVALID_IMAGE"}), 401
                 s3.put_object(Body=medium_size_buffer[0], Bucket="brandi-intern", Key=medium_size_buffer[1],
                               ContentType='image/jpeg')
                 medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
@@ -217,7 +218,7 @@ class ImageUpload:
 
             except Exception as e:
                 print(f'error1 : {e}')
-                return jsonify({'message' : 'INVALID_REQUEST'})
+                return jsonify({'message' : 'INVALID_REQUEST'}), 401
 
         # 순서2번의 이미지파일 이 존재하면 업로드하고 url을 딕셔너리에 추가
         if image_file_2:

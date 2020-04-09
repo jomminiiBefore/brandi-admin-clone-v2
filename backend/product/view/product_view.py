@@ -3,6 +3,7 @@ import re
 from flask import request, Blueprint, jsonify, g
 from flask_request_validator import (
     GET,
+    FORM,
     PATH,
     JSON,
     Param,
@@ -10,7 +11,7 @@ from flask_request_validator import (
     validate_params
 )
 from product.service.product_service import ProductService
-from connection import DatabaseConnection, get_db_connection
+from connection import get_db_connection
 from utils import login_required, ImageUpload
 
 
@@ -122,8 +123,7 @@ class ProductView():
 
         Returns:
             200: 상품별 상세 정보
-            400: 데이터베이스 연결 에러
-            500: server error
+            500: 데이터베이스 에러
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
@@ -141,41 +141,42 @@ class ProductView():
                 return product_infos
 
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
             finally:
                 try:
                     db_connection.close()
                 except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
+                    return jsonify({'message': f'{e}'}), 500
         else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @product_app.route('', methods=['POST'], endpoint='insert_new_product')
     @login_required
     @validate_params(
-        Param('is_available', JSON, int),
-        Param('is_on_display', JSON, int),
-        Param('first_category_id', JSON, int),
-        Param('second_category_id', JSON, int, required=False),
-        Param('name', JSON, str,
+        Param('is_available', FORM, int),
+        Param('is_on_display', FORM, int),
+        Param('first_category_id', FORM, int),
+        Param('second_category_id', FORM, int, required=False),
+        Param('name', FORM, str,
               rules=[Pattern(r"^((?!(?=.*\")(?=.*\')).)*$")]),
-        Param('short_description', JSON, str, required=False),
-        Param('color_filter_id', JSON, int),
-        Param('style_filter_id', JSON, int),
-        Param('long_description', JSON, str),
-        Param('youtube_url', JSON, str, required=False),
-        Param('stock', JSON, int),
-        Param('price', JSON, int),
-        Param('discount_rate', JSON, float),
-        Param('discount_start_time', JSON, str, required=False),
-        Param('discount_end_time', JSON, str, required=False),
-        Param('min_unit', JSON, int),
-        Param('max_unit', JSON, int),
-        Param('tags', JSON, list, required=False),
-        Param('selected_account_no', JSON, int)
+        Param('short_description', FORM, str, required=False),
+        Param('color_filter_id', FORM, int),
+        Param('style_filter_id', FORM, int),
+        Param('long_description', FORM, str),
+        Param('youtube_url', FORM, str, required=False),
+        Param('stock', FORM, int),
+        Param('price', FORM, int),
+        Param('discount_rate', FORM, float),
+        Param('discount_start_time', FORM, str, required=False),
+        Param('discount_end_time', FORM, str, required=False),
+        Param('min_unit', FORM, int),
+        Param('max_unit', FORM, int),
+        Param('tags', FORM, str, required=False),
+        Param('selected_account_no', FORM, int)
     )
     def insert_new_product(*args):
+        print(args)
         """ 상품 등록 엔드포인트
 
         새로운 상품을 등록하는 엔드포인트.
@@ -192,8 +193,7 @@ class ProductView():
 
         Returns: Http 응답코드
             200: 신규 상품 등록 성공
-            400: database cursor error
-            500: 데이터베이스 커넥션 없음
+            500: 데이터베이스 에
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
@@ -203,34 +203,8 @@ class ProductView():
 
         """
 
-        image_sample = {
-            "image_file_1": {
-                "big_image_size_id": 1,
-                "big_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/611eca76-1a93-4585-8341-e33496d595da",
-                "medium_image_size_id": 2,
-                "medium_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/b404625f-ce80-4da4-b13f-53daf0421178",
-                "small_image_size_id": 3,
-                "small_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/f64608c3-7b72-426c-b82f-795f83684385"
-            },
-            "image_file_2": {
-                "big_image_size_id": 1,
-                "big_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/41e16b52-d915-4acc-ae03-d7f62159ce88",
-                "medium_image_size_id": 2,
-                "medium_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/cc1d7434-ab5c-4f8e-a029-2683931d47ca",
-                "small_image_size_id": 3,
-                "small_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/d2951d20-039e-499c-94a9-07f7a7ab206c"
-            },
-            "image_file_3": {
-                "big_image_size_id": 1,
-                "big_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/b80b7b00-32e0-4ed3-8fda-7058662aca45",
-                "medium_image_size_id": 2,
-                "medium_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/6f863402-47f8-4a9a-a6f9-0b9a36e83806",
-                "small_image_size_id": 3,
-                "small_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/e90e65c4-1978-4b2e-b2e9-3242468c5519"
-            },
-            "image_file_4": {},
-            "image_file_5": {}
-        }
+        image_uploader = ImageUpload()
+        uploaded_images = image_uploader.upload_product_image(request)
 
         product_info = {
             'auth_type_id': g.account_info['auth_type_id'],
@@ -256,7 +230,7 @@ class ProductView():
             'max_unit': args[16],
             'tags': args[17],
             'selected_account_no': args[18],
-            'images': image_sample,
+            'images': uploaded_images,
         }
         db_connection = get_db_connection()
 
@@ -268,13 +242,13 @@ class ProductView():
                 return product_insert_result
 
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
             finally:
                 try:
                     db_connection.close()
                 except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
+                    return jsonify({'message': f'{e}'}), 500
 
         return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
@@ -302,7 +276,7 @@ class ProductView():
         Param('max_unit', JSON, int),
         Param('tags', JSON, list, required=False),
         Param('product_id', PATH, int),
-        Param('seller_id', JSON, int),
+        Param('seller_account_no', JSON, int),
     )
     def update_product_info(*args):
 
@@ -322,8 +296,7 @@ class ProductView():
 
         Returns: Http 응답코드
             200: 상품 정보 수정 성공
-            400: database cursor error
-            500: 데이터베이스 커넥션 없음
+            500: 데이터베이스 에러
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
@@ -332,48 +305,8 @@ class ProductView():
             2020-04-08 (leesh3@brandi.co.kr): 초기 생성
         """
 
-        image_sample = {
-            "image_file_1": {
-                "big_image_size_id": 1,
-                "big_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/611eca76-1a93-4585-8341-e33496d595da",
-                "medium_image_size_id": 2,
-                "medium_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/b404625f-ce80-4da4-b13f-53daf0421178",
-                "small_image_size_id": 3,
-                "small_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/f64608c3-7b72-426c-b82f-795f83684385"
-            },
-            "image_file_2": {
-                "big_image_size_id": 1,
-                "big_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/41e16b52-d915-4acc-ae03-d7f62159ce88",
-                "medium_image_size_id": 2,
-                "medium_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/cc1d7434-ab5c-4f8e-a029-2683931d47ca",
-                "small_image_size_id": 3,
-                "small_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/d2951d20-039e-499c-94a9-07f7a7ab206c"
-            },
-            "image_file_3": {
-                "big_image_size_id": 1,
-                "big_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/b80b7b00-32e0-4ed3-8fda-7058662aca45",
-                "medium_image_size_id": 2,
-                "medium_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/6f863402-47f8-4a9a-a6f9-0b9a36e83806",
-                "small_image_size_id": 3,
-                "small_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/e90e65c4-1978-4b2e-b2e9-3242468c5519"
-            },
-            "image_file_4": {
-                "big_image_size_id": 1,
-                "big_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/c82c9001-df57-4cc0-bbf2-2d81983b3c08",
-                "medium_image_size_id": 2,
-                "medium_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/4984f696-0053-4770-85a8-b1ea1f528c0a",
-                "small_image_size_id": 3,
-                "small_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/6cf0b3e0-6931-4518-8278-25ebd33075a0"
-            },
-            "image_file_5": {
-                "big_image_size_id": 1,
-                "big_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/f07683c5-ae44-4f47-9fee-a43fb2a6cc50",
-                "medium_image_size_id": 2,
-                "medium_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/9904acbb-9f87-43c7-9a61-1af1b6c4f334",
-                "small_image_size_id": 3,
-                "small_size_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/3740b9fc-065b-474b-a243-b9d2d1b5da14"
-            }
-        }
+        image_uploader = ImageUpload()
+        uploaded_images = image_uploader.upload_product_image(request)
 
         product_info = {
             'auth_type_id': g.account_info['auth_type_id'],
@@ -398,9 +331,9 @@ class ProductView():
             'min_unit': args[16],
             'max_unit': args[17],
             'tags': args[18],
-            'images': image_sample,
             'product_id': args[19],
-            'seller_id': args[20],
+            'seller_account_id': args[20],
+            'images': uploaded_images,
         }
 
         db_connection = get_db_connection()
@@ -412,12 +345,12 @@ class ProductView():
                 return product_update_result
 
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
             finally:
                 try:
                     db_connection.close()
                 except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
+                    return jsonify({'message': f'{e}'}), 500
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
