@@ -13,11 +13,11 @@ import {
   check_num,
   korean_english_number,
   lower_case,
-  check_url
+  check_url,
 } from "src/utils/regexp";
 import styles from "src/utils/styles";
 
-const SignUp = props => {
+const SignUp = (props) => {
   const [inputs, setInputs] = useState({
     id: "",
     password: "",
@@ -28,7 +28,7 @@ const SignUp = props => {
     servicecenterNumber: "",
     siteUrl: "",
     kakaoId: "",
-    instaId: ""
+    instaId: "",
   });
 
   const {
@@ -41,7 +41,7 @@ const SignUp = props => {
     servicecenterNumber,
     siteUrl,
     kakaoId,
-    instaId
+    instaId,
   } = inputs;
 
   // input안에 값이 한 개라도 들어왔을 경우 true로 변경
@@ -53,7 +53,7 @@ const SignUp = props => {
     sellerName: false,
     sellerEngName: false,
     servicecenterNumber: false,
-    siteUrl: false
+    siteUrl: false,
   });
 
   // input에 focus가 한 번이라도 됐을 경우 true로 변경
@@ -65,7 +65,7 @@ const SignUp = props => {
     sellerName: false,
     sellerEngName: false,
     servicecenterNumber: false,
-    siteUrl: false
+    siteUrl: false,
   });
 
   // 정규식 검사 결과에 따라 true로 변경
@@ -77,11 +77,11 @@ const SignUp = props => {
     sellerName: false,
     sellerEngName: false,
     servicecenterNumber: false,
-    siteUrl: false
+    siteUrl: false,
   });
 
   // 정규식 검사하는 함수
-  const setValue = e => {
+  const setValue = (e) => {
     const { name, value } = e.target;
     setInputs({ ...inputs, [name]: value });
     setIsTyped({ ...inputs, [name]: true });
@@ -102,7 +102,7 @@ const SignUp = props => {
       if (len_four.test(value)) {
         setIsValid({
           ...isValid,
-          [name]: password === value ? true : false
+          [name]: password === value ? true : false,
         });
       }
     } else if (name === "cellphoneNumber") {
@@ -138,14 +138,13 @@ const SignUp = props => {
     }
   };
 
-  const setBlur = e => {
+  const setBlur = (e) => {
     setIsBlurred({ ...isBlurred, [e.target.name]: true });
   };
 
   // RadioButton
   const [sellerTypeId, setSellerTypeId] = useState("");
-
-  const onChangeRadio = e => {
+  const onChangeRadio = (e) => {
     setSellerTypeId(e.target.value);
     console.log(e.target.value);
   };
@@ -169,7 +168,7 @@ const SignUp = props => {
     fetch(`${JMURL}/seller`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         login_id: id,
@@ -181,11 +180,11 @@ const SignUp = props => {
         center_number: servicecenterNumber,
         site_url: siteUrl,
         kakao_id: kakaoId ? kakaoId : null,
-        insta_id: instaId ? instaId : null
-      })
+        insta_id: instaId ? instaId : null,
+      }),
     })
-      .then(res => res.json())
-      .then(res => {
+      .then((res) => res.json())
+      .then((res) => {
         console.log("signup-res:: ", res);
         if (confirm("입력하신 정보로 셀러신청을 하시겠습니까?")) {
           alert(
@@ -195,7 +194,7 @@ const SignUp = props => {
         } else {
         }
       })
-      .catch(error => console.log("error::: ", error));
+      .catch((error) => console.log("error::: ", error));
   };
 
   return (
@@ -448,21 +447,20 @@ const SignUp = props => {
         </InputBox>
         <ButtonBox>
           <CustomButton
-            name={"신청"}
-            textColor={"white"}
+            name="신청"
+            textColor="white"
             color={styles.color.buttonBlue}
             onClickEvent={handleSignUp}
           />
           <CustomButton
-            name={"취소"}
-            textColor={"white"}
+            name="취소"
+            textColor="white"
             color={styles.color.buttonRed}
             onClickEvent={goToLogin}
           />
         </ButtonBox>
       </SignUpBox>
       <BottomEmpty />
-
       <Footer />
     </Container>
   );
