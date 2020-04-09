@@ -1,8 +1,9 @@
-import re
+import re, json
 
 from flask import request, Blueprint, jsonify, g
 from flask_request_validator import (
     GET,
+    FORM,
     PATH,
     JSON,
     Param,
@@ -13,8 +14,8 @@ from flask_request_validator import (
 )
 
 from seller.service.seller_service import SellerService
-from connection import get_db_connection
-from utils import login_required
+from connection import get_db_connection, DatabaseConnection
+from utils import login_required, ImageUpload
 
 
 class SellerView:
@@ -189,23 +190,24 @@ class SellerView:
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
-    @seller_app.route('/list', methods=['GET'], endpoint='get_all_sellers')
+    @seller_app.route('', methods=['GET'], endpoint='get_all_sellers')
     @login_required
-    # @validate_params(
-    #     Param('seller_account_no', PATH, int),
-    #     Param('login_id', PATH, int),
-    #     Param('name_en', PATH, str),
-    #     Param('name_kr', PATH, str),
-    #     Param('brandi_app_user_id', PATH, int),
-    #     Param('manager_name', PATH, str),
-    #     Param('seller_status', PATH, str),
-    #     Param('manager_contact_number', PATH, str),
-    #     Param('seller_type_name', PATH, str),
-    #     Param('start_time', PATH, str),
-    #     Param('close_time', PATH, str)
-    #
-    # )
-    def get_seller_list():
+    @validate_params(
+        Param('seller_account_no', GET, int, required=False),
+        Param('login_id', GET, str, required=False),
+        Param('name_en', GET, str, required=False),
+        Param('name_kr', GET, str, required=False),
+        Param('brandi_app_user_id', GET, int, required=False),
+        Param('manager_name', GET, str, required=False),
+        Param('manager_email', GET, str, required=False),
+        Param('seller_status', GET, str, required=False),
+        Param('manager_contact_number', GET, str, required=False),
+        Param('seller_type_name', GET, str, required=False),
+        Param('start_time', GET, str, required=False),
+        Param('close_time', GET, str, required=False),
+        Param('excel', GET, int, required=False)
+    )
+    def get_seller_list(*args):
 
         """ 가입된 모든 셀러 정보 리스트를 표출
 
@@ -218,7 +220,27 @@ class SellerView:
         History:
             2020-04-03 (yoonhc@brandi.co.kr): 초기 생성
         """
-        db_connection = get_db_connection()
+
+        # 데이터베이스 커넥션을 열어줌.
+        db_connection = DatabaseConnection()
+
+        # request에 통과한 쿼리파라미터를 담을 리스트를 생성.
+        request.valid_param = {}
+
+        # request안에 valid_param 리스트에 validation을 통과한 query parameter을 넣어줌.
+        request.valid_param['seller_account_no'] = args[0]
+        request.valid_param['login_id'] = args[1]
+        request.valid_param['name_en'] = args[2]
+        request.valid_param['name_kr'] = args[3]
+        request.valid_param['brandi_app_user_id'] = args[4]
+        request.valid_param['manager_name'] = args[5]
+        request.valid_param['manager_email'] = args[6]
+        request.valid_param['seller_status'] = args[7]
+        request.valid_param['manager_contact_number'] = args[8]
+        request.valid_param['seller_type_name'] = args[9]
+        request.valid_param['start_time'] = args[10]
+        request.valid_param['close_time'] = args[11]
+        request.valid_param['excel'] = args[12]
 
         # 유저 정보를 g에서 읽어와서 service에 전달
         user = g.account_info
@@ -230,91 +252,71 @@ class SellerView:
     @login_required
     @validate_params(
         Param('parameter_account_no', PATH, int),
-        Param('profile_image_url', JSON, str,
-              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
-        Param('profile_image_url', JSON, str,
-              rules=[MaxLength(200)]),
-        Param('seller_status_no', JSON, int),
-        Param('seller_type_no', JSON, int),
-        Param('name_kr', JSON, str,
+        Param('seller_status_no', FORM, int),
+        Param('seller_type_no', FORM, int),
+        Param('name_kr', FORM, str,
               rules=[Pattern(r'^[가-힣a-zA-Z0-9\ ]{1,45}$')]),
-        Param('name_en', JSON, str,
+        Param('name_en', FORM, str,
               rules=[Pattern(r'^[a-z\ ]{1,45}$')]),
-        Param('account_no', JSON, int),
-        Param('brandi_app_user_app_id', JSON, str,
+        Param('account_no', FORM, int),
+        Param('brandi_app_user_app_id', FORM, str,
               rules=[Pattern(r'^[가-힣a-zA-Z0-9]{1,45}$')]),
-        Param('ceo_name', JSON, str,
+        Param('ceo_name', FORM, str,
               rules=[Pattern(r'^[가-힣a-zA-Z0-9]{1,45}$')]),
-        Param('company_name', JSON, str,
+        Param('company_name', FORM, str,
               rules=[Pattern(r'^[가-힣a-zA-Z0-9]{1,45}$')]),
-        Param('business_number', JSON, str,
+        Param('business_number', FORM, str,
               rules=[Pattern(r'^[0-9]{3}-{1}[0-9]{2}-{1}[0-9]{5}$')]),
-        Param('certificate_image_url', JSON, str,
-              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
-        Param('certificate_image_url', JSON, str,
-              rules=[MaxLength(200)]),
-        Param('online_business_number', JSON, str,
+        Param('online_business_number', FORM, str,
               rules=[MaxLength(45)]),
-        Param('online_business_image_url', JSON, str,
-              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
-        Param('online_business_image_url', JSON, str,
-              rules=[MaxLength(200)]),
-        Param('background_image_url', JSON, str, required=False,
-              rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
-        Param('background_image_url', JSON, str,
-              rules=[MaxLength(200)]),
-        Param('short_description', JSON, str,
+        Param('short_description', FORM, str,
               rules=[MaxLength(100)]),
-        Param('long_description', JSON, str, required=False,
+        Param('long_description', FORM, str, required=False,
               rules=[MaxLength(200)]),
-        Param('long_description', JSON, str, required=False,
+        Param('long_description', FORM, str, required=False,
               rules=[MinLength(10)]),
-        Param('site_url', JSON, str,
+        Param('site_url', FORM, str,
               rules=[MaxLength(200)]),
-        Param('site_url', JSON, str,
+        Param('site_url', FORM, str,
               rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
-        Param('manager_infos', JSON, list),
-        Param('insta_id', JSON, str,
+        Param('manager_infos', FORM, str),
+        Param('insta_id', FORM, str,
               rules=[Pattern(r"^[a-z0-9_\.]{1,45}$")]),
-        Param('center_number', JSON, str,
+        Param('center_number', FORM, str,
               rules=[Pattern(r"^[0-9-]{1,14}$")]),
-        Param('kakao_id', JSON, str, required=False,
+        Param('kakao_id', FORM, str, required=False,
               rules=[Pattern(r"^[가-힣a-zA-Z0-9_\.]{1,45}$")]),
-        Param('yellow_id', JSON, str, required=False,
+        Param('yellow_id', FORM, str, required=False,
               rules=[Pattern(r"^[가-힣a-zA-Z0-9_\.]{1,45}$")]),
-        Param('zip_code', JSON, str,
+        Param('zip_code', FORM, str,
               rules=[Pattern(r"^[0-9]{5}$")]),
-        Param('address', JSON, str,
+        Param('address', FORM, str,
               rules=[MaxLength(100)]),
-        Param('detail_address', JSON, str,
+        Param('detail_address', FORM, str,
               rules=[MaxLength(100)]),
-        Param('weekday_start_time', JSON, str,
-              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}$")]),
-        Param('weekday_end_time', JSON, str,
-              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}$")]),
-        Param('weekend_start_time', JSON, str, required=False,
-              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}$")]),
-        Param('weekend_end_time', JSON, str, required=False,
-              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}$")]),
-        Param('bank_name', JSON, str,
+        Param('weekday_start_time', FORM, str,
+              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}$")]),
+        Param('weekday_end_time', FORM, str,
+              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}$")]),
+        Param('weekend_start_time', FORM, str, required=False,
+              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}$")]),
+        Param('weekend_end_time', FORM, str, required=False,
+              rules=[Pattern(r"^[0-2]{2}:[0-5]{1}[0-9]{1}:[0-5]{1}[0-9]{1}$")]),
+        Param('bank_name', FORM, str,
               rules=[MaxLength(45)]),
-        Param('bank_holder_name', JSON, str,
+        Param('bank_holder_name', FORM, str,
               rules=[MaxLength(45)]),
-        Param('account_number', JSON, str,
+        Param('account_number', FORM, str,
               rules=[MaxLength(45)]),
-        Param('seller_account_id', JSON, int),
-        Param('previous_seller_status_no', JSON, int),
+        Param('seller_account_id', FORM, int),
 
         # int 를 str 로 인식해서 정규식 유효성 확인
-        Param('seller_status_no', JSON, str,
+        Param('seller_status_no', FORM, str,
               rules=[Pattern(r"^[1-5]{1}$")]),
-        Param('seller_type_no', JSON, str,
-              rules=[Pattern(r"^[1-7]{1}$")]),
-        Param('previous_seller_status_no', JSON, str,
-              rules=[Pattern(r"^[1-5]{1}$")])
+        Param('seller_type_no', FORM, str,
+              rules=[Pattern(r"^[1-7]{1}$")])
     )
     def change_seller_info(*args):
-
         """ 계정 셀러정보 수정 엔드포인트
 
         셀러정보를 수정하는 엔드포인트 입니다.
@@ -335,7 +337,6 @@ class SellerView:
             account_no: 데코레이터에서 확인된 계정번호
 
         request.body:
-            profile_image_url 프로필 이미지 URL str 200자
             seller_status_no 셀러 상태번호 int
             seller_type_no 셀러 속성번호 int
             name_kr 셀러 한글명 str 한글,영문,숫자
@@ -346,10 +347,7 @@ class SellerView:
             ceo_name 대표자명 str
             company_name 사업자명 str
             business_number 사업자번호 str 12자리
-            certificate_image_url 사업자등록증 이미지 URL
             online_business_number 통신판매업번호 str
-            online_business_image_url 통신판매업신고필증 이미지 URL str
-            background_image_url 셀러페이지 배경이미지 URL str required False
             short_description 셀러 한줄 소개 str
             long_description 셀러 상세 소개 str required False 10글자 이상
             site_url 사이트 URL str
@@ -399,7 +397,7 @@ class SellerView:
         """
 
         # manager_infos 유효성 확인
-        manager_info_list = args[24]
+        manager_info_list = json.loads(args[16])
 
         # manger_infos 리스트를 돌면서 각각의 유효성을 충족하는지 체크
         for info in manager_info_list:
@@ -428,51 +426,49 @@ class SellerView:
             else:
                 return jsonify({"message": "NO_SPECIFIC_MANAGER_INFO"}), 400
 
+        # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url을 사전형으로 가져옴.
+        image_upload = ImageUpload()
+        seller_image = image_upload.upload_seller_image(request)
+
         # validation 확인이 된 data 를 account_info 로 재정의
         account_info = {
             'auth_type_id': g.account_info['auth_type_id'],
             'decorator_account_no': g.account_info['account_no'],
             'parameter_account_no': args[0],
-            'profile_image_url': args[1],
-            'seller_status_no': args[3],
-            'seller_type_no': args[4],
-            'name_kr': args[5],
-            'name_en': args[6],
-            'account_no': args[7],
-            'brandi_app_user_app_id': args[8],
-            'ceo_name': args[9],
-            'company_name': args[10],
-            'business_number': args[11],
-            'certificate_image_url': args[12],
-            'online_business_number': args[14],
-            'online_business_image_url': args[15],
-            'background_image_url': args[17],
-            'short_description': args[19],
-            'long_description': args[20],
-            'site_url': args[22],
-            'manager_infos': args[24],
-            'insta_id': args[25],
-            'center_number': args[26],
-            'kakao_id': args[27],
-            'yellow_id': args[28],
-            'zip_code': args[29],
-            'address': args[30],
-            'detail_address': args[31],
-            'weekday_start_time': args[32],
-            'weekday_end_time': args[33],
-            'weekend_start_time': args[34],
-            'weekend_end_time': args[35],
-            'bank_name': args[36],
-            'bank_holder_name': args[37],
-            'account_number': args[38],
-            'seller_account_id': args[39],
-            'previous_seller_status_no': args[40]
+            'profile_image_url': seller_image.get('profile_image_url', None),
+            'seller_status_no': args[1],
+            'seller_type_no': args[2],
+            'name_kr': args[3],
+            'name_en': args[4],
+            'account_no': args[5],
+            'brandi_app_user_app_id': args[6],
+            'ceo_name': args[7],
+            'company_name': args[8],
+            'business_number': args[9],
+            'certificate_image_url': seller_image.get('certificate_image_url', None),
+            'online_business_number': args[10],
+            'online_business_image_url': seller_image.get('online_business_image_url', None),
+            'background_image_url': seller_image.get('background_image_url', None),
+            'short_description': args[11],
+            'long_description': args[12],
+            'site_url': args[14],
+            'manager_infos': manager_info_list,
+            'insta_id': args[17],
+            'center_number': args[18],
+            'kakao_id': args[19],
+            'yellow_id': args[20],
+            'zip_code': args[21],
+            'address': args[22],
+            'detail_address': args[23],
+            'weekday_start_time': args[24],
+            'weekday_end_time': args[25],
+            'weekend_start_time': args[26],
+            'weekend_end_time': args[27],
+            'bank_name': args[28],
+            'bank_holder_name': args[29],
+            'account_number': args[30],
+            'seller_account_id': args[31]
         }
-
-        # 마스터 권한이 아닐 때 셀러 상태(입점 등)를 변경하려고 하면 에러 리턴
-        if account_info['auth_type_id'] != 1:
-            if account_info['seller_status_no'] != account_info['previous_seller_status_no']:
-                return jsonify({'message': 'NO_AUTHORIZATION_FOR_STATUS_CHANGE'}), 403
 
         # 데이터베이스 연결
         db_connection = get_db_connection()
@@ -595,9 +591,13 @@ class SellerView:
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
-    @seller_app.route('/status', methods=['PUT'], endpoint='change_seller_status')
+    @seller_app.route('/<int:seller_account_id>/status', methods=['PUT'], endpoint='change_seller_status')
     @login_required
-    def change_seller_status():
+    @validate_params(
+        Param('seller_account_id', PATH, int, required=False),
+        Param('seller_status_id', JSON, int, required=False)
+    )
+    def change_seller_status(*args):
         """ 마스터 권한으로 셀러 상태 변경
 
         Returns:
@@ -609,12 +609,19 @@ class SellerView:
         History:
             2020-04-05 (yoonhc@brandi.co.kr): 초기 생성
         """
-        db_connection = get_db_connection()
 
+        db_connection = DatabaseConnection()
         # 유저정보를 가져와 서비스로 넘김
         user = g.account_info
+
+        # 유효성검사를 통과한 parameter를 딕셔너리 담는다.
+        valid_param = {
+            'seller_account_id': args[0],
+            'seller_status_id': args[1]
+        }
+
         seller_service = SellerService()
-        status_change_result = seller_service.change_seller_status(request, user, db_connection)
+        status_change_result = seller_service.change_seller_status(valid_param, user, db_connection)
         return status_change_result
 
     @seller_app.route('', methods=['POST'])
