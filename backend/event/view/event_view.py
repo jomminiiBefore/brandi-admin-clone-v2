@@ -37,8 +37,7 @@ class EventView:
         # 전체 기획전 필수값
         Param('event_type_id', JSON, str,
               rules=[Pattern(r"^[1-5]{1}$")]),
-        Param('event_sort_id', JSON, str,
-              rules=[Pattern(r"^[1-14]{1,2}$")]),
+        Param('event_sort_id', JSON, int),
         Param('is_on_main', JSON, str,
               rules=[Pattern(r"^[0-1]{1}$")]),
         Param('is_on_event', JSON, str,
@@ -114,7 +113,7 @@ class EventView:
         Returns: http 응답코드
             200: SUCCESS 기획전 신규 등록 완료
             400: NO_SHORT_DESCRIPTION, BANNER_IMAGE_URL, NO_DETAIL_IMAGE_URL,
-                 NO_BUTTON_NAME, NO_BUTTON_LINK_DESCRIPTION
+                 NO_BUTTON_NAME, NO_BUTTON_LINK_DESCRIPTION, INVALID_EVENT_SORT
             403: NO_AUTHORIZATION
             500: NO_DATABASE_CONNECTION
 
@@ -161,7 +160,7 @@ class EventView:
             return jsonify({'message': 'INVALID_EVENT_TIME'}), 400
 
         # 기획전 타입이 이벤트일 경우 필수값 확인
-        if event_info['event_type_id'] == 1:
+        if event_info['event_type_id'] == "1":
             if not event_info['short_description']:
                 return jsonify({'message': 'NO_SHORT_DESCRIPTION'}), 400
 
@@ -171,19 +170,25 @@ class EventView:
             if not event_info['detail_image_url']:
                 return jsonify({'message': 'NO_DETAIL_IMAGE_URL'}), 400
 
-            # 입력 인자 관계에 따른 필수값 확인
-            if event_info['button_link_type_id']:
-                if not event_info['button_name']:
-                    return jsonify({'message': 'NO_BUTTON_NAME'}), 400
-
-                if event_info['button_link_type_id'] in [4, 5, 6]:
-                    if not event_info['button_link_description']:
-                        return jsonify({'message': 'NO_BUTTON_LINK_DESCRIPTION'}), 400
+            if event_info['event_sort_id'] not in range(1, 3):
+                return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
 
         # 기획전 타입이 쿠폰일 경우 필수값 확인
-        if event_info['event_type_id'] == 2:
+        if event_info['event_type_id'] == "2":
             if not event_info['short_description']:
                 return jsonify({'message': 'NO_SHORT_DESCRIPTION'}), 400
+
+            if event_info['event_sort_id'] not in range(3, 9):
+                return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
+
+        # 입력 인자 관계에 따른 필수값 확인
+        if event_info['button_link_type_id']:
+            if not event_info['button_name']:
+                return jsonify({'message': 'NO_BUTTON_NAME'}), 400
+
+            if event_info['button_link_type_id'] in range(4, 7):
+                if not event_info['button_link_description']:
+                    return jsonify({'message': 'NO_BUTTON_LINK_DESCRIPTION'}), 400
 
         # 데이터베이스 연결
         db_connection = get_db_connection()
