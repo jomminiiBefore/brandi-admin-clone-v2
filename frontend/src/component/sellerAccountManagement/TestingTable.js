@@ -1,31 +1,39 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
+import EnhancedTableHead from 'src/component/sellerAccountManagement/EnhancedTableHead';
+import CustomButton from 'src/component/common/CustomButton';
+import SmallButton from 'src/component/common/SmallButton';
 import clsx from 'clsx';
 import { lighten, makeStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
 import TablePagination from '@material-ui/core/TablePagination';
 import TableRow from '@material-ui/core/TableRow';
-import TableSortLabel from '@material-ui/core/TableSortLabel';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import Paper from '@material-ui/core/Paper';
 import Checkbox from '@material-ui/core/Checkbox';
 import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Switch from '@material-ui/core/Switch';
 import DeleteIcon from '@material-ui/icons/Delete';
+import Select from '@material-ui/core/Select';
 import FilterListIcon from '@material-ui/icons/FilterList';
+import DatePicker from 'react-date-picker';
+
+// select
+import MenuItem from '@material-ui/core/MenuItem';
+import FormControl from '@material-ui/core/FormControl';
+
+import style from 'src/utils/styles';
+import styled from 'styled-components';
 
 function createData(name, calories, fat, carbs, protein) {
   return { name, calories, fat, carbs, protein };
 }
 
-const rows = [
+const itemRows = [
   createData('Cupcake', 305, 3.7, 67, 4.3),
   createData('Donut', 452, 25.0, 51, 4.9),
   createData('Eclair', 262, 16.0, 24, 6.0),
@@ -51,151 +59,6 @@ function descendingComparator(a, b, orderBy) {
   return 0;
 }
 
-function getComparator(order, orderBy) {
-  return order === 'desc'
-    ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
-}
-
-function stableSort(array, comparator) {
-  const stabilizedThis = array.map((el, index) => [el, index]);
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
-  return stabilizedThis.map((el) => el[0]);
-}
-
-const headCells = [
-  {
-    id: 'name',
-    numeric: false,
-    disablePadding: true,
-    label: '',
-  },
-  { id: 'index', numeric: true, disablePadding: false, label: '번호' },
-  { id: 'sellerId', numeric: true, disablePadding: false, label: '셀러아이디' },
-  {
-    id: 'englishName',
-    numeric: true,
-    disablePadding: false,
-    label: '영문이름',
-  },
-  { id: 'koreanName', numeric: true, disablePadding: false, label: '한글이름' },
-  { id: 'sellerType', numeric: true, disablePadding: false, label: '셀러구분' },
-  {
-    id: 'memberNumber',
-    numeric: true,
-    disablePadding: false,
-    label: '회원번호',
-  },
-  {
-    id: 'managerName',
-    numeric: true,
-    disablePadding: false,
-    label: '담당자이름',
-  },
-  {
-    id: 'sellerStatus',
-    numeric: true,
-    disablePadding: false,
-    label: '셀러상태',
-  },
-  {
-    id: 'managerContact',
-    numeric: true,
-    disablePadding: false,
-    label: '담당자연락처',
-  },
-  {
-    id: 'managerEmail',
-    numeric: true,
-    disablePadding: false,
-    label: '담당자이메일',
-  },
-  {
-    id: 'sellerProperty',
-    numeric: true,
-    disablePadding: false,
-    label: '셀러속성',
-  },
-  {
-    id: 'productCount',
-    numeric: true,
-    disablePadding: false,
-    label: '상품개수',
-  },
-  {
-    id: 'urlRegisterDate',
-    numeric: true,
-    disablePadding: false,
-    label: 'URL 등록일시',
-  },
-  { id: 'actions', numeric: true, disablePadding: false, label: 'Actions' },
-];
-
-function EnhancedTableHead(props) {
-  const {
-    classes,
-    onSelectAllClick,
-    order,
-    orderBy,
-    numSelected,
-    rowCount,
-    // onRequestSort,
-  } = props;
-  //   const createSortHandler = (property) => (event) => {
-  //     onRequestSort(event, property);
-  //   };
-
-  return (
-    <TableHead>
-      <TableRow>
-        <TableCell padding="checkbox">
-          <Checkbox
-            indeterminate={numSelected > 0 && numSelected < rowCount}
-            checked={rowCount > 0 && numSelected === rowCount}
-            onChange={onSelectAllClick}
-            inputProps={{ 'aria-label': 'select all desserts' }}
-          />
-        </TableCell>
-        {headCells.map((headCell) => (
-          <TableCell
-            key={headCell.id}
-            align={headCell.numeric ? 'right' : 'left'}
-            padding={headCell.disablePadding ? 'none' : 'default'}
-            sortDirection={orderBy === headCell.id ? order : false}
-          >
-            <TableSortLabel
-              active={orderBy === headCell.id}
-              direction={orderBy === headCell.id ? order : 'asc'}
-              //   onClick={createSortHandler(headCell.id)}
-            >
-              {headCell.label}
-              {orderBy === headCell.id ? (
-                <span className={classes.visuallyHidden}>
-                  {order === 'desc' ? 'sorted descending' : 'sorted ascending'}
-                </span>
-              ) : null}
-            </TableSortLabel>
-          </TableCell>
-        ))}
-      </TableRow>
-    </TableHead>
-  );
-}
-
-EnhancedTableHead.propTypes = {
-  classes: PropTypes.object.isRequired,
-  numSelected: PropTypes.number.isRequired,
-  //   onRequestSort: PropTypes.func.isRequired,
-  onSelectAllClick: PropTypes.func.isRequired,
-  order: PropTypes.oneOf(['asc', 'desc']).isRequired,
-  orderBy: PropTypes.string.isRequired,
-  rowCount: PropTypes.number.isRequired,
-};
-
 const useToolbarStyles = makeStyles((theme) => ({
   root: {
     paddingLeft: theme.spacing(2),
@@ -218,6 +81,7 @@ const useToolbarStyles = makeStyles((theme) => ({
 
 const EnhancedTableToolbar = (props) => {
   const classes = useToolbarStyles();
+  const selectClasses = useStyles();
   const { numSelected } = props;
 
   return (
@@ -242,7 +106,7 @@ const EnhancedTableToolbar = (props) => {
           id="tableTitle"
           component="div"
         >
-          Nutrition
+          셀러 회원 리스트
         </Typography>
       )}
 
@@ -276,7 +140,7 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(2),
   },
   table: {
-    minWidth: 2000,
+    minWidth: 3500,
   },
   visuallyHidden: {
     border: 0,
@@ -289,6 +153,13 @@ const useStyles = makeStyles((theme) => ({
     top: 20,
     width: 1,
   },
+  formControl: {
+    margin: theme.spacing(1),
+    minWidth: 120,
+  },
+  selectEmpty: {
+    marginTop: theme.spacing(2),
+  },
 }));
 
 export default function TestingTable() {
@@ -299,16 +170,75 @@ export default function TestingTable() {
   const [page, setPage] = React.useState(0);
   const [dense, setDense] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  const [sellerList, setSellerList] = React.useState({ list: [], count: 0 });
+  const [sellerCount, setSellerCount] = React.useState(0);
+  const [input, setInput] = React
+    .useState
+    //   {
+    // seller_account_id: 0,
+    // login_id: '',
+    // name_en: '',
+    // name_kr: '',
+    // brandi_app_user_id: 0,
+    // manager_name: '',
+    // seller_status: '',
+    // manager_contact_number: '',
+    // manager_email: '',
+    // seller_type_name: '',
+    // created_at_start: '',
+    // created_at_end: '',
+    //   }
+    ();
 
-  //   const handleRequestSort = (event, property) => {
-  //     const isAsc = orderBy === property && order === 'asc';
-  //     setOrder(isAsc ? 'desc' : 'asc');
-  //     setOrderBy(property);
-  //   };
+  // DatePicker value 형식에 맞게 값을 저장하기 위해 별도로 state 생성
+  const [dateStart, setDateStart] = React.useState();
+  const [dateEnd, setDateEnd] = React.useState();
+
+  // 페이징에 필요한 state
+  const [limit, setLimit] = React.useState(10);
+  const [offset, setOffset] = React.useState(0);
+
+  const onChangeInput = (e) => {
+    setInput({ ...input, [e.target.name]: e.target.value });
+  };
+
+  useEffect(() => {
+    getSellerList();
+  }, []);
+
+  const getSellerList = () => {
+    fetch('http://localhost:5000/seller', {
+      method: 'GET',
+      headers: {
+        Authorization:
+          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        console.log('get::', res);
+        if (input) {
+          setSellerList({
+            ...sellerList,
+            list: res.seller_list,
+            count: res.seller_count.filtered_seller_count,
+          });
+          //   setTotalList(res.seller_count.filtered_seller_count);
+        } else {
+          setSellerList({
+            ...sellerList,
+            list: res.seller_list,
+            count: res.seller_count.total_seller_count,
+          });
+          //   setTotalList(res.seller_count.total_seller_count);
+        }
+      });
+  };
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds = rows.map((n) => n.name);
+      const newSelecteds = itemRows.map((n) => n.name);
       setSelected(newSelecteds);
       return;
     }
@@ -340,99 +270,513 @@ export default function TestingTable() {
   };
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    console.log('rowspaerpage: ', event.target.value);
+    // setRowsPerPage(parseInt(event.target.value, 10));
+    // setPage(0);
   };
 
   const handleChangeDense = (event) => {
     setDense(event.target.checked);
   };
 
+  const onSelectChange = (event) => {};
+
   const isSelected = (name) => selected.indexOf(name) !== -1;
 
   const emptyRows =
-    rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage);
+    rowsPerPage - Math.min(rowsPerPage, itemRows.length - page * rowsPerPage);
 
+  const submitDatas = () => {};
+
+  const onChangedStartPeriod = (e) => {
+    let year = e.getFullYear();
+    let month = e.getMonth() + 1;
+    let day = e.getDate();
+    let date = year + '-' + month + '-' + day;
+
+    setInput({ ...input, start_time: date });
+    setDateStart(e);
+  };
+
+  const onChangedEndPeriod = (e) => {
+    let year = e.getFullYear();
+    let month = e.getMonth() + 1;
+    let day = e.getDate();
+    let date = year + '-' + month + '-' + day;
+    setInput({ ...input, close_time: date });
+    setDateEnd(e);
+  };
+
+  // limit 값 변경시 useEffect 호출
+  useEffect(() => {
+    console.log('useEffect!!');
+    onSearch();
+  }, [limit, offset]);
+
+  const onSearch = () => {
+    console.log('onSearch(): ');
+
+    // 검색어
+    let queryString = new URLSearchParams();
+    for (let key in input) {
+      //   if (!input.hasOwnProperty()) continue;
+      queryString.append(key, input[key]);
+    }
+    if (offset) {
+      console.log('offset: ', offset * limit);
+      queryString.append('offset', offset * limit);
+    }
+    if (limit) {
+      console.log('limit: ', limit);
+      queryString.append('limit', limit);
+    }
+
+    console.log('queryString: ', queryString);
+    fetch(`http://localhost:5000/seller?${queryString}`, {
+      method: 'GET',
+      headers: {
+        Authorization:
+          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        console.log('input:::', input);
+        console.log('result:: ', res);
+        // 검색어가 있을 경우 필터된 리스트의 총 개수를 가져온다.
+        if (input) {
+          console.log('122');
+          setSellerList({
+            ...sellerList,
+            list: res.seller_list,
+            count: res.seller_count.filtered_seller_count,
+          });
+          //   setTotalList(res.seller_count.filtered_seller_count);
+        } else {
+          console.log('222');
+          setSellerList({
+            ...sellerList,
+            list: res.seller_list,
+            count: res.seller_count.total_seller_count,
+          });
+          //   setTotalList(res.seller_count.total_seller_count);
+        }
+      });
+  };
+
+  const onChangeLimit = (e) => {
+    console.log('onChangeLimit()');
+    setLimit(e.target.value);
+  };
+
+  const onIncreaseOffset = (total) => {
+    console.log('onIncreaseOffset() total: ', total, 'offset: ', offset);
+
+    // 현재 페이지가 전체 페이지보다 작을 때만 실행
+    if (offset + 1 < parseInt(totalPage)) {
+      setOffset(offset + 1);
+    }
+  };
+
+  const onDecreaseOffset = (total) => {
+    console.log('onDecreaseOffset()', total, 'offset: ', offset);
+
+    // 현재 페이지가 1보다 낮아지지 않게 하기 위한 조건식
+    if (offset + 1 > 1) {
+      setOffset(offset - 1);
+    }
+  };
+
+  const onChangeOffsetInput = (e) => {
+    console.log('onChangeOffsetInput value: ', e.target.value);
+    if (e.key === 'Enter') {
+      setOffset(e.target.value);
+    }
+  };
+
+  // 화면상 보여지는 offset 값
+  const displayOffset = offset + 1;
+  //   console.log('selected: ', selected);
+  //   console.log('input: ', input);
+  //   console.log('limit::  ', limit);
+
+  // 총 페이지 수
+  let totalPage = sellerList.count / limit;
+  totalPage = parseInt(totalPage);
+  // 총 아이템 수와 limit를 나눠서 나누어떨어지지 않으면 페이지를 하나 추가한다.
+  if (sellerList.count % limit > 0) {
+    totalPage++;
+  }
+
+  console.log('totalPage: ', parseInt(totalPage));
   return (
-    <div className={classes.root}>
-      <Paper className={classes.paper}>
-        <EnhancedTableToolbar numSelected={selected.length} />
-        <TableContainer>
-          <Table
-            className={classes.table}
-            aria-labelledby="tableTitle"
-            size={dense ? 'small' : 'medium'}
-            aria-label="enhanced table"
-          >
-            <EnhancedTableHead
-              classes={classes}
-              numSelected={selected.length}
-              order={order}
-              orderBy={orderBy}
-              onSelectAllClick={handleSelectAllClick}
-              //   onRequestSort={handleRequestSort}
-              rowCount={rows.length}
-            />
-            <TableBody>
-              {stableSort(rows, getComparator(order, orderBy))
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row, index) => {
-                  const isItemSelected = isSelected(row.name);
-                  const labelId = `enhanced-table-checkbox-${index}`;
-
-                  return (
-                    <TableRow
-                      hover
-                      onClick={(event) => handleClick(event, row.name)}
-                      role="checkbox"
-                      aria-checked={isItemSelected}
-                      tabIndex={-1}
-                      key={row.name}
-                      selected={isItemSelected}
+    <Container>
+      <div className={classes.root}>
+        <Paper className={classes.paper}>
+          <EnhancedTableToolbar numSelected={selected.length} />
+          <TableContainer>
+            <Table
+              className={classes.table}
+              aria-labelledby="tableTitle"
+              size={dense ? 'small' : 'medium'}
+              aria-label="enhanced table"
+            >
+              <EnhancedTableHead
+                classes={classes}
+                numSelected={selected.length}
+                order={order}
+                orderBy={orderBy}
+                onSelectAllClick={handleSelectAllClick}
+                //   onRequestSort={handleRequestSort}
+                rowCount={itemRows.length}
+              />
+              <TableBody>
+                <TableRow>
+                  <TableCell align="right"></TableCell>
+                  {/* 번호 */}
+                  <TableCell
+                    component="th"
+                    // id={labelId}
+                    scope="row"
+                    padding="none"
+                    align="center"
+                  >
+                    <InputForm
+                      name="seller_account_id"
+                      onChange={(e) => onChangeInput(e)}
+                    />
+                  </TableCell>
+                  {/* 셀러 아이디 */}
+                  <TableCell align="right">
+                    <InputForm
+                      name="login_id"
+                      onChange={(e) => onChangeInput(e)}
+                    />
+                  </TableCell>
+                  {/* 영문 이름 */}
+                  <TableCell align="right">
+                    <InputForm
+                      name="name_en"
+                      onChange={(e) => onChangeInput(e)}
+                    />
+                  </TableCell>
+                  {/* 한글 이름 */}
+                  <TableCell align="right">
+                    <InputForm
+                      name="name_kr"
+                      onChange={(e) => onChangeInput(e)}
+                    />
+                  </TableCell>
+                  {/* 셀러 구분 */}
+                  <TableCell align="right"></TableCell>
+                  {/* 회원 번호 */}
+                  <TableCell align="right">
+                    <InputForm
+                      name="brandi_app_user_id"
+                      onChange={(e) => onChangeInput(e)}
+                    />
+                  </TableCell>
+                  {/* 담당자 이름 */}
+                  <TableCell align="right">
+                    <InputForm
+                      name="manager_name"
+                      onChange={(e) => onChangeInput(e)}
+                    />
+                  </TableCell>
+                  {/* 셀러 상태 */}
+                  <TableCell align="right">
+                    <FormControl
+                      variant="outlined"
+                      className={classes.formControl}
+                      margin="dense"
                     >
-                      <TableCell padding="checkbox">
-                        <Checkbox
-                          checked={isItemSelected}
-                          inputProps={{ 'aria-labelledby': labelId }}
-                        />
-                      </TableCell>
-                      <TableCell
-                        component="th"
-                        id={labelId}
-                        scope="row"
-                        padding="none"
+                      {/* <InputLabel id="demo-simple-select-outlined-label">
+                        Select
+                      </InputLabel> */}
+                      <Select
+                        name="seller_status"
+                        value=""
+                        onChange={(e) => onChangeInput(e)}
                       >
-                        {row.name}
-                      </TableCell>
-                      <TableCell align="right">{row.calories}</TableCell>
-                      <TableCell align="right">{row.fat}</TableCell>
-                      <TableCell align="right">{row.carbs}</TableCell>
-                      <TableCell align="right">{row.protein}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              {emptyRows > 0 && (
-                <TableRow style={{ height: (dense ? 33 : 53) * emptyRows }}>
-                  <TableCell colSpan={6} />
+                        <MenuItem value="">
+                          <em>Select</em>
+                        </MenuItem>
+                        <MenuItem value="입점">입점</MenuItem>
+                        <MenuItem value="입점대기">입점대기</MenuItem>
+                        <MenuItem value="퇴점">퇴점</MenuItem>
+                        <MenuItem value="퇴점대기">퇴점대기</MenuItem>
+                        <MenuItem value="휴점">휴점</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </TableCell>
+                  {/* 담당자 연락처 */}
+                  <TableCell align="right">
+                    <InputForm
+                      name="manager_contact_number"
+                      onChange={(e) => onChangeInput(e)}
+                    />
+                  </TableCell>
+                  {/* 담당자 이메일 */}
+                  <TableCell align="right">
+                    <InputForm
+                      name="manager_email"
+                      onChange={(e) => onChangeInput(e)}
+                    />
+                  </TableCell>
+                  {/* 셀러 속성 */}
+                  <TableCell align="right">
+                    <FormControl
+                      variant="outlined"
+                      className={classes.formControl}
+                      margin="dense"
+                    >
+                      {/* <InputLabel id="demo-simple-select-outlined-label">
+                        Select
+                      </InputLabel> */}
+                      <Select
+                        name="seller_type_name"
+                        value=""
+                        onChange={(e) => onChangeInput(e)}
+                      >
+                        <MenuItem value="">
+                          <em>Select</em>
+                        </MenuItem>
+                        <MenuItem value="쇼핑몰">쇼핑몰</MenuItem>
+                        <MenuItem value="마켓">마켓</MenuItem>
+                        <MenuItem value="로드샵">로드샵</MenuItem>
+                        <MenuItem value="디자이너브랜드">
+                          디자이너브랜드
+                        </MenuItem>
+                        <MenuItem value="제너럴브랜드">제너럴브랜드</MenuItem>
+                        <MenuItem value="내셔널브랜드">내셔널브랜드</MenuItem>
+                        <MenuItem value="뷰티">뷰티</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </TableCell>
+                  <TableCell align="right"></TableCell>
+                  <TableCell align="right"></TableCell>
+                  <TableCell align="right">
+                    <DatePickerContainer>
+                      <DatePickerWrapper>
+                        <DatePicker
+                          onChange={onChangedStartPeriod}
+                          value={dateStart}
+                          name="start_time"
+                        />
+                      </DatePickerWrapper>
+                      <div>
+                        <DatePicker
+                          onChange={onChangedEndPeriod}
+                          value={dateEnd}
+                          name="close_time"
+                        />
+                      </div>
+                    </DatePickerContainer>
+                  </TableCell>
+                  <TableCell align="right">
+                    <SmallButton
+                      name="Search"
+                      color="#f0ac4e"
+                      textColor="#fff"
+                      onClickEvent={onSearch}
+                    />
+                    <SmallButton
+                      name="Reset"
+                      color="#d9534f"
+                      textColor="#fff"
+                      //   onClickEvent={}
+                    />
+                  </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        {/* <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={rows.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onChangePage={handleChangePage}
-          onChangeRowsPerPage={handleChangeRowsPerPage}
-        /> */}
-      </Paper>
-      {/* <FormControlLabel
+
+                {
+                  // stableSort(itemRows, getComparator(order, orderBy))
+                  //   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+
+                  sellerList.list.map((row, index) => {
+                    console.log('index: ', index);
+                    const isItemSelected = isSelected(row.seller_account_id);
+                    const labelId = `enhanced-table-checkbox-${index}`;
+
+                    return (
+                      <TableRow
+                        hover
+                        role="checkbox"
+                        aria-checked={isItemSelected}
+                        tabIndex={-1}
+                        key={row.seller_account_id}
+                        selected={isItemSelected}
+                      >
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            checked={isItemSelected}
+                            inputProps={{ 'aria-labelledby': labelId }}
+                            onClick={(event) =>
+                              handleClick(event, row.seller_account_id)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell
+                          component="th"
+                          id={labelId}
+                          scope="row"
+                          padding="none"
+                          align="center"
+                        >
+                          {row.seller_account_id}
+                        </TableCell>
+                        <TableCell align="right">{row.login_id}</TableCell>
+                        <TableCell align="right">{row.name_en}</TableCell>
+                        <TableCell align="right">{row.name_kr}</TableCell>
+                        <TableCell align="right">일반셀러</TableCell>
+                        <TableCell align="right">
+                          {row.brandi_app_user_id}
+                        </TableCell>
+                        <TableCell align="right">{row.manager_name}</TableCell>
+                        <TableCell align="right">{row.seller_status}</TableCell>
+                        <TableCell align="right">
+                          {row.manager_contact_number}
+                        </TableCell>
+                        <TableCell align="right">{row.manager_email}</TableCell>
+                        <TableCell align="right">
+                          {row.seller_type_name}
+                        </TableCell>
+                        <TableCell align="right">{row.product_count}</TableCell>
+                        <TableCell align="right">
+                          <a href={row.site_url}>{row.site_url}</a>
+                        </TableCell>
+                        <TableCell align="right">{row.created_at}</TableCell>
+                        <TableCell align="right">
+                          {/* {console.log('row:: ', row.action)} */}
+                          {row.action &&
+                            row.action.map((item, key) => {
+                              //휴점신청 F0AC4E 퇴점신청처리 D9534F 휴점해제 5CB85B 입점승인 5BC0DE
+                              let color;
+                              if (item === '휴점 신청') {
+                                color = '#f0ac4e';
+                              } else if (
+                                item === '퇴점 신청 처리' ||
+                                item === '입점 거절' ||
+                                item === '퇴점 확정 처리'
+                              ) {
+                                color = '#d9534f';
+                              } else if (
+                                item === '휴점 해제' ||
+                                item === '퇴점 철회 처리'
+                              ) {
+                                color = '#5cb85b';
+                              } else if (item === '입점 승인') {
+                                color = '#5bc0d3';
+                              }
+
+                              return (
+                                <SmallButton
+                                  key={key}
+                                  name={item}
+                                  color={color}
+                                  textColor="#fff"
+                                  //   onClickEvent={}
+                                />
+                              );
+                            })}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                }
+                {emptyRows > 0 && (
+                  <TableRow style={{ height: (dense ? 33 : 53) * emptyRows }}>
+                    <TableCell colSpan={6} />
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <PaginationContainer>
+            {offset > 0 && (
+              <CustomButton
+                name="<"
+                onClickEvent={() => onDecreaseOffset(totalPage)}
+              />
+            )}
+            <PaginationInputForm
+              type="text"
+              onKeyPress={onChangeOffsetInput}
+              //   value="1"
+              placeholder="1"
+            />
+            {offset + 1 < parseInt(totalPage) && (
+              <CustomButton
+                name=">"
+                onClickEvent={() => onIncreaseOffset(totalPage)}
+              />
+            )}
+            of {parseInt(totalPage)} | View
+            <FormControl
+              variant="outlined"
+              className={classes.formControl}
+              margin="dense"
+            >
+              {/* <InputLabel id="demo-simple-select-outlined-label">
+                        Select
+                      </InputLabel> */}
+              <Select
+                name="limit"
+                value={limit}
+                onChange={(e) => onChangeLimit(e)}
+              >
+                <MenuItem value="">
+                  <em>Select</em>
+                </MenuItem>
+                <MenuItem value="10">10</MenuItem>
+                <MenuItem value="20">20</MenuItem>
+                <MenuItem value="50">50</MenuItem>
+                <MenuItem value="100">100</MenuItem>
+                <MenuItem value="150">150</MenuItem>
+              </Select>
+            </FormControl>
+            <span>records | Found total {sellerList.count} records</span>
+          </PaginationContainer>
+        </Paper>
+        {/* <FormControlLabel
         control={<Switch checked={dense} onChange={handleChangeDense} />}
         label="Dense padding"
       /> */}
-    </div>
+      </div>
+    </Container>
   );
 }
+
+const Container = styled.div`
+  padding: 10px 20px 20px 20px;
+`;
+
+const InputForm = styled.input`
+  height: 30px;
+  width: 100%;
+  border: 1px solid #bdbdbd;
+`;
+
+const DatePickerContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const DatePickerWrapper = styled.div`
+  margin-bottom: 5px;
+`;
+
+const PaginationContainer = styled.div`
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+`;
+
+const PaginationInputForm = styled.input`
+  height: 30px;
+  width: 45px;
+  border: 1px solid #bdbdbd;
+  padding: 6px 10px;
+  text-align: center;
+`;

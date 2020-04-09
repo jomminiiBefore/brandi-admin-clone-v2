@@ -11,6 +11,7 @@ import Checkbox from '@material-ui/core/Checkbox';
 import { withStyles } from '@material-ui/core/styles';
 import style from 'src/utils/styles';
 import styled from 'styled-components';
+import TestingTable from './TestingTable';
 
 const styles = (theme) => ({
   root: {

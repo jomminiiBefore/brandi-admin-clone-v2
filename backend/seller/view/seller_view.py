@@ -125,6 +125,7 @@ class SellerView:
     )
     def get_seller_info(*args):
 
+
         """ 계정 셀러정보 표출 엔드포인트
 
         셀러정보를 표출하는 엔드포인트 입니다.

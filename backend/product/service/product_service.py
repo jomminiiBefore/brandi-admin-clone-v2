@@ -149,6 +149,7 @@ class ProductService:
         """
 
         product_dao = ProductDao()
+<<<<<<< HEAD
         auth_type = product_info['auth_type_id']
         if auth_type == 1:
             update_product_result = product_dao.update_product_info(product_info, db_connection)
@@ -183,3 +184,36 @@ class ProductService:
         """
         product_dao = ProductDao()
         return product_dao.get_color_filters(db_connection)
+=======
+        update_product_result = product_dao.update_product_info(product_info, db_connection)
+        return update_product_result
+
+    # noinspection PyMethodMayBeStatic
+    def get_product_list(self, request, user, db_connection):
+
+        """ 모든 상품 정보 리스트 출력
+        Args:
+            request: 클라이언트에서 온 요청
+            user: 유저 정보
+            db_connection: 데이터베이스 커넥션 객체
+
+        Returns:
+            200: 모든 상 정보 리스트
+           403: 열람 권한 없음
+
+        Authors:
+            kimsj5@brandi.co.kr (김승)
+
+        History:
+            2020-04-09 (kimsj5@brandi.co.kr): 초기 생성
+
+        """
+
+        product_dao = ProductDao()
+        auth_type_id = user.get('auth_type_id', None)
+
+        # 마스터 유저이면 dao에 db_connection 전달
+        if auth_type_id == 1:
+            product_list_result = product_dao.get_product_list(request, db_connection)
+            return product_list_result
+>>>>>>> d4a5c04... wip2

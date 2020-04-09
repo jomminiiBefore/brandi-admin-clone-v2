@@ -946,6 +946,20 @@ const Main = () => {
             </SellerStateContainer>
           </TableItem>
         </TableBox>
+        <ButtonsContainer>
+          <CustomButton
+            name="수정"
+            color="#5cb85b"
+            textColor="#fff"
+            // onClickEvent={onClick}
+          />
+          <CustomButton
+            name="취소"
+            color="#fff"
+            textColor="#000"
+            // onClickEvent={onClick}
+          />
+        </ButtonsContainer>
       </Container>
       {passwordModal && <PasswordModal showPasswordModal={showPasswordModal} />}
     </>
@@ -1013,4 +1027,9 @@ const SellerStateChangeUser = styled.div`
   font-size: 13px;
   padding: 8px;
   align-self: center;
+`;
+
+const ButtonsContainer = styled.div`
+  display: flex;
+  justify-content: center;
 `;

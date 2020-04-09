@@ -3,6 +3,7 @@ import Layout from 'src/component/common/Layout';
 import Main from 'src/component/sellerAccountManagement/Main';
 import style from 'src/utils/styles';
 import styled from 'styled-components';
+import TestingTable from 'src/component/sellerAccountManagement/TestingTable';
 
 const SellerAccountManagement = () => {
   return (
@@ -20,7 +21,7 @@ const SellerAccountManagement = () => {
           </CategoryText>
         </PageBar>
         {/* main */}
-        <Main />
+        <TestingTable />
       </Container>
     </Layout>
   );
