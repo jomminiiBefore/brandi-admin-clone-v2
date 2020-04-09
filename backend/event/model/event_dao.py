@@ -236,3 +236,97 @@ class EventDao:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
+
+    # noinspection PyMethodMayBeStatic
+    def get_event_types(self, db_connection):
+
+        """ 기획전 타입 목록 표출
+
+        기획전 전체 타입 목록을 표출합니다.
+
+        Args:
+            db_connection: 데이터베이스 커넥션 객체
+
+        Returns:
+            200: 기획전 타입 목록
+            500: INVALID_KEY, DB_CURSOR_ERROR
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-09 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+        try:
+            with db_connection.cursor() as db_cursor:
+                select_statement = """
+                    SELECT 
+                    event_type_no as event_type_id,
+                    name as event_type_name
+                    FROM event_types
+                    ORDER BY event_type_no
+                """
+
+                db_cursor.execute(select_statement)
+                types = db_cursor.fetchall()
+
+                return jsonify({'event_types': types}), 200
+
+        except KeyError as e:
+            print(f'KEY_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'INVALID_KEY'}), 500
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
+
+    # noinspection PyMethodMayBeStatic
+    def get_event_sorts(self, event_type_info, db_connection):
+
+        """ 기획전 타입별 종류 목록 표출
+
+        기획전 특정 타입별 종류 목록을 표출합니다.
+
+        Args:
+            event_type_info: 이벤트 타입 정보
+            db_connection: 데이터베이스 커넥션 객체
+
+        Returns:
+            200: 기획전 타입 목록
+            500: INVALID_KEY, DB_CURSOR_ERROR
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-09 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+        try:
+            with db_connection.cursor() as db_cursor:
+                select_statement = """
+                    SELECT 
+                    event_sort_no as event_sort_id,
+                    name as event_sort_name
+                    FROM event_sorts
+                    WHERE event_type_id = %(event_type_id)s
+                    ORDER BY event_sort_no
+                """
+
+                db_cursor.execute(select_statement, event_type_info)
+                sorts = db_cursor.fetchall()
+
+                return jsonify({'event_sorts': sorts}), 200
+
+        except KeyError as e:
+            print(f'KEY_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'INVALID_KEY'}), 500
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500

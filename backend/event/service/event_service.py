@@ -53,3 +53,57 @@ class EventService:
 
         except Exception as e:
             return jsonify({'message': f'{e}'}), 400
+
+    # noinspection PyMethodMayBeStatic
+    def get_event_types(self, db_connection):
+
+        """ 기획전 타입 목록 표출
+
+        기획전 전체 타입 목록을 표출합니다.
+
+        Args:
+            db_connection: 데이터베이스 커넥션 객체
+
+        Returns:
+            200: 기획전 타입 목록
+            500: DB_CURSOR_ERROR, INVALID_KEY
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-09 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+
+        event_dao = EventDao()
+        types = event_dao.get_event_types(db_connection)
+
+        return types
+
+    # noinspection PyMethodMayBeStatic
+    def get_event_sorts(self, event_type_info, db_connection):
+        """ 기획전 타입별 종류 목록 표출
+
+        기획전 특정 타입별 종류 목록을 표출합니다.
+
+        Args:
+            event_type_info: 이벤트 타입 정보
+            db_connection: 데이터베이스 커넥션 객체
+
+        Returns:
+            200: 기획전 타입별 종류 목록
+            500: DB_CURSOR_ERROR, INVALID_KEY
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-09 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+
+        event_dao = EventDao()
+        sorts = event_dao.get_event_sorts(event_type_info, db_connection)
+
+        return sorts

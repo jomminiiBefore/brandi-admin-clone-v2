@@ -209,3 +209,98 @@ class EventView:
                     return jsonify({'message': f'{e}'}), 400
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+    @event_app.route("/type", methods=["GET"])
+    @login_required
+    def get_event_types():
+
+        """ 기획전 타입 표출 엔드포인트
+
+        기획전 타입 표출 엔드포인트 입니다.
+        기획전 등록페이지에서 기획전 타입 목록을 표출할때 사용됩니다.
+
+        Returns:
+            200: 기획전 타입 목록
+            500: DB_CURSOR_ERROR, INVALID_KEY, NO_DATABASE_CONNECTION
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-09 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+
+        db_connection = get_db_connection()
+        if db_connection:
+            try:
+                event_service = EventService()
+                types = event_service.get_event_types(db_connection)
+
+                return types
+
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 400
+
+            finally:
+                try:
+                    db_connection.close()
+
+                except Exception as e:
+                    return jsonify({'message': f'{e}'}), 400
+        else:
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+    @event_app.route("/type/<int:event_type_id>", methods=["GET"], endpoint='get_event_sorts')
+    @login_required
+    @validate_params(
+        Param('event_type_id', PATH, str,
+              rules=[Pattern(r"^[1-5]{1}$")])
+    )
+    def get_event_sorts(*args):
+
+        """ 기획전 타입별 종류 표출 엔드포인트
+
+        기획전 타입별 종류 표출 엔드포인트 입니다.
+        기획전 등록페이지에서 기획전 타입 별 목록을 표출할때 사됩니다.
+
+        Args:
+            *args: 유효성 검사를 통과한 파라미터
+
+        url Parameter:
+            event_type_id: 기획전 타입 아이디
+
+        Returns:
+            200: 기획전 타입별 종류 목록
+            500: DB_CURSOR_ERROR, INVALID_KEY, NO_DATABASE_CONNECTION
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-09 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+
+        # event_type_id 저장
+        event_type_info = {"event_type_id": args[0]}
+
+        db_connection = get_db_connection()
+        if db_connection:
+            try:
+                event_service = EventService()
+                sorts = event_service.get_event_sorts(event_type_info, db_connection)
+
+                return sorts
+
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 400
+
+            finally:
+                try:
+                    db_connection.close()
+
+                except Exception as e:
+                    return jsonify({'message': f'{e}'}), 400
+        else:
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
