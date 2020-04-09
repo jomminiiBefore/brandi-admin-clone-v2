@@ -442,101 +442,84 @@ class ImageUpload:
         background_image = request.files.get('background_image', None)
 
         # 필수로 들어와야 하는 파일의 존재여부 확인.
-        if seller_profile_image and certificate_image and online_business_image:
-            try:
-                # 들어온 파일의 사이즈를 구함.
-                image_file_size = os.fstat(seller_profile_image.fileno()).st_size
-                image_file_form = seller_profile_image.content_type
+        if seller_profile_image:
 
-                # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
-                if not ('image' in image_file_form):
-                    return jsonify({'message': 'INVALID_FILE1'}), 400
 
-                # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
-                if image_file_size > 10485760:
-                    return jsonify({'message': 'INVALID_IMAGE1'}), 400
+            # 들어온 파일의 사이즈를 구함.
+            image_file_size = os.fstat(seller_profile_image.fileno()).st_size
+            image_file_form = seller_profile_image.content_type
 
-                uploaded_image_name = str(uuid.uuid4())
-                s3 = get_s3_connection()
-                s3.put_object(Body=seller_profile_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
-                uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
-                data["profile_image_url"] = uploaded_image_url
+            # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
+            if not ('image' in image_file_form):
+                return jsonify({'message': 'INVALID_FILE1'}), 400
 
-            except Exception as e:
-                print(f'Error : {e}')
-                return jsonify({'message': f'INVALID_REQUEST1'}), 400
+            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            if image_file_size > 10485760:
+                return jsonify({'message': 'INVALID_IMAGE1'}), 400
 
-            try:
-                # 들어온 파일의 사이즈를 구함.
-                image_file_size = os.fstat(certificate_image.fileno()).st_size
-                image_file_form = certificate_image.content_type
+            uploaded_image_name = str(uuid.uuid4())
+            s3 = get_s3_connection()
+            s3.put_object(Body=seller_profile_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
+            uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
+            data["s3_profile_image_url"] = uploaded_image_url
 
-                # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
-                if not ('image' in image_file_form):
-                    return jsonify({'message': 'INVALID_FILE2'}), 400
+        if certificate_image:
 
-                # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
-                if image_file_size > 10485760:
-                    return jsonify({'message': 'INVALID_IMAGE2'}), 400
+            # 들어온 파일의 사이즈를 구함.
+            image_file_size = os.fstat(certificate_image.fileno()).st_size
+            image_file_form = certificate_image.content_type
 
-                uploaded_image_name = str(uuid.uuid4())
-                s3 = get_s3_connection()
-                s3.put_object(Body=certificate_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
-                uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
-                data["certificate_image_url"] = uploaded_image_url
+            # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
+            if not ('image' in image_file_form):
+                return jsonify({'message': 'INVALID_FILE2'}), 400
 
-            except Exception as e:
-                print(f'Error : {e}')
-                return jsonify({'message': 'INVALID_REQUEST2'}), 400
+            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            if image_file_size > 10485760:
+                return jsonify({'message': 'INVALID_IMAGE2'}), 400
 
-            try:
-                # 들어온 파일의 사이즈를 구함.
-                image_file_size = os.fstat(online_business_image.fileno()).st_size
-                image_file_form = online_business_image.content_type
+            uploaded_image_name = str(uuid.uuid4())
+            s3 = get_s3_connection()
+            s3.put_object(Body=certificate_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
+            uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
+            data["s3_certificate_image_url"] = uploaded_image_url
 
-                # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
-                if not ('image' in image_file_form):
-                    return jsonify({'message': 'INVALID_FILE3'}), 400
+        if online_business_image:
+            # 들어온 파일의 사이즈를 구함.
+            image_file_size = os.fstat(online_business_image.fileno()).st_size
+            image_file_form = online_business_image.content_type
 
-                # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
-                if image_file_size > 10485760:
-                    return jsonify({'message': 'INVALID_IMAGE3'}), 400
+            # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
+            if not ('image' in image_file_form):
+                return jsonify({'message': 'INVALID_FILE3'}), 400
 
-                uploaded_image_name = str(uuid.uuid4())
-                s3 = get_s3_connection()
-                s3.put_object(Body=online_business_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
-                uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
-                data["online_business_image_url"] = uploaded_image_url
+            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            if image_file_size > 10485760:
+                return jsonify({'message': 'INVALID_IMAGE3'}), 400
 
-            except Exception as e:
-                print(f'Error : {e}')
-                return jsonify({'message': 'INVALID_REQUEST3'}), 400
-
-        else:
-            return jsonify({'message': f'INVALID_REQUEST'}), 400
+            uploaded_image_name = str(uuid.uuid4())
+            s3 = get_s3_connection()
+            s3.put_object(Body=online_business_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
+            uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
+            data["s3_online_business_image_url"] = uploaded_image_url
 
         if background_image:
-            try:
-                # 들어온 파일의 사이즈를 구함.
-                image_file_size = os.fstat(background_image.fileno()).st_size
-                image_file_form = background_image.content_type
 
-                # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
-                if not ('image' in image_file_form):
-                    return jsonify({'message': 'INVALID_FILE4'}), 400
+            # 들어온 파일의 사이즈를 구함.
+            image_file_size = os.fstat(background_image.fileno()).st_size
+            image_file_form = background_image.content_type
 
-                # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
-                if image_file_size > 10485760:
-                    return jsonify({'message': 'INVALID_IMAGE4'}), 400
+            # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
+            if not ('image' in image_file_form):
+                return jsonify({'message': 'INVALID_FILE4'}), 400
 
-                uploaded_image_name = str(uuid.uuid4())
-                s3 = get_s3_connection()
-                s3.put_object(Body=background_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
-                uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
-                data["background_image_url"] = uploaded_image_url
+            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            if image_file_size > 10485760:
+                return jsonify({'message': 'INVALID_IMAGE4'}), 400
 
-            except Exception as e:
-                print(f'Error : {e}')
-                return jsonify({'message': 'INVALID_REQUEST4'}), 400
+            uploaded_image_name = str(uuid.uuid4())
+            s3 = get_s3_connection()
+            s3.put_object(Body=background_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
+            uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
+            data["s3_background_image_url"] = uploaded_image_url
 
         return data
