@@ -1,4 +1,4 @@
-import re
+import re, json
 from datetime import datetime
 
 from flask import request, Blueprint, jsonify, g
@@ -67,8 +67,7 @@ class EventView:
               rules=[Pattern(r"^[1-6]{1}$")]),
         Param('button_link_description', JSON, str, required=False,
               rules=[MaxLength(45)]),
-        Param('product_order', JSON, int, required=False),
-        Param('product_id', JSON, int, required=False),
+        Param('product', JSON, list, required=False),
         Param('youtube_url', JSON, str, required=False,
               rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
         Param('youtube_url', JSON, str, required=False,
@@ -119,10 +118,12 @@ class EventView:
 
         Authors:
             leejm3@brandi.co.kr (이종민)
+            yoonhc@brandi.co.kr (윤희철)
 
         History:
             2020-04-07 (leejm3@brandi.co.kr): 초기생성 / 이벤트 기획전 부분 작성
             2020-04-08 (leejm3@brandi.co.kr): 기획전 기간 밸리데이션 추가
+            2020-04-10 (yoonhc@brandi.co.kr): 상품(이미지), 상품(텍스트), 유튜브 기획전 작성
 
         """
 
@@ -145,12 +146,13 @@ class EventView:
             'button_name': args[13],
             'button_link_type_id': args[14],
             'button_link_description': args[15],
-            'product_order': args[16],
-            'product_id': args[17],
-            'youtube_url': args[18],
+            'youtube_url': args[17],
             'auth_type_id': g.account_info['auth_type_id'],
             'account_no': g.account_info['account_no']
             }
+
+        # 이벤트 상품을 service로 넘길 변수에 담아준다. None이 들어와도 일단 넘긴다.
+        event_product_info = args[16]
 
         # 기획전 기간 밸리데이션
         now = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M')
@@ -158,6 +160,10 @@ class EventView:
         # 시작시간이 현재 시간보다 전이거나 시작시간이 종료시간보다 늦으면 에러 반환
         if event_info['event_start_time'] < now or event_info['event_start_time'] > event_info['event_end_time']:
             return jsonify({'message': 'INVALID_EVENT_TIME'}), 400
+        
+        if not (event_info['event_type_id'] and event_info['event_sort_id'] 
+                and event_info['is_on_main'] and event_info['is_on_event'] and event_info['name']):
+            return jsonify({'message': 'MISSING_PREREQUISITE'}), 400
 
         # 기획전 타입이 이벤트일 경우 필수값 확인
         if event_info['event_type_id'] == "1":
@@ -181,6 +187,36 @@ class EventView:
             if event_info['event_sort_id'] not in range(3, 9):
                 return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
 
+        # 기획전 타입이 상품(이미지)일 경우 필수값 확인
+        if event_info['event_type_id'] == "3":
+            if not event_info['banner_image_url']:
+                return jsonify({'message': 'MISSING_BANNAER_IMAGE'}), 400
+
+            if not event_info['detail_image_url']:
+                return jsonify({'message': 'MISSING_DETAIL_IMAGE'}), 400
+            
+            if event_info['event_sort_id'] not in range(9,11):
+                return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
+
+        # 기획전 타입이 상품(텍스트)일 경우 필수값 확인
+        if event_info['event_type_id'] == "4":
+            if not event_info['short_description']:
+                return jsonify({'message': 'MISSING_SHORT_DESC'}), 400
+
+            if not event_info['banner_image_url']:
+                return jsonify({'message': 'MISSING_BANNER_IMAGE'}), 400
+
+        # 기획전 타입이 유튜브일 경우 필수값 확인
+        if event_info['event_type_id'] == "5":
+            if not event_info['short_description']:
+                return jsonify({'message': 'MISSING_SHORT_DESC'}), 400
+
+            if not event_info['banner_image_url']:
+                return jsonify({'message': 'MISSING_BANNER_IMAGE'}), 400
+
+            if not event_info['youtube_url']:
+                return jsonify({'message': 'MISSING_YOUTUBE_URL'}), 400
+
         # 입력 인자 관계에 따른 필수값 확인
         if event_info['button_link_type_id']:
             if not event_info['button_name']:
@@ -196,7 +232,7 @@ class EventView:
             try:
                 event_service = EventService()
 
-                registering_event_result = event_service.register_event(event_info, db_connection)
+                registering_event_result = event_service.register_event(event_info, db_connection, event_product_info)
                 return registering_event_result
 
             except Exception as e:
@@ -208,7 +244,7 @@ class EventView:
                 except Exception as e:
                     return jsonify({'message': f'{e}'}), 400
         else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+            return jsonify({'view_message': 'NO_DATABASE_CONNECTION'}), 500
 
     @event_app.route("/type", methods=["GET"])
     @login_required

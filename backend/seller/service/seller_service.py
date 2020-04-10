@@ -12,9 +12,9 @@ class SellerService:
 
     """ 셀러 서비스
 
-   Authors:
+    Authors:
         leesh3@brandi.co.kr (이소헌)
-   History:
+    History:
         2020-03-25 (leesh3@brandi.co.kr): 초기 생성
 
     """
@@ -246,8 +246,8 @@ class SellerService:
             db_connection: 데이터베이스 커넥션 객체
 
         Returns:
-            200: 가입된 모든 셀러 정보 리스트
-           403: 열람 권한 없음
+            seller_list_result: 셀러 정보 리스트
+            403: auth_type_id가 1(마스터)이 아니면 열람 권한 없음
 
         Authors:
             yoonhc@brandi.co.kr (윤희철)
@@ -271,20 +271,21 @@ class SellerService:
 
         """ 마스터 권한 셀러 상태 변경
             Args:
-                request: 클라이언트에서 온 요청
+                valid_param: 유효성검사를 통과한 parameter
                 user: 유저 정보
                 db_connection: 데이터베이스 커넥션 객체
 
             Returns:
                 200: 수정 성공
                 400: value값이 정확하게 안들어 온 경우
-                403: 수정 권한 없음
+                403: 마스터 권한이 아닌 경우 수정 권한 없음
 
             Authors:
                 yoonhc@brandi.co.kr (윤희철)
 
             History:
                 2020-04-03 (yoonhc@brandi.co.kr): 초기 생성
+                2020-04-05 (yoonhc@brandi.co.kr): 마스터권한 확인 방식 변경
 
         """
         seller_dao = SellerDao()
@@ -298,36 +299,6 @@ class SellerService:
             # 셀러 상태 번호와 셀러 계정 번호가 둘다 들어오지 않으면 400 리턴
             if not seller_status_id or not seller_account_id:
                 return jsonify({'message': 'INVALID_VALUE'}), 400
-
-            # request로 들어온 셀러상태(변경하고자 하는 상태)가 데이터베이스에 있는 셀러상태와 같으면 애러 리턴
-            try:
-                with db_connection as db_cursor:
-                    seller_status_statement = '''
-                        SELECT seller_status_id
-                        FROM seller_infos
-                        WHERE seller_account_id = %(seller_account_id)s 
-                        AND close_time = '2037-12-31 23:59:59.0'
-                    '''
-
-                    seller_status_parameter = {
-                        'seller_account_id' : seller_account_id
-                    }
-
-                    db_cursor.execute(seller_status_statement, seller_status_parameter)
-                    seller_status_db = db_cursor.fetchone()
-
-                    # 데이터베이스에서 가져온 해당 셀러 어카운트의 셀러 상태의 존재 유무 확인
-                    if not seller_status_db:
-                        return jsonify({'message': 'SELLER_NOT_EXISTS'})
-
-                    # request로 들어온 셀러상태와 데이터베이스에 있는 셀러상태 비교
-                    if seller_status_db['seller_status_id'] == seller_status_id:
-                        return jsonify({'message': 'INVALID_REQUEST'}), 400
-
-            # 데이터베이스 error
-            except Exception as e:
-                print(f'SERVICE_DATABASE_CURSOR_ERROR_WITH {e}')
-                return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
 
             seller_list_result = seller_dao.change_seller_status(seller_status_id, seller_account_id, db_connection)
             return seller_list_result
