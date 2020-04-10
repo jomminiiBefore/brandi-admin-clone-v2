@@ -163,3 +163,59 @@ class EventService:
 
         except Exception as e:
             return jsonify({'message': f'{e}'}), 400
+
+    # noinspection PyMethodMayBeStatic
+    def change_event_infos(self, event_info, event_product_info, db_connection):
+
+        """ 기획전 수정 로직
+
+        event_info 에 담긴 기획전 타입을 확인하고,
+        각 기획전에 맞는 필드를 등록하는 dao 를 실행함
+
+        Args:보
+            event_info: 유효성 검사를 통과한 기획전 등록 정보
+            event_product_info: 상품, 유튜브 타입의 기획전에서 사용되는 상품 정
+            db_connection: 연결된 database connection 객체
+
+        Returns: http 응답코드
+            200: SUCCESS 기획전 수정 완료
+            400: NOT_ALLOWED_TO_CHANGE_EVENT_TYPE_OR_SORT, INVALID_EVENT_NO
+            500: DB_CURSOR_ERROR, INVALID_KEY
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-10 (leejm3@brandi.co.kr): 초기생성
+
+        """
+
+        event_dao = EventDao()
+        try:
+            # 기획전 타입이 이벤트일 경우
+            if event_info['event_type_id'] == 1:
+                changing_event_result = event_dao.change_event_event(event_info, db_connection)
+                return changing_event_result
+
+            # 기획전 타입이 쿠폰일 경우
+            if event_info['event_type_id'] == 2:
+                changing_event_result = event_dao.change_coupon_event(event_info, db_connection)
+                return changing_event_result
+
+            # 기획전 타입이 상품(이미지)일 경우
+            if event_info['event_type_id'] == 3:
+                changing_event_result = event_dao.change_product_image_event(event_info, event_product_info, db_connection)
+                return changing_event_result
+
+            # 기획전 타입이 상품(텍스트)일 경우
+            if event_info['event_type_id'] == 4:
+                changing_event_result = event_dao.change_product_text_event(event_info, event_product_info, db_connection)
+                return changing_event_result
+
+            # 기획전 타입이 유튜브일 경우
+            if event_info['event_type_id'] == 5:
+                changing_event_result = event_dao.change_youtube_event(event_info,event_product_info, db_connection)
+                return changing_event_result
+
+        except TypeError as e:
+            return jsonify({'service_message': f'{e}'}), 400
