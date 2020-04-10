@@ -160,10 +160,6 @@ class EventView:
         # 시작시간이 현재 시간보다 전이거나 시작시간이 종료시간보다 늦으면 에러 반환
         if event_info['event_start_time'] < now or event_info['event_start_time'] > event_info['event_end_time']:
             return jsonify({'message': 'INVALID_EVENT_TIME'}), 400
-        
-        if not (event_info['event_type_id'] and event_info['event_sort_id'] 
-                and event_info['is_on_main'] and event_info['is_on_event'] and event_info['name']):
-            return jsonify({'message': 'MISSING_PREREQUISITE'}), 400
 
         # 기획전 타입이 이벤트일 경우 필수값 확인
         if event_info['event_type_id'] == "1":
@@ -190,7 +186,7 @@ class EventView:
         # 기획전 타입이 상품(이미지)일 경우 필수값 확인
         if event_info['event_type_id'] == "3":
             if not event_info['banner_image_url']:
-                return jsonify({'message': 'MISSING_BANNAER_IMAGE'}), 400
+                return jsonify({'message': 'MISSING_BANNER_IMAGE'}), 400
 
             if not event_info['detail_image_url']:
                 return jsonify({'message': 'MISSING_DETAIL_IMAGE'}), 400
@@ -328,6 +324,55 @@ class EventView:
                 sorts = event_service.get_event_sorts(event_type_info, db_connection)
 
                 return sorts
+
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 400
+
+            finally:
+                try:
+                    db_connection.close()
+
+                except Exception as e:
+                    return jsonify({'message': f'{e}'}), 400
+        else:
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+    @event_app.route("/<int:event_no>", methods=["GET"], endpoint='get_event_infos')
+    @login_required
+    def get_event_infos(event_no):
+
+        """ 기획전 정보 표출 엔드포인트
+
+        기획전 정보 표출 엔드포인트 입니다.
+        url parameter 로 받은 기획전 번호에 해당하는 정보를 표출합니다.
+
+        Args:
+            event_no: 기획전 번호
+
+        Returns:
+            200: 기획전 정보
+            400: INVALID_EVENT_NO
+            500: DB_CURSOR_ERROR, INVALID_KEY, NO_DATABASE_CONNECTION
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-10 (leejm3@brandi.co.kr): 초기 생성
+
+        """
+
+        # 마스터 권한이 아니면 반려
+        if g.account_info['auth_type_id'] != 1:
+            return jsonify({'message': 'NO_AUTHORIZATION'}), 403
+
+        db_connection = get_db_connection()
+        if db_connection:
+            try:
+                event_service = EventService()
+                info = event_service.get_event_infos(event_no, db_connection)
+
+                return info
 
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
