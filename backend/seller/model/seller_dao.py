@@ -931,7 +931,6 @@ class SellerDao:
 
                 # 새로운 버전 이전의 버전의 셀러 번호를 seller_data에 저장장
                 seller_data['previous_seller_info_no'] = db_cursor.fetchone()['seller_info_no']
-                print(f"이전 셀러 인포 아이디 : {seller_data['previous_seller_info_no']}")
 
                 # seller_infos : 셀러 상태 변경 sql 명령문
                 update_seller_status_statement = """
