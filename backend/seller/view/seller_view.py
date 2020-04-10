@@ -421,7 +421,7 @@ class SellerView:
 
         Authors:
             leejm3@brandi.co.kr (이종민)
-            yoonhc@brandi.co.kr
+            yoonhc@brandi.co.kr (윤희철)
 
         History:
             2020-04-03 (leejm3@brandi.co.kr): 초기 생성
@@ -431,7 +431,7 @@ class SellerView:
             2020-04-08 (leejm3@brandi.co.kr):
                 마스터가 아닐 때 셀러 상태(입점 등)를 변경하려고 하면 에러 처리하는 내용 추가
             2020-04-09 (yoonhc@barndi.co.kr):
-                이미지 업로더 적용
+                이미지 업로더 적용.
             2020-04-09 (leejm3@brandi.co.kr):
                  이미지 파일을 새로 업로드하면, 이 파일을 저장한 s3 url 을 저장하고,
                  수정을 안해서 기존에 DB에 저장된 url 을 보내주면, 해당 url 을 저장함
@@ -472,6 +472,9 @@ class SellerView:
         # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url을 사전형으로 가져옴.
         image_upload = ImageUpload()
         seller_image = image_upload.upload_seller_image(request)
+
+        if (400 or 500) in seller_image:
+            return seller_image
 
         # validation 확인이 된 data 를 account_info 로 재정의
         account_info = {

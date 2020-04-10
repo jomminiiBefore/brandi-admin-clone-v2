@@ -308,6 +308,10 @@ class ProductView():
         image_uploader = ImageUpload()
         uploaded_images = image_uploader.upload_product_image(request)
 
+        # 이미지 업로더를 호출한 결과값에 애러코드 400이 포함되어있으면 utils.py에서 발생한 러메세지를 그대로 리턴
+        if (400 or 500) in uploaded_images:
+            return uploaded_images
+
         product_info = {
             'auth_type_id': g.account_info['auth_type_id'],
             'token_account_no': g.account_info['account_no'],
