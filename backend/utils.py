@@ -548,3 +548,98 @@ class ImageUpload:
             data["s3_background_image_url"] = uploaded_image_url
 
         return data
+    #
+    # # 요청받은 기획전 이미지를 s3에 업로드
+    # def upload_event_image(self, request):
+    #     """
+    #     Args:
+    #         request: 요청 값
+    #
+    #     Returns:
+    #         s3 버킷에 올라간 이미지 파일의 url(dictionary)
+    #
+    #     Authors:
+    #         yoonhc@brandi.co.kr (윤희철)
+    #
+    #     History:
+    #         2020-04-02 (yoonhc@brandi.co.kr): 초기 생성
+    #     """
+    #
+    #     data = {}
+    #     # print([file for file in request.files])
+    #     banner_image = request.files.get('banner_image', None)
+    #
+    #     # 500MB 이하만 업로드 가능
+    #     try:
+    #         with Image.open(banner_image) as pillow_obj:
+    #             buffer = io.BytesIO()
+    #             pillow_obj.save(buffer, pillow_obj.format)
+    #             print(buffer.tell()/1000)
+    #             if buffer.tell()/1000 > 500000:
+    #                 return jsonify({'message' : f'{buffer}'}), 400
+    #
+    #     except Exception:
+    #         return jsonify({'message' : 'INVALID_IMAGE1'}), 400
+    #
+    #     uploaded_image_name = str(uuid.uuid4())
+    #     s3 = get_s3_connection()
+    #     s3.put_object(Body=image_file, Bucket="brandi-intern", Key=uploaded_image_name)
+    #     uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
+    #     data["uploaded_image_url"] = uploaded_image_url
+    #
+    #     return data
+
+    # 요청받은 셀러 이미지를 s3에 업로드
+    def upload_event_image(self, request):
+        """
+        기획전 이미지 업로더 수정 필요. 임시로 사용.
+
+        """
+
+        data = {}
+
+        banner_image = request.files.get('banner_image', None)
+        detail_image = request.files.get('detail_image', None)
+
+        # 필수로 들어와야 하는 파일의 존재여부 확인.
+        if banner_image:
+
+            # 들어온 파일의 사이즈를 구함.
+            image_file_size = os.fstat(banner_image.fileno()).st_size
+            image_file_form = banner_image.content_type
+
+            # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
+            if not ('image' in image_file_form):
+                return jsonify({'message': 'INVALID_FILE1'}), 400
+
+            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            if image_file_size > 10485760:
+                return jsonify({'message': 'INVALID_IMAGE1'}), 400
+
+            uploaded_image_name = str(uuid.uuid4())
+            s3 = get_s3_connection()
+            s3.put_object(Body=banner_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
+            uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
+            data["s3_banner_image_url"] = uploaded_image_url
+
+        if detail_image:
+
+            # 들어온 파일의 사이즈를 구함.
+            image_file_size = os.fstat(detail_image.fileno()).st_size
+            image_file_form = detail_image.content_type
+
+            # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
+            if not ('image' in image_file_form):
+                return jsonify({'message': 'INVALID_FILE2'}), 400
+
+            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            if image_file_size > 10485760:
+                return jsonify({'message': 'INVALID_IMAGE2'}), 400
+
+            uploaded_image_name = str(uuid.uuid4())
+            s3 = get_s3_connection()
+            s3.put_object(Body=detail_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
+            uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
+            data["s3_detail_image_url"] = uploaded_image_url
+
+        return data
