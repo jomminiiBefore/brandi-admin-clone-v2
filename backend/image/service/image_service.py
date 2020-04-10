@@ -146,7 +146,7 @@ class ImageService:
                 # big_size 업로드
                 big_size_buffer = self.resize_to_big(image_file_1)
                 if not big_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
+                    return jsonify({"message": "INVALID_IMAGE33"}), 400
                 s3.put_object(Body=big_size_buffer[0], Bucket="brandi-intern", Key=big_size_buffer[1],
                               ContentType='image/jpeg')
                 big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'

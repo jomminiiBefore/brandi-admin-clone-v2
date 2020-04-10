@@ -210,19 +210,27 @@ class SellerView:
     def get_seller_list(*args):
 
         """ 가입된 모든 셀러 정보 리스트를 표출
+        유효성검사를 통과한 값을 request에 넣어줌.
+
+        Args:
+            g.account_info: 데코레이터에서 넘겨받은 수정을 수행하는 계정 정보
+                auth_type_id: 계정의 권한정보
+                account_no: 데코레이터에서 확인된 계정번호드
+            args: path parameter를 통해서 들어온 검색 키워
 
         Returns:
             200: 가입된 모든 셀러 및 셀러 세부 정보 리스트로 표출
+            400: seller_service로 값을 넘겨줄 때 애러가나면 400 리턴
+            500: database 연결에 실패하면 500리턴
 
         Authors:
             yoonhc@barndi.co.kr (윤희철)
 
         History:
             2020-04-03 (yoonhc@brandi.co.kr): 초기 생성
+            2020-04-07 (yoonhc@brandi.co.kr): 파라미터 유효성검사 추가
+            2020-04-10 (yoonhc@brandi.co.kr): 애러 처리 추가
         """
-
-        # 데이터베이스 커넥션을 열어줌.
-        db_connection = DatabaseConnection()
 
         # request에 통과한 쿼리파라미터를 담을 리스트를 생성.
         request.valid_param = {}
@@ -244,9 +252,19 @@ class SellerView:
 
         # 유저 정보를 g에서 읽어와서 service에 전달
         user = g.account_info
-        seller_service = SellerService()
-        seller_list_result = seller_service.get_seller_list(request, user, db_connection)
-        return seller_list_result
+
+        # 데이터베이스 커넥션을 열어줌.
+        db_connection = DatabaseConnection()
+        if db_connection:
+            try:
+                seller_service = SellerService()
+                seller_list_result = seller_service.get_seller_list(request, user, db_connection)
+                return seller_list_result
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 400
+
+        else:
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('/<int:parameter_account_no>', methods=['PUT'], endpoint='change_seller_info')
     @login_required
@@ -403,6 +421,7 @@ class SellerView:
 
         Authors:
             leejm3@brandi.co.kr (이종민)
+            yoonhc@brandi.co.kr
 
         History:
             2020-04-03 (leejm3@brandi.co.kr): 초기 생성
@@ -645,19 +664,27 @@ class SellerView:
         Param('seller_status_id', JSON, int, required=False)
     )
     def change_seller_status(*args):
-        """ 마스터 권한으로 셀러 상태 변경
+        """ 셀러 상태 변경
+        마스터 권한을 가진 어카운트가 셀러의 상태를 변경 하는 기능.
+
+        Args:
+            args: 유효성 검사를 통과한 파라미터 리스트
+                seller_account_id: path parameter를 통해서 들어온 셀러 계정 아이디
+                seller_status_id: request body를 통해서 들어온
 
         Returns:
-            200: 셀러 상태 변경 성공
+            200: 셀러 상태 변경 성공 메세지
+            400: seller_service의 클래스 호출 실패 또는 parameter를 제대로 넘겨지주 못했을 경우
+            500: 데이터베이스 연결 실패
 
         Authors:
             yoonhc@barndi.co.kr (윤희철)
 
         History:
             2020-04-05 (yoonhc@brandi.co.kr): 초기 생성
+            2020-04-09 (yoonhc@brandi.co.kr): 선분이력을 반영하여 상태변경 작성
         """
 
-        db_connection = DatabaseConnection()
         # 유저정보를 가져와 서비스로 넘김
         user = g.account_info
 
@@ -667,9 +694,18 @@ class SellerView:
             'seller_status_id': args[1]
         }
 
-        seller_service = SellerService()
-        status_change_result = seller_service.change_seller_status(valid_param, user, db_connection)
-        return status_change_result
+        db_connection = DatabaseConnection()
+        if db_connection:
+            try:
+                seller_service = SellerService()
+                status_change_result = seller_service.change_seller_status(valid_param, user, db_connection)
+                return status_change_result
+
+            except Exception as e:
+                return({'message': f'{e}'}), 400
+
+        else:
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('', methods=['POST'])
     @validate_params(

@@ -379,13 +379,18 @@ class SellerDao:
     def get_seller_list(self, request, db_connection):
 
         """ GET 셀러 리스트를 표출하고, 검색 키워드가 오면 키워드 별 검색 가능.
+        페이지네이션 기능: offset과 limit값을 받아서 페이지네이션 구현.
+        검색기능: 키워드를 받아서 검색기능 구현. 키워드가 추가 될 때 마다 검색어가 필터에 추가됨.
+        엑셀다운로드 기능: excel=1을 쿼리파라미터로 받으면 데이터베이스의 값을
+                        엑셀파일로 만들어 s3에 업로드하고 다운로드 링크를 리턴
 
         Args:
             db_connection: 연결된 database connection 객체
             request: 쿼리파라미터를 가져옴
 
         Returns: http 응답코드
-            200: 셀러 리스트 표출(검색기능 포함)
+            200: 키워드로 excel=1이 들어온 경우 s3에 올라간 엑셀파일 다운로드url
+            200: 셀러 리스트 표출(검색기능 포함), 키워드에 맞는 셀러 숫자
             500: SERVER ERROR
 
         Authors:
@@ -393,6 +398,7 @@ class SellerDao:
 
         History:
             2020-04-03(heechul@brandi.co.kr): 초기 생성
+            2020-04-07(heechul@brandi.co.kr): 엑셀 다운로드 기능 추가
         """
 
         # offset과 limit에 음수가 들어오면  default값 지정
@@ -894,6 +900,10 @@ class SellerDao:
     def change_seller_status(self, seller_status_id, seller_account_id, db_connection):
 
         """ 마스터 권한 셀러 상태 변경
+        마스터 권한을 가진 유저가 데이터베이스의 셀러의 상태를 변경함.
+        seller_infos테이블에 새로운 이력(row)를 생성하고 seller_infos의 foreign key룰 가지는
+        manager_infos테이블에도 새로운 셀러 정보 이력을 foregin key로 가지도록 row를 추가해줌.
+
             Args:
                 seller_status_id: 셀러 상태 아이디
                 seller_account_id: 셀러 정보 아이디
@@ -901,19 +911,26 @@ class SellerDao:
 
             Returns:
                 200: 셀러 상태 정보 수정 성공
-                500: 데이터베이스 error
+                500: 데이터베이스 error, key error
 
             Authors:
                 yoonhc@brandi.co.kr (윤희철)
 
             History:
                 2020-04-05 (yoonhc@brandi.co.kr): 초기 생성
+                2020-04-09 (yoonhc@brandi.co.kr): 셀러정보 선분이력 반영
 
         """
 
         # 데이터베이스 커서 실행
         try:
             with db_connection as db_cursor:
+
+                # 트랜잭션 시작
+                db_cursor.execute("START TRANSACTION")
+
+                # 자동 커밋 비활성화
+                db_cursor.execute("SET AUTOCOMMIT=0")
 
                 # seller_infos : service에서 넘어온 셀러 데이터
                 seller_data = {
@@ -1055,10 +1072,14 @@ class SellerDao:
                 db_connection.commit()
                 return jsonify({'message': 'SUCCESS'}), 200
 
-        # 데이터베이스 error
-        except Exception as e:
+        except KeyError as e:
+            print(f'KEY_ERROR WITH {e}')
+            return jsonify({'message': 'INVALID_KEY'}), 500
+
+        except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
-            return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
+            db_connection.rollback()
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
     # noinspection PyMethodMayBeStatic
     def get_account_info(self, account_info, db_connection):

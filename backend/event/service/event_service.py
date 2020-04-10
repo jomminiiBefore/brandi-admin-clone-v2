@@ -17,7 +17,7 @@ class EventService:
         """
 
     # noinspection PyMethodMayBeStatic
-    def register_event(self, event_info, db_connection):
+    def register_event(self, event_info, db_connection, event_product_info):
 
         """ 기획전 등록 로직
 
@@ -33,10 +33,11 @@ class EventService:
 
         Authors:
             leejm3@brandi.co.kr (이종민)
+            yoonhc@brandi.co.kr (윤희철)
 
         History:
             2020-04-07 (leejm3@brandi.co.kr): 초기생성
-
+            2020-04-10 (yoonhc@brandi.co.kr): 상품(이미지), 상품(텍스트), 유튜브 기획전 작성
         """
 
         event_dao = EventDao()
@@ -51,8 +52,24 @@ class EventService:
                 registering_event_result = event_dao.register_coupon_event(event_info, db_connection)
                 return registering_event_result
 
-        except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            # 기획전 타입이 상품(이미지)일 경우
+            if event_info['event_type_id'] == "3":
+                registering_event_result = event_dao.register_product_image_event(event_info, event_product_info, db_connection)
+                print(1)
+                return registering_event_result
+
+            # 기획전 타입이 상품(텍스트)일 경우
+            if event_info['event_type_id'] == "4":
+                registering_event_result = event_dao.register_product_text_event(event_info, event_product_info, db_connection)
+                return registering_event_result
+
+            # 기획전 타입이 유튜브일 경우
+            if event_info['event_type_id'] == "5":
+                registering_event_result = event_dao.register_youtube_event(event_info,event_product_info, db_connection)
+                return registering_event_result
+
+        except TypeError as e:
+            return jsonify({'service_message': f'{e}'}), 400
 
     # noinspection PyMethodMayBeStatic
     def get_event_types(self, db_connection):
@@ -75,11 +92,14 @@ class EventService:
             2020-04-09 (leejm3@brandi.co.kr): 초기 생성
 
         """
+        try:
+            event_dao = EventDao()
+            types = event_dao.get_event_types(db_connection)
 
-        event_dao = EventDao()
-        types = event_dao.get_event_types(db_connection)
+            return types
 
-        return types
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
 
     # noinspection PyMethodMayBeStatic
     def get_event_sorts(self, event_type_info, db_connection):
@@ -103,7 +123,43 @@ class EventService:
 
         """
 
-        event_dao = EventDao()
-        sorts = event_dao.get_event_sorts(event_type_info, db_connection)
+        try:
+            event_dao = EventDao()
+            sorts = event_dao.get_event_sorts(event_type_info, db_connection)
 
-        return sorts
+            return sorts
+
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+    # noinspection PyMethodMayBeStatic
+    def get_event_infos(self, event_no, db_connection):
+
+        """ 기획전 정보 표출 로직
+
+        전달 받은 기획전 번계정번호에 맞는 셀러정보를 표출해줍니다.
+
+        Args:
+            event_no: 기획전 번호
+            db_connection: 연결된 database connection 객체
+
+        Returns: http 응답코드
+            200: 기획전 정보
+            400: INVALID_EVENT_NO
+            500: DB_CURSOR_ERROR, INVALID_KEY
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-10 (leejm3@brandi.co.kr) : 초기 생성
+
+        """
+
+        event_dao = EventDao()
+        try:
+            getting_event_info_result = event_dao.get_event_infos(event_no, db_connection)
+            return getting_event_info_result
+
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
