@@ -170,7 +170,8 @@ class EventService:
         """ 기획전 수정 로직
 
         event_info 에 담긴 기획전 타입을 확인하고,
-        각 기획전에 맞는 필드를 등록하는 dao 를 실행함
+        각 기획전 타입에 들어오지 말아야 할 키값을 걸러줌.
+        기획전타입확인과 유효성검사가 끝나면 dao로 arguments를 넘김.
 
         Args:보
             event_info: 유효성 검사를 통과한 기획전 등록 정보
@@ -179,42 +180,104 @@ class EventService:
 
         Returns: http 응답코드
             200: SUCCESS 기획전 수정 완료
-            400: NOT_ALLOWED_TO_CHANGE_EVENT_TYPE_OR_SORT, INVALID_EVENT_NO
+            400: NOT_ALLOWED_TO_CHANGE_EVENT_TYPE_OR_SORT,
+                INVALID_EVENT_NO,
+                INVALID_FIELD_LONG_DESCRIPTION,
+                INVALID_FIELD_SHORT_DESCRIPTION,
+                INVALID_FIELD_YOUTUBE_URL,
+                INVALID_FILED_EVENT_PRODUCT,
+                INVALID_FIELD_BUTTON,
+                INVALID_FIELD_BANNER_IMAGE_URL,
+                INVALID_FIELD_DETAIL_IMAGE_URL,
             500: DB_CURSOR_ERROR, INVALID_KEY
 
         Authors:
             leejm3@brandi.co.kr (이종민)
+            yoonhc@brandi.co.kr (윤희철)
 
         History:
             2020-04-10 (leejm3@brandi.co.kr): 초기생성
+            2020-04-11 (yoonhc@brandi.co.kr): 각 기획전 타입별 들어오지 말아야할 키값을 걸러주는 로직 추가.
 
         """
-
+        print(event_info)
         event_dao = EventDao()
         try:
             # 기획전 타입이 이벤트일 경우
             if event_info['event_type_id'] == 1:
-                changing_event_result = event_dao.change_event_event(event_info, db_connection)
+
+                # 기획전 이벤트에 들어오면 안되는 필드를 걸러줌.
+                if event_info['long_description']:
+                    return jsonify({'message': 'INVALID_FIELD_LONG_DESCRIPTION'}), 400
+                if event_info['youtube_url']:
+                    return jsonify({'message': 'INVALID_FIELD_YOUTUBE_URL'}), 400
+                if event_product_info:
+                    return jsonify({'message': 'INVALID_FILED_EVENT_PRODUCT'}), 400
+
+                # 통과되면(기획전 타입이 이벤트로 판명되면) dao로 arguments를 넘겨줌.
+                changing_event_result = event_dao.change_event(event_info, db_connection, event_product_info)
                 return changing_event_result
 
             # 기획전 타입이 쿠폰일 경우
             if event_info['event_type_id'] == 2:
-                changing_event_result = event_dao.change_coupon_event(event_info, db_connection)
+                if event_info['banner_image_url']:
+                    return jsonify({'message': 'INVALID_FIELD_BANNER_IMAGE_URL'}), 400
+                if event_info['detail_image_url']:
+                    return jsonify({'message': 'INVALID_FIELD_DETAIL_IMAGE_URL'}), 400
+                if event_info['youtube_url']:
+                    return jsonify({'message': 'INVALID_FIELD_YOUTUBE_URL'}), 400
+                if event_product_info:
+                    return jsonify({'message': 'INVALID_FILED_EVENT_PRODUCT'}), 400
+
+                # 통과되면(기획전타입이 쿠폰으로 판명되면) dao로 arguments를 넘겨줌
+                changing_event_result = event_dao.change_event(event_info, db_connection, event_product_info)
                 return changing_event_result
 
             # 기획전 타입이 상품(이미지)일 경우
             if event_info['event_type_id'] == 3:
-                changing_event_result = event_dao.change_product_image_event(event_info, event_product_info, db_connection)
+
+                # 기획전 값이 상품이미지 일 경우 들어오지 말아야 할 키값을 걸러줌.
+                if event_info['long_description']:
+                    return jsonify({'message': 'INVALID_FIELD_LONG_DESCRIPTION'}), 400
+                if event_info['short_description']:
+                    return jsonify({'message': 'INVALID_FIELD_SHORT_DESCRIPTION'}), 400
+                if event_info['youtube_url']:
+                    return jsonify({'message': 'INVALID_FIELD_YOUTUBE_URL'}), 400
+                if event_info['button_name'] or event_info['button_link_type_id'] or event_info['button_link_description']:
+                    return jsonify({'message': 'INVALID_FIELD_BUTTON'}), 400
+
+                # 통과되면(기획전 타입이 상품이미지로 판명되면) dao로 arguments를 넘겨줌.
+                changing_event_result = event_dao.change_event(event_info, db_connection, event_product_info)
                 return changing_event_result
 
             # 기획전 타입이 상품(텍스트)일 경우
             if event_info['event_type_id'] == 4:
-                changing_event_result = event_dao.change_product_text_event(event_info, event_product_info, db_connection)
+
+                # 기획전 타입이 상품텍스트 일 때 들어오지 말아야 할 키값을 걸러줌.
+                if event_info['youtube_url']:
+                    return jsonify({'message': 'INVALID_FIELD_YOUTUBE_URL'}), 400
+                if event_info['button_name'] or event_info['button_link_type_id'] or event_info['button_link_description']:
+                    return jsonify({'message': 'INVALID_FIELD_BUTTON'}), 400
+                if event_info['detail_image_url']:
+                    return jsonify({'message': 'INVALID_FIELD_DETAIL_IMAGE_URL'}), 400
+                if event_info['long_description']:
+                    return jsonify({'message': 'INVALID_FIELD_LONG_DESCRIPTION'}), 400
+
+                # 통과되면(기획전 타입이 상품텍스트로 판명되면) dao로 arguments를 넘겨줌.
+                changing_event_result = event_dao.change_event(event_info, db_connection, event_product_info)
                 return changing_event_result
 
             # 기획전 타입이 유튜브일 경우
             if event_info['event_type_id'] == 5:
-                changing_event_result = event_dao.change_youtube_event(event_info,event_product_info, db_connection)
+
+                # 기획전 타입이 유튜브일 때 들어오지 말아야 할 키값들을 걸러줌.
+                if event_info['button_name'] or event_info['button_link_type_id'] or event_info['button_link_description']:
+                    return jsonify({'message': 'INVALID_FIELD_BUTTON'}), 400
+                if event_info['long_description']:
+                    return jsonify({'message': 'INVALID_FIELD_LONG_DESCRIPTION'}), 400
+
+                # 통과되면(기획전 타입이 유튜브로 판명되면) dao로 arguments를 넘겨줌.
+                changing_event_result = event_dao.change_event(event_info, db_connection, event_product_info)
                 return changing_event_result
 
         except TypeError as e:

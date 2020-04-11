@@ -357,6 +357,7 @@ class EventView:
 
         Authors:
             leejm3@brandi.co.kr (이종민)
+            yoonhc@brandi.co.kr (윤희철)
 
         History:
             2020-04-10 (leejm3@brandi.co.kr): 초기 생성
@@ -423,7 +424,7 @@ class EventView:
               rules=[Pattern(r"^[1-6]{1}$")]),
         Param('button_link_description', FORM, str, required=False,
               rules=[MaxLength(45)]),
-        Param('product', FORM, list, required=False),
+        Param('product', FORM, str, required=False),
         Param('youtube_url', FORM, str, required=False,
               rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
         Param('youtube_url', FORM, str, required=False,
@@ -479,9 +480,13 @@ class EventView:
 
         Authors:
             leejm3@brandi.co.kr (이종민)
+            yoonhc@brandi.co.kr (윤희철)
 
         History:
             2020-04-10 (leejm3@brandi.co.kr): 초기 생성
+            2020-04-11 (yoonhc@brandi.co.kr):
+                - utils.py에서 나오는 결과값에 애러코드 400이있으면 애러메세지를 그대로 리턴하는 코드 추가
+                - 기획전 상품이 validation을 통과하면 json loads를 통해서 array자료형으로 파싱하는 코드 추가.
 
         """
 
@@ -492,6 +497,10 @@ class EventView:
         # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url을 사전형으로 가져옴.
         image_upload = ImageUpload()
         event_image = image_upload.upload_event_image(request)
+
+        # 함수의 실행결과에 400이 포함된 경우 애러메세지를 그대로 리턴함.
+        if (400 or 500) in event_image:
+            return event_image
 
         # validation(형식) 확인된 데이터 저장
         event_info = {
@@ -505,7 +514,7 @@ class EventView:
             'event_end_time': args[7],
             'short_description': args[8],
             'long_description': args[9],
-            'banner_image_url': event_image.get('s3_banner_imager_url', None),
+            'banner_image_url': event_image.get('s3_banner_image_url', None),
             'detail_image_url': event_image.get('s3_detail_image_url', None),
             'button_name': args[14],
             'button_link_type_id': args[15],
@@ -522,8 +531,13 @@ class EventView:
         if not event_info['detail_image_url']:
             event_info['detail_image_url'] = args[12]
 
-        # 리스트로 들어온 product 정보를 따로 저장 (dao 에서 에러를 막기 위해)
-        event_product_info = args[17]
+        # 리스트로 들어온 product 정보를 따로 저장 (dao 에서 에러를 막기 위해), 값이 안들어오면 None으로 넘겨줌.
+        try:
+            # form데이터로 값을 받으면 str처리가 되기 때문에 json.loads통해서 array 자료형으로 만들어준다.
+            event_product_info = json.loads(args[17])
+        except:
+            # form data로 값이 들어오지 않으면 None type을 파싱하는 경우가 생기기 때문에 except처리를 넣고 넘겨줄 값에 None을 담는다.
+            event_product_info = None
 
         # 기획전 기간 밸리데이션
         now = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M')
@@ -602,13 +616,13 @@ class EventView:
                 return info
 
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'view_message': f'{e}'}), 400
 
             finally:
                 try:
                     db_connection.close()
 
                 except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
+                    return jsonify({'view_message': f'{e}'}), 400
         else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+            return jsonify({'view_message': 'NO_DATABASE_CONNECTION'}), 500

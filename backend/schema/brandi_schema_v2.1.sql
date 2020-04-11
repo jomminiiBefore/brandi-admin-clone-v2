@@ -1824,14 +1824,6 @@ INSERT INTO events (
 (
     8, -- event_no
     4 -- uploader
-),
-(
-    9, -- event_no
-    5 -- uploader
-),
-(
-    10, -- event_no
-    6 -- uploader
 );
 
 
@@ -1895,33 +1887,33 @@ INSERT INTO event_infos
 	event_id
 ) VALUES (
 	1, -- event_info_no
-	'이벤트1', -- name
+	'이벤트1 이벤트', -- name
 	1, -- is_on_main
 	1, -- is_on_event
-	'브랜디 이벤트1 입니다.', -- short_description
+	'브랜디 기획전 이벤트타입 입니다.', -- short_description
 	'2020-03-21 23:59:59', -- event_stat_time
 	'2020-04-21 23:59:59', -- event_end_time
 	'https://image.brandi.me/home/banner/bannerImage_1_1585288803.jpg', -- banner_image_url
 	'https://image.brandi.me/event/2020/03/27/1585274063_bannerdetail.jpg', -- detail_image_url
-	'<p>브랜디 이벤트1 입니다. 장문의 상세 설명입니다.</p>', -- long_description
-	'https://youtu.be/hyZsbD7SIu4', -- youtube_url
-	1, -- event_type_id
+	NULL, -- long_description
+	NULL, -- youtube_url
+	1, -- event_type_id, 이벤트타입
 	1, -- event_sort_id
 	(SELECT created_at FROM events WHERE event_no=1), -- start_time
 	1, -- modifier, account_no
 	1 -- event_id
 ),(
 	2, -- event_info_no
-	'이벤트2', -- name
+	'이벤트2 쿠폰', -- name
 	1, -- is_on_main
 	1, -- is_on_event
-	'브랜디 이벤트2 입니다.', -- short_description
-	'2020-03-27 23:59:59', -- event_stat_time
+	'브랜디 쿠폰 이벤트2 입니다.', -- short_description
+	'2020-03-27 23:59:59', -- event_start_time
 	'2020-04-19 23:59:59', -- event_end_time
-	'https://image.brandi.me/home/banner/bannerImage_5_1585274842.jpg', -- banner_image_url
-	'https://image.brandi.me/event/2020/03/22/1584847404_bannerdetail.jpg', -- detail_image_url
+	NULL, -- banner_image_url
+	NULL, -- detail_image_url
 	'<p>브랜디 이벤트2 입니다. 장문의 상세 설명입니다.</p>', -- long_description
-	'https://youtu.be/hyZsbD7SIu4', -- youtube_url
+	NULL, -- youtube_url
 	2, -- event_type_id
 	3, -- event_sort_id
 	(SELECT created_at FROM events WHERE event_no=2), -- start_time
@@ -1929,16 +1921,16 @@ INSERT INTO event_infos
 	2 -- event_id
 ),(
 	3, -- event_info_no
-	'이벤트3', -- name
+	'이벤트3 쿠폰', -- name
 	1, -- is_on_main
 	1, -- is_on_event
 	'브랜디 이벤트3 입니다.', -- short_description
 	'2020-03-27 23:59:59', -- event_stat_time
 	'2020-04-19 23:59:59', -- event_end_time
-	'https://image.brandi.me/home/banner/bannerImage_126197_1585534030.jpg', -- banner_image_url
-	'https://image.brandi.me/event/2020/03/29/1585460313_bannerdetail.jpg', -- detail_image_url
+	null, -- banner_image_url
+	null, -- detail_image_url
 	'<p>브랜디 이벤트3 입니다. 장문의 상세 설명입니다.</p>', -- long_description
-	'https://youtu.be/XqGjahLSYR0', -- youtube_url
+	null, -- youtube_url
 	2, -- event_type_id
 	3, -- event_sort_id
 	(SELECT created_at FROM events WHERE event_no=3), -- start_time
@@ -1946,16 +1938,16 @@ INSERT INTO event_infos
 	3 -- event_id
 ),(
 	4, -- event_info_no
-	'이벤트4', -- name
+	'이벤트4 쿠폰', -- name
 	1, -- is_on_main
 	1, -- is_on_event
 	'브랜디 이벤트4 입니다.', -- short_description
 	'2020-03-27 23:59:59', -- event_stat_time
 	'2020-04-19 23:59:59', -- event_end_time
-	'https://image.brandi.me/home/banner/bannerImage_126162_1585534016.jpg', -- banner_image_url
-	'https://image.brandi.me/event/2020/03/27/1585300626_bannerdetail.jpg', -- detail_image_url
+	null, -- banner_image_url
+	null, -- detail_image_url
 	'<p>브랜디 이벤트4 입니다. 장문의 상세 설명입니다.</p>', -- long_description
-	'https://youtu.be/jVTc9c3j8R4', -- youtube_url
+	null, -- youtube_url
 	2, -- event_type_id
 	3, -- event_sort_id
 	(SELECT created_at FROM events WHERE event_no=4), -- start_time
@@ -1963,7 +1955,7 @@ INSERT INTO event_infos
 	4 -- event_id
 ),(
 	5, -- event_info_no
-	'이벤트4', -- name
+	'이벤트4 상품이미지', -- name
 	1, -- is_on_main
 	1, -- is_on_event
 	NULL, -- short_description
@@ -1977,10 +1969,10 @@ INSERT INTO event_infos
 	9, -- event_sort_id
 	(SELECT created_at FROM events WHERE event_no=7), -- start_time
 	2, -- modifier, account_no
-	7 -- event_id
+	5 -- event_id
 ),(
 	6, -- event_info_no
-	'이벤트4', -- name
+	'이벤트4 상품이미지', -- name
 	1, -- is_on_main
 	1, -- is_on_event
 	NULL, -- short_description
@@ -1994,10 +1986,10 @@ INSERT INTO event_infos
 	10, -- event_sort_id
 	(SELECT created_at FROM events WHERE event_no=8), -- start_time
 	2, -- modifier, account_no
-	8 -- event_id
+	6 -- event_id
 ),(
 	7, -- event_info_no
-	'이벤트4', -- name
+	'이벤트4 상품텍스트', -- name
 	1, -- is_on_main
 	1, -- is_on_event
 	'브랜디 이벤트4 입니다.', -- short_description
@@ -2005,16 +1997,16 @@ INSERT INTO event_infos
 	'2020-04-19 23:59:59', -- event_end_time
 	'https://image.brandi.me/home/banner/bannerImage_126162_1585534016.jpg', -- banner_image_url
 	NULL, -- detail_image_url
-	'<p>브랜디 이벤트4 입니다. 장문의 상세 설명입니다.</p>', -- long_description
-	'https://youtu.be/jVTc9c3j8R4', -- youtube_url
+	null, -- long_description
+	null, -- youtube_url
 	4, -- event_type_id
 	11, -- event_sort_id
 	(SELECT created_at FROM events WHERE event_no=9), -- start_time
 	2, -- modifier, account_no
-	9 -- event_id
+	7 -- event_id
 ),(
 	8, -- event_info_no
-	'이벤트4', -- name
+	'이벤트4 유튜브', -- name
 	1, -- is_on_main
 	1, -- is_on_event
 	'브랜디 이벤트4 입니다.', -- short_description
@@ -2028,7 +2020,7 @@ INSERT INTO event_infos
 	13, -- event_sort_id
 	(SELECT created_at FROM events WHERE event_no=10), -- start_time
 	2, -- modifier, account_no
-	10 -- event_id
+	8 -- event_id
 );
 
 

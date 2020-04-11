@@ -163,7 +163,8 @@ class ImageUpload:
 
         Returns:
             data: s3 버킷에 올라간 이미지파일의 url(dictionary), size를 포함한 딕셔너리
-            400: 파일형식이 잘못된 경우, 파일 크기가 너무 큰 경우
+            400: 파일형식이 잘못된 경우, 파일 크기가 너무 큰 경우,
+            500: s3에 업로드과정에서 애러가 난 경우.
 
         Authors:
             yoonhc@brandi.co.kr (윤희철)
@@ -171,6 +172,7 @@ class ImageUpload:
         History:
             2020-04-02 (yoonhc@brandi.co.kr): 초기 생성
             2020-04-09 (yoonhc@brandi.co,kr): RESTful api형식에 맞추기 위해서 이미지 업로드 기능의 모듈화.
+            2020-04-11 (yoonhc@brandi.co.kr): s3에 업로드 되는 과정에서 발생하는 애러 except처리 추가.
         """
         # s3 연결
         s3 = get_s3_connection()
@@ -193,248 +195,389 @@ class ImageUpload:
 
         # 순서1번의 이미지파일 이 존재하면 업로드하고 url을 딕셔너리에 추가
         if image_file_1:
+            # 들어온 파일의 사이즈와 확장자를 구함.
+            image_file_size = os.fstat(image_file_1.fileno()).st_size
+            image_file_form = image_file_1.content_type
+
+            # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
+            if not ('image' in image_file_form):
+                return jsonify({'message': 'INVALID_FILE'}), 400
+
+            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            if image_file_size > 10485760:
+                return jsonify({'message': 'INVALID_IMAGE1'}), 400
+
+            # big_size 업로드
+            big_size_buffer = self.resize_to_big(image_file_1)
+            if not big_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
+            # 이미지를 올리다가 에러가 날 경우를 잡아줌.
             try:
-                # 들어온 파일의 사이즈와 확장자를 구함.
-                image_file_size = os.fstat(image_file_1.fileno()).st_size
-                image_file_form = image_file_1.content_type
-
-                # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
-                if not ('image' in image_file_form):
-                    return jsonify({'message': 'INVALID_FILE'}), 400
-
-                # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
-                if image_file_size > 10485760:
-                    return jsonify({'message': 'INVALID_IMAGE1'}), 400
-
-                # big_size 업로드
-                big_size_buffer = self.resize_to_big(image_file_1)
-                if not big_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=big_size_buffer[0], Bucket="brandi-intern", Key=big_size_buffer[1],
-                              ContentType='image/jpeg')
-                big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
-                data['image_file_1']['big_size_url'] = big_size_url
-                data['image_file_1']['big_image_size_id'] = 1
-
-                # medium_size 업로드
-                medium_size_buffer = self.resize_to_medium(image_file_1)
-                if not medium_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=medium_size_buffer[0], Bucket="brandi-intern", Key=medium_size_buffer[1],
-                              ContentType='image/jpeg')
-                medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
-                data['image_file_1']['medium_size_url'] = medium_size_url
-                data['image_file_1']['medium_image_size_id'] = 2
-
-                # small_size 업로드
-                small_size_buffer = self.resize_to_small(image_file_1)
-                if not small_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=small_size_buffer[0], Bucket="brandi-intern", Key=small_size_buffer[1],
-                              ContentType='image/jpeg')
-                small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
-                data['image_file_1']['small_size_url'] = small_size_url
-                data['image_file_1']['small_image_size_id'] = 3
+                s3.put_object(
+                    Body=big_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=big_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
 
             except Exception as e:
                 print(f'error1 : {e}')
-                return jsonify({'message' : 'INVALID_REQUEST'}), 400
+                return jsonify({'message' : 'S3_UPLOAD_FAIL'}), 500
+
+            big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
+            data['image_file_1']['big_size_url'] = big_size_url
+            data['image_file_1']['big_image_size_id'] = 1
+
+            # medium_size 업로드
+            medium_size_buffer = self.resize_to_medium(image_file_1)
+            if not medium_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
+            try:
+                s3.put_object(
+                    Body=big_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=big_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
+            data['image_file_1']['medium_size_url'] = medium_size_url
+            data['image_file_1']['medium_image_size_id'] = 2
+
+            # small_size 업로드
+            small_size_buffer = self.resize_to_small(image_file_1)
+            if not small_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
+            try:
+                s3.put_object(
+                    Body=big_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=big_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
+            data['image_file_1']['small_size_url'] = small_size_url
+            data['image_file_1']['small_image_size_id'] = 3
 
         # 순서2번의 이미지파일 이 존재하면 업로드하고 url을 딕셔너리에 추가
         if image_file_2:
+            # 들어온 파일의 사이즈와 확장자를 구함.
+            image_file_size = os.fstat(image_file_2.fileno()).st_size
+            image_file_form = image_file_2.content_type
+
+            # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
+            if not ('image' in image_file_form):
+                return jsonify({'message': 'INVALID_FILE'})
+
+            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            if image_file_size > 10485760:
+                return jsonify({'message': 'INVALID_IMAGE1'})
+
+            # big_size 업로드
+            big_size_buffer = self.resize_to_big(image_file_2)
+            if not big_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
             try:
-                # 들어온 파일의 사이즈와 확장자를 구함.
-                image_file_size = os.fstat(image_file_2.fileno()).st_size
-                image_file_form = image_file_2.content_type
-
-                # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
-                if not ('image' in image_file_form):
-                    return jsonify({'message': 'INVALID_FILE'})
-
-                # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
-                if image_file_size > 10485760:
-                    return jsonify({'message': 'INVALID_IMAGE1'})
-
-                # big_size 업로드
-                big_size_buffer = self.resize_to_big(image_file_2)
-                if not big_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=big_size_buffer[0], Bucket="brandi-intern", Key=big_size_buffer[1],
-                              ContentType='image/jpeg')
-                big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
-                data['image_file_2']['big_size_url'] = big_size_url
-                data['image_file_2']['big_image_size_id'] = 1
-
-                # medium_size 업로드
-                medium_size_buffer = self.resize_to_medium(image_file_2)
-                if not medium_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=medium_size_buffer[0], Bucket="brandi-intern", Key=medium_size_buffer[1],
-                              ContentType='image/jpeg')
-                medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
-                data['image_file_2']['medium_size_url'] = medium_size_url
-                data['image_file_2']['medium_image_size_id'] = 2
-
-                # small_size 업로드
-                small_size_buffer = self.resize_to_small(image_file_2)
-                if not small_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=small_size_buffer[0], Bucket="brandi-intern", Key=small_size_buffer[1],
-                              ContentType='image/jpeg')
-                small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
-                data['image_file_2']['small_size_url'] = small_size_url
-                data['image_file_2']['small_image_size_id'] = 3
+                s3.put_object(
+                    Body=big_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=big_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
 
             except Exception as e:
                 print(f'error1 : {e}')
-                return jsonify({'message' : 'INVALID_REQUEST'})
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
+            data['image_file_2']['big_size_url'] = big_size_url
+            data['image_file_2']['big_image_size_id'] = 1
+
+            # medium_size 업로드
+            medium_size_buffer = self.resize_to_medium(image_file_2)
+            if not medium_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
+            try:
+                s3.put_object(
+                    Body=medium_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=medium_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
+            data['image_file_2']['medium_size_url'] = medium_size_url
+            data['image_file_2']['medium_image_size_id'] = 2
+
+            # small_size 업로드
+            small_size_buffer = self.resize_to_small(image_file_2)
+            if not small_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
+            try:
+                s3.put_object(
+                    Body=small_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=small_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
+            data['image_file_2']['small_size_url'] = small_size_url
+            data['image_file_2']['small_image_size_id'] = 3
 
         # 순서3번의 이미지파일 이 존재하면 업로드하고 url을 딕셔너리에 추가
         if image_file_3:
+            # 들어온 파일의 사이즈와 확장자를 구함.
+            image_file_size = os.fstat(image_file_3.fileno()).st_size
+            image_file_form = image_file_3.content_type
+
+            # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
+            if not ('image' in image_file_form):
+                return jsonify({'message': 'INVALID_FILE'})
+
+            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            if image_file_size > 10485760:
+                return jsonify({'message': 'INVALID_IMAGE1'})
+
+            # big_size 업로드
+            big_size_buffer = self.resize_to_big(image_file_3)
+            if not big_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
             try:
-                # 들어온 파일의 사이즈와 확장자를 구함.
-                image_file_size = os.fstat(image_file_3.fileno()).st_size
-                image_file_form = image_file_3.content_type
-
-                # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
-                if not ('image' in image_file_form):
-                    return jsonify({'message': 'INVALID_FILE'})
-
-                # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
-                if image_file_size > 10485760:
-                    return jsonify({'message': 'INVALID_IMAGE1'})
-
-                # big_size 업로드
-                big_size_buffer = self.resize_to_big(image_file_3)
-                if not big_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=big_size_buffer[0], Bucket="brandi-intern", Key=big_size_buffer[1],
-                              ContentType='image/jpeg')
-                big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
-                data['image_file_3']['big_size_url'] = big_size_url
-                data['image_file_3']['big_image_size_id'] = 1
-
-                # medium_size 업로드
-                medium_size_buffer = self.resize_to_medium(image_file_3)
-                if not medium_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=medium_size_buffer[0], Bucket="brandi-intern", Key=medium_size_buffer[1],
-                              ContentType='image/jpeg')
-                medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
-                data['image_file_3']['medium_size_url'] = medium_size_url
-                data['image_file_3']['medium_image_size_id'] = 2
-
-                # small_size 업로드
-                small_size_buffer = self.resize_to_small(image_file_3)
-                if not small_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=small_size_buffer[0], Bucket="brandi-intern", Key=small_size_buffer[1],
-                              ContentType='image/jpeg')
-                small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
-                data['image_file_3']['small_size_url'] = small_size_url
-                data['image_file_3']['small_image_size_id'] = 3
+                s3.put_object(
+                    Body=big_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=big_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
 
             except Exception as e:
                 print(f'error1 : {e}')
-                return jsonify({'message' : 'INVALID_REQUEST'})
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
+            data['image_file_3']['big_size_url'] = big_size_url
+            data['image_file_3']['big_image_size_id'] = 1
+
+            # medium_size 업로드
+            medium_size_buffer = self.resize_to_medium(image_file_3)
+            if not medium_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
+            try:
+                s3.put_object(
+                    Body=medium_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=medium_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
+            data['image_file_3']['medium_size_url'] = medium_size_url
+            data['image_file_3']['medium_image_size_id'] = 2
+
+            # small_size 업로드
+            small_size_buffer = self.resize_to_small(image_file_3)
+            if not small_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
+            try:
+                s3.put_object(
+                    Body=small_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=small_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
+            data['image_file_3']['small_size_url'] = small_size_url
+            data['image_file_3']['small_image_size_id'] = 3
 
         # 순서4번의 이미지파일 이 존재하면 업로드하고 url을 딕셔너리에 추가
         if image_file_4:
+            # 들어온 파일의 사이즈와 확장자를 구함.
+            image_file_size = os.fstat(image_file_4.fileno()).st_size
+            image_file_form = image_file_4.content_type
+
+            # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
+            if not ('image' in image_file_form):
+                return jsonify({'message': 'INVALID_FILE'})
+
+            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            if image_file_size > 10485760:
+                return jsonify({'message': 'INVALID_IMAGE1'})
+
+            # big_size 업로드
+            big_size_buffer = self.resize_to_big(image_file_4)
+            if not big_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
             try:
-                # 들어온 파일의 사이즈와 확장자를 구함.
-                image_file_size = os.fstat(image_file_4.fileno()).st_size
-                image_file_form = image_file_4.content_type
-
-                # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
-                if not ('image' in image_file_form):
-                    return jsonify({'message': 'INVALID_FILE'})
-
-                # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
-                if image_file_size > 10485760:
-                    return jsonify({'message': 'INVALID_IMAGE1'})
-
-                # big_size 업로드
-                big_size_buffer = self.resize_to_big(image_file_4)
-                if not big_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=big_size_buffer[0], Bucket="brandi-intern", Key=big_size_buffer[1],
-                              ContentType='image/jpeg')
-                big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
-                data['image_file_4']['big_size_url'] = big_size_url
-                data['image_file_4']['big_image_size_id'] = 1
-
-                # medium_size 업로드
-                medium_size_buffer = self.resize_to_medium(image_file_4)
-                if not medium_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=medium_size_buffer[0], Bucket="brandi-intern", Key=medium_size_buffer[1],
-                              ContentType='image/jpeg')
-                medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
-                data['image_file_4']['medium_size_url'] = medium_size_url
-                data['image_file_4']['medium_image_size_id'] = 2
-
-                # small_size 업로드
-                small_size_buffer = self.resize_to_small(image_file_4)
-                if not small_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=small_size_buffer[0], Bucket="brandi-intern", Key=small_size_buffer[1],
-                              ContentType='image/jpeg')
-                small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
-                data['image_file_4']['small_size_url'] = small_size_url
-                data['image_file_4']['small_image_size_id'] = 3
+                s3.put_object(
+                    Body=big_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=big_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
 
             except Exception as e:
                 print(f'error1 : {e}')
-                return jsonify({'message' : 'INVALID_REQUEST'})
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
+            data['image_file_4']['big_size_url'] = big_size_url
+            data['image_file_4']['big_image_size_id'] = 1
+
+            # medium_size 업로드
+            medium_size_buffer = self.resize_to_medium(image_file_4)
+            if not medium_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
+            try:
+                s3.put_object(
+                    Body=medium_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=medium_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
+            data['image_file_4']['medium_size_url'] = medium_size_url
+            data['image_file_4']['medium_image_size_id'] = 2
+
+            # small_size 업로드
+            small_size_buffer = self.resize_to_small(image_file_4)
+            if not small_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
+            try:
+                s3.put_object(
+                    Body=small_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=small_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
+            data['image_file_4']['small_size_url'] = small_size_url
+            data['image_file_4']['small_image_size_id'] = 3
 
         # 순서5번의 이미지파일 이 존재하면 업로드하고 url을 딕셔너리에 추가
         if image_file_5:
+            # 들어온 파일의 사이즈와 확장자를 구함.
+            image_file_size = os.fstat(image_file_5.fileno()).st_size
+            image_file_form = image_file_5.content_type
+
+            # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
+            if not ('image' in image_file_form):
+                return jsonify({'message': 'INVALID_FILE'})
+
+            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            if image_file_size > 10485760:
+                return jsonify({'message': 'INVALID_IMAGE1'})
+
+            # big_size 업로드
+            big_size_buffer = self.resize_to_big(image_file_5)
+            if not big_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
             try:
-                # 들어온 파일의 사이즈와 확장자를 구함.
-                image_file_size = os.fstat(image_file_5.fileno()).st_size
-                image_file_form = image_file_5.content_type
-
-                # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
-                if not ('image' in image_file_form):
-                    return jsonify({'message': 'INVALID_FILE'})
-
-                # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
-                if image_file_size > 10485760:
-                    return jsonify({'message': 'INVALID_IMAGE1'})
-
-                # big_size 업로드
-                big_size_buffer = self.resize_to_big(image_file_5)
-                if not big_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=big_size_buffer[0], Bucket="brandi-intern", Key=big_size_buffer[1],
-                              ContentType='image/jpeg')
-                big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
-                data['image_file_5']['big_size_url'] = big_size_url
-                data['image_file_5']['big_image_size_id'] = 1
-
-                # medium_size 업로드
-                medium_size_buffer = self.resize_to_medium(image_file_5)
-                if not medium_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=medium_size_buffer[0], Bucket="brandi-intern", Key=medium_size_buffer[1],
-                              ContentType='image/jpeg')
-                medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
-                data['image_file_5']['medium_size_url'] = medium_size_url
-                data['image_file_5']['medium_image_size_id'] = 2
-
-                # small_size 업로드
-                small_size_buffer = self.resize_to_small(image_file_5)
-                if not small_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
-                s3.put_object(Body=small_size_buffer[0], Bucket="brandi-intern", Key=small_size_buffer[1],
-                              ContentType='image/jpeg')
-                small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
-                data['image_file_5']['small_size_url'] = small_size_url
-                data['image_file_5']['small_image_size_id'] = 3
+                s3.put_object(
+                    Body=big_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=big_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
 
             except Exception as e:
                 print(f'error1 : {e}')
-                return jsonify({'message' : 'INVALID_REQUEST'})
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
+            data['image_file_5']['big_size_url'] = big_size_url
+            data['image_file_5']['big_image_size_id'] = 1
+
+            # medium_size 업로드
+            medium_size_buffer = self.resize_to_medium(image_file_5)
+            if not medium_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
+            try:
+                s3.put_object(
+                    Body=medium_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=medium_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
+            data['image_file_5']['medium_size_url'] = medium_size_url
+            data['image_file_5']['medium_image_size_id'] = 2
+
+            # small_size 업로드
+            small_size_buffer = self.resize_to_small(image_file_5)
+            if not small_size_buffer:
+                return jsonify({"message": "INVALID_IMAGE"}), 400
+
+            try:
+                s3.put_object(
+                    Body=small_size_buffer[0],
+                    Bucket="brandi-intern",
+                    Key=small_size_buffer[1],
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
+            small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
+            data['image_file_5']['small_size_url'] = small_size_url
+            data['image_file_5']['small_image_size_id'] = 3
 
         return data
 
@@ -451,6 +594,8 @@ class ImageUpload:
 
         Returns:
             data: s3 버킷에 올라간 이미지 파일의 url(dictionary)
+            400: 파일형식이 잘못된 경우, 파일 크기가 너무 큰 경우,
+            500: s3에 업로드과정에서 애러가 난 경우.
 
         Authors:
             yoonhc@brandi.co.kr (윤희철)
@@ -458,10 +603,10 @@ class ImageUpload:
         History:
             2020-04-02 (yoonhc@brandi.co.kr): 초기 생성
             2020-04-09 (yoonhc@brandi.co.kr): image파일 업로드 형식을 RESTful api 기준에 맞추어 모듈로 만들고 필요한 앱에서 import해서 사용하는 방식 채택
+            2020-04-11 (yoonhc@brandi.co.kr): s3에 업로드 되는 과정에서 발생하는 애러 except처리 추가.
         """
 
         data = {}
-        # print([file for file in request.files])
         seller_profile_image = request.files.get('seller_profile_image', None)
         certificate_image = request.files.get('certificate_image', None)
         online_business_image = request.files.get('online_business_image', None)
@@ -484,7 +629,19 @@ class ImageUpload:
 
             uploaded_image_name = str(uuid.uuid4())
             s3 = get_s3_connection()
-            s3.put_object(Body=seller_profile_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
+
+            try:
+                s3.put_object(
+                    Body=seller_profile_image,
+                    Bucket="brandi-intern",
+                    Key=uploaded_image_name,
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
             uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
             data["s3_profile_image_url"] = uploaded_image_url
 
@@ -504,7 +661,20 @@ class ImageUpload:
 
             uploaded_image_name = str(uuid.uuid4())
             s3 = get_s3_connection()
-            s3.put_object(Body=certificate_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
+
+            # s3에 올리는 과정에서 발생하는 애러를 잡아줌.
+            try:
+                s3.put_object(
+                    Body=certificate_image,
+                    Bucket="brandi-intern",
+                    Key=uploaded_image_name,
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
             uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
             data["s3_certificate_image_url"] = uploaded_image_url
 
@@ -523,7 +693,20 @@ class ImageUpload:
 
             uploaded_image_name = str(uuid.uuid4())
             s3 = get_s3_connection()
-            s3.put_object(Body=online_business_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
+
+            # s3에 올리는 과정에서 발생하는 애러를 잡아줌.
+            try:
+                s3.put_object(
+                    Body=online_business_image,
+                    Bucket="brandi-intern",
+                    Key=uploaded_image_name,
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
             uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
             data["s3_online_business_image_url"] = uploaded_image_url
 
@@ -543,57 +726,48 @@ class ImageUpload:
 
             uploaded_image_name = str(uuid.uuid4())
             s3 = get_s3_connection()
-            s3.put_object(Body=background_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
+
+            # s3에 올리는 과정에서 발생하는 애러를 잡아줌.
+            try:
+                s3.put_object(
+                    Body=background_image,
+                    Bucket="brandi-intern",
+                    Key=uploaded_image_name,
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
             uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
             data["s3_background_image_url"] = uploaded_image_url
 
         return data
-    #
-    # # 요청받은 기획전 이미지를 s3에 업로드
-    # def upload_event_image(self, request):
-    #     """
-    #     Args:
-    #         request: 요청 값
-    #
-    #     Returns:
-    #         s3 버킷에 올라간 이미지 파일의 url(dictionary)
-    #
-    #     Authors:
-    #         yoonhc@brandi.co.kr (윤희철)
-    #
-    #     History:
-    #         2020-04-02 (yoonhc@brandi.co.kr): 초기 생성
-    #     """
-    #
-    #     data = {}
-    #     # print([file for file in request.files])
-    #     banner_image = request.files.get('banner_image', None)
-    #
-    #     # 500MB 이하만 업로드 가능
-    #     try:
-    #         with Image.open(banner_image) as pillow_obj:
-    #             buffer = io.BytesIO()
-    #             pillow_obj.save(buffer, pillow_obj.format)
-    #             print(buffer.tell()/1000)
-    #             if buffer.tell()/1000 > 500000:
-    #                 return jsonify({'message' : f'{buffer}'}), 400
-    #
-    #     except Exception:
-    #         return jsonify({'message' : 'INVALID_IMAGE1'}), 400
-    #
-    #     uploaded_image_name = str(uuid.uuid4())
-    #     s3 = get_s3_connection()
-    #     s3.put_object(Body=image_file, Bucket="brandi-intern", Key=uploaded_image_name)
-    #     uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
-    #     data["uploaded_image_url"] = uploaded_image_url
-    #
-    #     return data
 
     # 요청받은 셀러 이미지를 s3에 업로드
     def upload_event_image(self, request):
-        """
-        기획전 이미지 업로더 수정 필요. 임시로 사용.
+        """ 기획전 이미지 파일을 업로드하고 url을 리턴하는 매서드
+        request 의 files 안에 파일객체를 가져와서 값이 있으면 s3에 올리는 작업 수행.
+        파일의 형식이 image가 아닐 경우 이미지를 업로드 하지 않음.
+        파일의 크기가 일정크기를 넘으면 업로드 하지 않음.
+        boto3 라이브러리를 이용하여 s3에 업로드하고 url을 리턴함.
 
+        Args:
+            request: 이미지 파일을 포함한 요청 값
+
+        Returns:
+            data: s3 버킷에 올라간 이미지 파일의 url(dictionary)
+            400: 파일형식이 잘못된 경우, 파일 크기가 너무 큰 경우,
+            500: s3에 업로드과정에서 애러가 난 경우.
+
+        Authors:
+            yoonhc@brandi.co.kr (윤희철)
+
+        History:
+            2020-04-02 (yoonhc@brandi.co.kr): 초기 생성
+            2020-04-09 (yoonhc@brandi.co.kr): image파일 업로드 형식을 RESTful api 기준에 맞추어 모듈로 만들고 필요한 앱에서 import해서 사용하는 방식 채택
+            2020-04-11 (yoonhc@brandi.co.kr): s3에 업로드 되는 과정에서 발생하는 애러 except처리 추가.
         """
 
         data = {}
@@ -618,7 +792,20 @@ class ImageUpload:
 
             uploaded_image_name = str(uuid.uuid4())
             s3 = get_s3_connection()
-            s3.put_object(Body=banner_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
+
+            # s3에 올리는 과정에서 발생하는 애러를 잡아줌
+            try:
+                s3.put_object(
+                    Body=banner_image,
+                    Bucket="brandi-intern",
+                    Key=uploaded_image_name,
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
             uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
             data["s3_banner_image_url"] = uploaded_image_url
 
@@ -638,7 +825,20 @@ class ImageUpload:
 
             uploaded_image_name = str(uuid.uuid4())
             s3 = get_s3_connection()
-            s3.put_object(Body=detail_image, Bucket="brandi-intern", Key=uploaded_image_name, ContentType='image/jpeg')
+
+            # s3에 올리는 과정에서 발생하는 애러를 잡아줌
+            try:
+                s3.put_object(
+                    Body=detail_image,
+                    Bucket="brandi-intern",
+                    Key=uploaded_image_name,
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                print(f'error1 : {e}')
+                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+
             uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
             data["s3_detail_image_url"] = uploaded_image_url
 

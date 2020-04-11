@@ -26,10 +26,10 @@ class SellerDao:
             random_name: 랜덤한 이름 리
 
         Authors:
-            heechul@brandi.co.kr (윤희철)
+            yoonhc@brandi.co.kr (윤희철)
 
         History:
-            2020-04-07 (heechul@brandi.co.kr): 초기 생성
+            2020-04-07 (yoonhc@brandi.co.kr): 초기 생성
         """
         random_name = str(uuid.uuid4())
         return random_name
@@ -394,11 +394,12 @@ class SellerDao:
             500: SERVER ERROR
 
         Authors:
-            heechul@brandi.co.kr (윤희철)
+            yoonhc@brandi.co.kr (윤희철)
 
         History:
-            2020-04-03(heechul@brandi.co.kr): 초기 생성
-            2020-04-07(heechul@brandi.co.kr): 엑셀 다운로드 기능 추가
+            2020-04-03(yoonhc@brandi.co.kr): 초기 생성
+            2020-04-07(yoonhc@brandi.co.kr): 엑셀 다운로드 기능 추가
+            2020-04-10(yoonhc@brandi.co.kr): 필터링 키워드가 들어오면 필터된 셀러를 count하고 결과값에 추가하는 기능 작성
         """
 
         # offset과 limit에 음수가 들어오면  default값 지정
@@ -555,7 +556,7 @@ class SellerDao:
                 # pagination을 위해서 전체 셀러가 몇명인지 count해서 기존의 seller_info에 넣어줌.
                 seller_count_statement = '''
                     SELECT 
-                    COUNT(seller_account_id) as seller_count
+                    COUNT(seller_account_id) as total_seller_count
                     FROM seller_infos
                     LEFT JOIN seller_accounts ON seller_infos.seller_account_id = seller_accounts.seller_account_no 
                     LEFT JOIN accounts ON seller_accounts.account_id = accounts.account_no 
@@ -564,7 +565,25 @@ class SellerDao:
                 db_cursor.execute(seller_count_statement)
                 seller_count = db_cursor.fetchone()
 
-                return jsonify({'seller_list': seller_info, 'seller_count': seller_count['seller_count']}), 200
+                # 쿼리파라미터가 들어오면 필터된 셀러를 카운트하고 리턴 값에 포함시킴.
+                if len(filter_query) > 0:
+                    filter_query_values_count_statement = f'''
+                        SELECT COUNT(0) as filtered_seller_count
+                        FROM seller_infos
+                        right JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
+                        LEFT JOIN accounts ON seller_accounts.account_id = accounts.account_no
+                        LEFT JOIN seller_statuses ON seller_infos.seller_status_id = seller_statuses.status_no
+                        LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
+                        LEFT JOIN manager_infos on manager_infos.seller_info_id = seller_infos.seller_info_no 
+                        WHERE seller_infos.close_time = '2037-12-31 23:59:59.0' 
+                        AND manager_infos.ranking = 1{filter_query}
+                        LIMIT %(limit)s OFFSET %(offset)s
+                    '''
+                    db_cursor.execute(filter_query_values_count_statement, parameter)
+                    filter_query_values_count = db_cursor.fetchone()
+                    seller_count['filtered_seller_count'] = filter_query_values_count['filtered_seller_count']
+
+                return jsonify({'seller_list': seller_info, 'seller_count': seller_count}), 200
 
         # 데이터베이스 error
         except Exception as e:
@@ -938,7 +957,7 @@ class SellerDao:
                     'seller_account_id': seller_account_id
                 }
 
-                # 새로운 이력 생성 이전의 셀러 번호를 가져와서 셀러데이터에 저장
+                # 새로운 이력 생성 이전의 셀러 인포 번호를 가져와서 셀러데이터에 저장
                 db_cursor.execute('''
                 SELECT seller_info_no
                 FROM seller_infos
