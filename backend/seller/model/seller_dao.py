@@ -420,7 +420,8 @@ class SellerDao:
 
         name_kr = request.valid_param['name_kr']
         if name_kr:
-            filter_query += f" AND name_kr = '{name_kr}'"
+            # filter_query += f" AND name_kr = '{name_kr}'"
+            filter_query += f" AND name_kr LIKE '%{name_kr}%'"
 
         name_en = request.valid_param['name_en']
         if name_en:
@@ -481,7 +482,10 @@ class SellerDao:
                     seller_accounts.created_at,
                     manager_infos.name as manager_name,
                     manager_infos.contact_number as manager_contact_number,
-                    manager_infos.email as manager_email
+                    manager_infos.email as manager_email,
+                    seller_infos.product_sort_id,
+                    profile_image_url,
+                    accounts.account_no
                     FROM seller_infos
                     right JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
                     LEFT JOIN accounts ON seller_accounts.account_id = accounts.account_no
