@@ -657,7 +657,6 @@ class ProductDao:
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
-<<<<<<< HEAD
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
     # noinspection PyMethodMayBeStatic
@@ -702,8 +701,6 @@ class ProductDao:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
-=======
-            return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
 
         # noinspection PyMethodMayBeStatic
 
@@ -857,4 +854,3 @@ class ProductDao:
         except Exception as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
->>>>>>> d4a5c04... wip2
