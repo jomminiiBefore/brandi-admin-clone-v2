@@ -149,7 +149,6 @@ class ProductService:
         """
 
         product_dao = ProductDao()
-<<<<<<< HEAD
         auth_type = product_info['auth_type_id']
         if auth_type == 1:
             update_product_result = product_dao.update_product_info(product_info, db_connection)
@@ -184,7 +183,6 @@ class ProductService:
         """
         product_dao = ProductDao()
         return product_dao.get_color_filters(db_connection)
-=======
         update_product_result = product_dao.update_product_info(product_info, db_connection)
         return update_product_result
 
@@ -216,4 +214,3 @@ class ProductService:
         if auth_type_id == 1:
             product_list_result = product_dao.get_product_list(request, db_connection)
             return product_list_result
->>>>>>> d4a5c04... wip2
