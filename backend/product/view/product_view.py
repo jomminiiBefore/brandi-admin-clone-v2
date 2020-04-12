@@ -390,3 +390,57 @@ class ProductView():
                     return jsonify({'message': f'{e}'}), 500
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+
+
+    @product_app.route('', methods=['GET'], endpoint='get_all_products')
+    @login_required
+    @validate_params(
+        Param('period_start', GET, str, required=False),
+        Param('period_end', GET, str, required=False),
+        Param('seller_name', GET, str, required=False),
+        Param('product_name', GET, str, required=False),
+        Param('product_number', GET, int, required=False),
+        Param('seller_types', GET, str, required=False),
+        Param('available', GET, str, required=False),
+        Param('is_on_display', GET, str, required=False),
+        Param('is_on_discount', GET, str, required=False),
+    )
+    def get_product_list(*args):
+
+        """ 상품 리스트
+
+        Returns:
+            200:
+
+        Authors:
+            kimsj5@barndi.co.kr (김승준)
+
+        History:
+            2020-04-09 (kimsj5@brandi.co.kr): 초기 생성
+        """
+
+        # 데이터베이스 커넥션을 열어줌.
+        db_connection = DatabaseConnection()
+
+        # request에 통과한 쿼리파라미터를 담을 리스트를 생성.
+        request.valid_param = {}
+
+        # request안에 valid_param 리스트에 validation을 통과한 query parameter을 넣어줌.
+        request.valid_param['period_start'] = args[0] # 조회 기간 시작
+        request.valid_param['period_end'] = args[1] # 조회 기간 끝
+        request.valid_param['seller_name'] = args[2] # 셀러명
+        request.valid_param['product_name'] = args[3] # 상품명
+        request.valid_param['product_number'] = args[4] # 상품번호
+        request.valid_param['seller_types'] = args[5] # 셀러속성
+        request.valid_param['available'] = args[6] # 판매여부
+        request.valid_param['is_on_display'] = args[7] # 진열여부
+        request.valid_param['is_on_discount'] = args[8] # 할인여부
+
+
+        # 유저 정보를 g에서 읽어와서 service에 전달
+        user = g.account_info
+        product_service = ProductService()
+        product_list_result = product_service.get_product_list(request, user, db_connection)
+
+        return product_list_result

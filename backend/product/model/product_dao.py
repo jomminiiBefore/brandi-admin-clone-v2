@@ -701,3 +701,156 @@ class ProductDao:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
+
+        # noinspection PyMethodMayBeStatic
+
+    def get_product_list(self, request, db_connection):
+
+        """ GET 상 리스트를 표출하고, 검색 키워드 요청 시 상품 필터링
+
+        Args:
+            db_connection: 연결된 database connection 객체
+            request: 쿼리파라미터를 가져옴
+
+        Returns: http 응답코드
+            200: 상품 리스트 표출(검색기능 포함)
+            500: SERVER ERROR
+
+        Authors:
+            kimsj5@brandi.co.kr (김승준)
+
+        History:
+            2020-04-09(kimsj5@brandi.co.kr): 초기 생성
+        """
+
+        # offset과 limit에 음수가 들어오면  default값 지정
+        offset = 0 if int(request.args.get('offset', 0)) < 0 else int(request.args.get('offset', 0))
+        limit = 10 if int(request.args.get('limit', 10)) < 0 else int(request.args.get('limit', 10))
+
+        # sql에서 where 조건문에 들어갈 필터 문자열
+        filter_query = ''
+
+        # request안의 유효성검사에 딕셔너리인 valid_param에서 value가 None이 아니면 filter_query에 조건 쿼리문을 추가해줌.
+        # period_start = request.valid_param['period_start']
+        # if period_start:
+        #     filter_query += f" AND seller_accounts.inquiry_period = {period_start}"
+
+        seller_name = request.valid_param['seller_name']
+        if seller_name:
+            filter_query += f" AND seller_infos.name_kr = '{seller_name}'"
+
+        product_name = request.valid_param['product_name']
+        if product_name:
+            filter_query += f" AND product_infos.name = '{product_name}'"
+
+        product_number = request.valid_param['product_number']
+        if product_number:
+            filter_query += f" AND product_no = '{product_number}'"
+
+        seller_types = request.valid_param['seller_types']
+        if seller_types:
+            filter_query += f" AND seller_types.name = '{seller_types}'"
+
+        available = request.valid_param['available']
+        if available:
+            filter_query += f" AND product_infos.is_available = '{available}'"
+
+        is_on_display = request.valid_param['is_on_display']
+        if is_on_display:
+            filter_query += f" AND product_infos.is_on_display = '{is_on_display}'"
+
+        is_on_discount = request.valid_param['is_on_discount']
+        if is_on_discount:
+            if is_on_discount == "1":
+                filter_query += f" AND product_infos.discount_rate > 0"
+            else:
+                filter_query += f" AND product_infos.discount_rate = 0"
+
+        # seller_type_name = request.valid_param['seller_type_name']
+        # if seller_type_name:
+        #     filter_query += f" AND seller_types.name = '{seller_type_name}'"
+
+        # start_date = request.valid_param['start_time']
+        # end_date = request.valid_param['close_time']
+        # if start_date and end_date:
+        #     start_date = str(request.args.get('start_time', None)) + ' 00:00:00'
+        #     end_date = str(request.args.get('close_time', None)) + ' 23:59:59'
+        #     filter_query += f" AND seller_accounts.created_at > '{start_date}' AND seller_accounts.created_at < '{end_date}'"
+
+        try:
+            with db_connection as db_cursor:
+
+                # 상 리스트를 가져오는 sql 명령문, 쿼리가 들어오면 쿼리문을 포메팅해서 검색 실행
+                select_product_list_statement = f'''
+                    SELECT 
+                        products.created_at, 
+                        product_images.image_url, 
+                        product_infos.name as product_name,
+                        products.product_no, 
+                        seller_types.name as seller_type,
+                        seller_infos.name_kr,
+                        product_infos.price,
+                        FLOOR(product_infos.price*(1-product_infos.discount_rate)) as discount_price,
+                        product_infos.discount_rate,
+                        product_infos.is_available,
+                        product_infos.is_on_display,
+                        (CASE WHEN product_infos.discount_rate > 0 THEN 1 ELSE 0 END) AS is_discount
+                    FROM products
+                    LEFT JOIN product_infos ON products.product_no = product_infos.product_id
+                    LEFT JOIN product_images ON product_infos.product_info_no = product_images.product_info_id 
+                    LEFT JOIN product_sorts ON product_infos.product_sort_id = product_sorts.product_sort_no
+                    LEFT JOIN seller_types ON product_sorts.product_sort_no = seller_types.product_sort_id
+                    LEFT JOIN seller_infos ON seller_types.seller_type_no = seller_infos.seller_type_id
+                    WHERE seller_infos.close_time = '2037-12-31 23:59:59.0'
+                    AND product_images.image_size_id = 1
+                    AND product_images.image_order = 1
+                    {filter_query}
+                    LIMIT %(limit)s OFFSET %(offset)s                   
+                   '''
+                parameter = {
+                    'limit': limit,
+                    'offset': offset,
+                }
+
+                # sql 쿼리와 pagination 데이터 바인딩
+                db_cursor.execute(select_product_list_statement, parameter)
+                product_info = db_cursor.fetchall()
+
+                # 셀러 상태를 확인하여 해당 상태에서 취할 수 있는 action을 기존의 seller_info에 넣어줌.
+                # for seller in seller_info:
+                #     if seller['seller_status'] == '입점':
+                #         seller['action'] = ['휴점 신청', '퇴점 신청 처리']
+                #     elif seller['seller_status'] == '입점대기':
+                #         seller['action'] = ['입점 승인', '입점 거절']
+                #     elif seller['seller_status'] == '휴점':
+                #         seller['action'] = ['휴점 해제', '퇴점 신청 처리']
+                #     elif seller['seller_status'] == '퇴점대기':
+                #         seller['action'] = ['휴점 신청', '퇴점 확정 처리', '퇴점 철회 처리']
+
+                print(filter_query)
+                # pagination을 위해서 상품 몇개인지 count해서 기존의 product_info에 넣어줌.
+                product_count_statement = f'''
+                    SELECT
+                      COUNT(0) as filtered_product_count
+                    FROM products
+                    LEFT JOIN product_infos ON products.product_no = product_infos.product_id
+                    LEFT JOIN product_images ON product_infos.product_info_no = product_images.product_info_id
+                    LEFT JOIN product_sorts ON product_infos.product_sort_id = product_sorts.product_sort_no
+                    LEFT JOIN seller_types ON product_sorts.product_sort_no = seller_types.product_sort_id
+                    LEFT JOIN seller_infos ON seller_types.seller_type_no = seller_infos.seller_type_id
+                    WHERE seller_infos.close_time = '2037-12-31 23:59:59.0' 
+                    AND product_images.image_size_id=1
+                    {filter_query}
+                   '''
+                db_cursor.execute(product_count_statement)
+                product_count = db_cursor.fetchone()
+                print(product_count['filtered_product_count'])
+
+                return jsonify({'product_list': product_info,
+                                'product_count': product_count['filtered_product_count']
+                                }), 200
+
+        # 데이터베이스 error
+        except Exception as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            return jsonify({'error': 'DB_CURSOR_ERROR'}), 500
