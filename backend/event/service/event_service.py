@@ -55,7 +55,6 @@ class EventService:
             # 기획전 타입이 상품(이미지)일 경우
             if event_info['event_type_id'] == "3":
                 registering_event_result = event_dao.register_product_image_event(event_info, event_product_info, db_connection)
-                print(1)
                 return registering_event_result
 
             # 기획전 타입이 상품(텍스트)일 경우
@@ -200,7 +199,7 @@ class EventService:
             2020-04-11 (yoonhc@brandi.co.kr): 각 기획전 타입별 들어오지 말아야할 키값을 걸러주는 로직 추가.
 
         """
-        print(event_info)
+
         event_dao = EventDao()
         try:
             # 기획전 타입이 이벤트일 경우

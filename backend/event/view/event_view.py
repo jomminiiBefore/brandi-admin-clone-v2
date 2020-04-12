@@ -36,42 +36,42 @@ class EventView:
     @login_required
     @validate_params(
         # 전체 기획전 필수값
-        Param('event_type_id', JSON, str,
+        Param('event_type_id', FORM, str,
               rules=[Pattern(r"^[1-5]{1}$")]),
-        Param('event_sort_id', JSON, int),
-        Param('is_on_main', JSON, str,
+        Param('event_sort_id', FORM, int),
+        Param('is_on_main', FORM, str,
               rules=[Pattern(r"^[0-1]{1}$")]),
-        Param('is_on_event', JSON, str,
+        Param('is_on_event', FORM, str,
               rules=[Pattern(r"^[0-1]{1}$")]),
-        Param('name', JSON, str,
+        Param('name', FORM, str,
               rules=[Pattern(r"^.{1,25}$")]),
-        Param('event_start_time', JSON, str,
+        Param('event_start_time', FORM, str,
               rules=[Pattern(r"^([2][0]\d{2})-([0-2]\d)-([0-2]\d) ([0-2]\d):([0-5]\d)$")]),
-        Param('event_end_time', JSON, str,
+        Param('event_end_time', FORM, str,
               rules=[Pattern(r"^([2][0]\d{2})-([0-2]\d)-([0-2]\d) ([0-2]\d):([0-5]\d)$")]),
 
         # 각 기획전 타입 필수값 여부는 function 내부에서 확인
-        Param('short_description', JSON, str, required=False,
+        Param('short_description', FORM, str, required=False,
               rules=[MaxLength(45)]),
-        Param('long_description', JSON, str, required=False),
-        Param('banner_image_url', JSON, str, required=False,
+        Param('long_description', FORM, str, required=False),
+        Param('banner_image_url', FORM, str, required=False,
               rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
-        Param('banner_image_url', JSON, str, required=False,
+        Param('banner_image_url', FORM, str, required=False,
               rules=[MaxLength(200)]),
-        Param('detail_image_url', JSON, str, required=False,
+        Param('detail_image_url', FORM, str, required=False,
               rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
-        Param('detail_image_url', JSON, str, required=False,
+        Param('detail_image_url', FORM, str, required=False,
               rules=[MaxLength(200)]),
-        Param('button_name', JSON, str, required=False,
+        Param('button_name', FORM, str, required=False,
               rules=[MaxLength(10)]),
-        Param('button_link_type_id', JSON, str, required=False,
+        Param('button_link_type_id', FORM, str, required=False,
               rules=[Pattern(r"^[1-6]{1}$")]),
-        Param('button_link_description', JSON, str, required=False,
+        Param('button_link_description', FORM, str, required=False,
               rules=[MaxLength(45)]),
-        Param('product', JSON, list, required=False),
-        Param('youtube_url', JSON, str, required=False,
+        Param('product', FORM, str, required=False),
+        Param('youtube_url', FORM, str, required=False,
               rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
-        Param('youtube_url', JSON, str, required=False,
+        Param('youtube_url', FORM, str, required=False,
               rules=[MaxLength(200)])
     )
     def register_event_info(*args):
@@ -127,9 +127,16 @@ class EventView:
             2020-04-10 (yoonhc@brandi.co.kr): 상품(이미지), 상품(텍스트), 유튜브 기획전 작성
 
         """
-
         if g.account_info['auth_type_id'] != 1:
             return jsonify({'message': 'NO_AUTHORIZATION'}), 403
+
+        # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url을 사전형으로 가져옴.
+        image_upload = ImageUpload()
+        event_image = image_upload.upload_event_image(request)
+
+        # 함수의 실행결과에 400이 포함된 경우 애러메세지를 그대로 리턴함.
+        if (400 or 500) in event_image:
+            return event_image
 
         # validation(형식) 확인된 데이터 저장
         event_info = {
@@ -142,8 +149,8 @@ class EventView:
             'event_end_time': args[6],
             'short_description': args[7],
             'long_description': args[8],
-            'banner_image_url': args[9],
-            'detail_image_url': args[11],
+            'banner_image_url': event_image.get('s3_banner_image_url', None),
+            'detail_image_url': event_image.get('s3_detail_image_url', None),
             'button_name': args[13],
             'button_link_type_id': args[14],
             'button_link_description': args[15],
@@ -152,8 +159,21 @@ class EventView:
             'account_no': g.account_info['account_no']
             }
 
-        # 이벤트 상품을 service로 넘길 변수에 담아준다. None이 들어와도 일단 넘긴다.
-        event_product_info = args[16]
+        # file 로 이미지가 안들어올 경우, FORM 으로 받은 이미지 url로 대체
+        if not event_info['banner_image_url']:
+            event_info['banner_image_url'] = args[10]
+
+        if not event_info['detail_image_url']:
+            event_info['detail_image_url'] = args[12]
+
+        # 리스트로 들어온 product 정보를 따로 저장 (dao 에서 에러를 막기 위해), 값이 안들어오면 None으로 넘겨줌.
+        try:
+            # form데이터로 값을 받으면 str처리가 되기 때문에 json.loads통해서 array 자료형으로 만들어준다.
+            event_product_info = json.loads(args[16])
+
+        except:
+            # form data로 값이 들어오지 않으면 None type을 파싱하는 경우가 생기기 때문에 except처리를 넣고 넘겨줄 값에 None을 담는다.
+            event_product_info = None
 
         # 기획전 기간 밸리데이션
         now = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M')
