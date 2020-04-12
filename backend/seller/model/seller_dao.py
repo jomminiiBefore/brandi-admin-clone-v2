@@ -578,10 +578,7 @@ class SellerDao:
                 db_cursor.execute(seller_count_statement)
                 seller_count = db_cursor.fetchone()
 
-<<<<<<< HEAD
                 # 쿼리파라미터가 들어오면 필터된 셀러를 카운트하고 리턴 값에 포함시킴.
-=======
->>>>>>> d4a5c04... wip2
                 if len(filter_query) > 0:
                     filter_query_values_count_statement = f'''
                         SELECT COUNT(0) as filtered_seller_count
