@@ -319,7 +319,6 @@ class EventDao:
                     for product in event_product_info:
                         # 바인딩을 위해서 한개의 상품정보에 새로 생성된 이벤트인포 아이디를 넣어줌
                         product['new_event_info_id'] = new_event_info_id
-                        print(product)
 
                         insert_event_detail_product_infos = '''
                         INSERT INTO event_detail_product_infos(
@@ -794,13 +793,14 @@ class EventDao:
 
         """ 기획전 정보 테이블에 새로운 이력 생성.
         새로운 이력을 만들어주기 전 해당 기획전 id값을 가지는 가장 최근의 기획전 정보의 선분을 현시간으로 끊어줌.
-        유효성검사를 통과한 arguments로 기획전 정보 테이블에 새로운 이력 생성
-        기획전 타입이 이벤트, 쿠폰인 경우 버튼 테이블에 새로생성된 기획전 정보를 foreign key로 가지는 새로운 row추가.
+        유효성검사를 통과한 arguments 로 기획전 정보 테이블에 새로운 이력 생성
+        기획전 타입이 이벤트, 쿠폰인 경우 버튼 테이블에 새로생성된 기획전 정보를 foreign key 로 가지는 새로운 row 추가.
         기획전 타입이 상품이미지, 상품텍스트, 유튜브인 경우 기획전 상품테이블에 새로생성된 기획전 정보를
-        foreign key로 가지는 새로운 row추가.(기획전상품 값이 들어온 경우에 한함.)
+        foreign key 로 가지는 새로운 row 추가.(기획전상품 값이 들어온 경우에 한함.)
 
         Args:
             event_info: 유효성 검사를 통과한 기획전 수정 정보
+            event_product_info: 기획전 타입이 상품, 유튜브 일 경우 상품 정보를 받아옴
             db_connection: 연결된 database connection 객체
 
         Returns: http 응답코드
@@ -930,7 +930,7 @@ class EventDao:
                     db_cursor.execute(insert_event_detail_infos_statement, event_info)
 
                 if event_info['event_type_id'] in range(3, 6):
-                    # for문을 돌면서 들어온 이벤트 상품 정보를 이베트 상품 테이블에 생성함.
+                    # for 문을 돌면서 들어온 이벤트 상품 정보를 이벤트 상품 테이블에 생성함.
                     for product in event_product_info:
                         # 기획전 타입이 상품이미지, 상품텍스트, 유튜브일 경우 기획전 상품정보 INSERT 문
                         insert_event_product_detail_infos_statement = '''
@@ -944,7 +944,7 @@ class EventDao:
                             %(event_info_id)s
                             )
                         '''
-                        # 위에서 생성된 새로운 이력의 event_info의 no값을 이벤트 상품 정보에 바인딩을 위해 넣어줌.
+                        # 위에서 생성된 새로운 이력의 event_info 의 no 값을 이벤트 상품 정보에 바인딩을 위해 넣어줌.
                         product['event_info_id'] = event_info_no
                         db_cursor.execute(insert_event_product_detail_infos_statement, product)
 
