@@ -23,7 +23,8 @@ class DatabaseConnection:
 
     def __init__(self):
 
-        """ database connection 생성
+        """ 데이터베이스 커넥션을 만들어주는 클래
+        database connection 생성
 
         Returns:
             database connection 객체
@@ -32,7 +33,7 @@ class DatabaseConnection:
             yoonhc@brandi.co.kr (윤희철)
             leesh3@brandi.co.kr (이소헌)
 
-        History:
+        History:스
             2020-03-30 (yoonhc@brandi.co.kr): 초기 생성
             2020-04-01 (leesh3@brandi.co.kr): 클래스화
         """

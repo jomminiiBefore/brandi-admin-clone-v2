@@ -557,8 +557,8 @@ class EventDao:
                         )
                         '''
                         db_cursor.execute(insert_event_detail_product_infos, product)
-
                         db_connection.commit()
+
                 return jsonify({'message': 'SUCCESS'}), 200
 
         except KeyError as e:
@@ -747,7 +747,7 @@ class EventDao:
                 # 이벤트타입 아이디가 상품이미지, 상품텍스트, 유튜브에 해당할경우 기획전 상품리스트를 가져옴
                 if info['event_type_id'] in range(3, 6):
 
-                    # 위에서 가져온 이벤트 인포 번호를 where조건문에 foreign key자리에 일치시켜줌
+                    # 위에서 가져온 이벤트 인포 번호를 where 조건문에 foreign key 자리에 일치시켜줌
                     select_product_statement = '''
                     SELECT 
                     event_detail_product_infos.product_order,
@@ -857,13 +857,13 @@ class EventDao:
                 # 자동 커밋 비활성화
                 db_cursor.execute("SET AUTOCOMMIT=0")
 
-                # 새로운 선분이력을 만들어줄 때 이전의 이력의 end_time값을 주기위해 현재 시각을 데이터베이스에서 가져옴.
+                # 새로운 선분이력을 만들어줄 때 이전의 이력의 close_time 값을 주기위해 현재 시각을 데이터베이스에서 가져옴.
                 db_cursor.execute('SELECT NOW()')
                 current_time = db_cursor.fetchone()['NOW()']
                 event_info['current_time'] = current_time
 
-                # 기획전 정보 새로운 이력 생성. view와 service에서 유효성검사가 끝났기 때문에 기호기전 타입과 무관하게 필요한 필드를 전부 생성
-                # 새로운 이력을 싱성하기 전 선분의 close_time을 현재시각으로 바꿔줌.
+                # 기획전 정보 새로운 이력 생성. view 와 service 에서 유효성검사가 끝났기 때문에 기획전 타입과 무관하게 필요한 필드를 전부 생성
+                # 새로운 이력을 싱성하기 전 선분의 close_time 을 현재시각으로 바꿔줌.
                 db_cursor.execute('''
                 UPDATE event_infos
                 SET close_time = %(current_time)s
