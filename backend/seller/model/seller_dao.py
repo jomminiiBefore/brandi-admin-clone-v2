@@ -35,15 +35,15 @@ class SellerDao:
         return random_name
 
     # noinspection PyMethodMayBeStatic
-    def get_account_password(self, account_info, db_connection):
+    def get_account_password(self, change_info, db_connection):
 
         """ 계정의 암호화된 비밀번호 표출
 
         비밀번호 변경 시 기존 비밀번호를 제대로 입력했는지 확인하기 위해,
-        인자로 받아온 account_info['parameter_account_no'] 의 password 를 표출합니다.
+        인자로 받아온 change_info['parameter_account_no'] 의 password 를 표출합니다.
 
         Args:
-            account_info: account 정보
+            change_info: account 정보
             (parameter_account_no: 비밀번호를 확인할 account_no)
             db_connection: 연결된 database connection 객체
 
@@ -56,25 +56,23 @@ class SellerDao:
 
         History:
             2020-03-31 (leejm3@brandi.co.kr): 초기 생성
+            2020-04-12 (leejm3@brandi.co.kr):
+                - 받는 인자 명칭을 명확히 하기 위해 변경(account_info -> change_info)
+                - sql 바인딩용 데이터를 따로 만들었는데, 인자로 받은 change_info 를 그대로 사용하도록 변경
         """
 
         try:
             with db_connection.cursor() as db_cursor:
 
-                # SELECT 문에서 확인할 데이터
-                account_info_data = {
-                    'account_no': account_info['parameter_account_no']
-                }
-
                 # accounts 테이블 SELECT
                 select_account_password_statement = """
                     SELECT account_no, password 
                     FROM accounts 
-                    WHERE account_no = %(account_no)s
+                    WHERE account_no = %(parameter_account_no)s
                 """
 
                 # SELECT 문 실행
-                db_cursor.execute(select_account_password_statement, account_info_data)
+                db_cursor.execute(select_account_password_statement, change_info)
 
                 # 쿼리로 나온 기존 비밀번호를 가져옴
                 original_password = db_cursor.fetchone()
@@ -89,17 +87,21 @@ class SellerDao:
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
     # noinspection PyMethodMayBeStatic
-    def change_password(self, account_info, db_connection):
+    def change_password(self, change_info, db_connection):
 
         """ UPDATE 계정 비밀번호 DB
 
         Args:
-            account_info: account 정보
-            (parameter_account_no: 비밀번호를 확인할 account_no
+            change_info:
+                parameter_account_no: 비밀번호가 바뀌어야할 계정 번호
+                original_password: 기존 비밀번호
+                new_password: 새로운 비밀번호
+
             db_connection: 연결된 database connection 객체
 
         Returns: http 응답코드
             200: SUCCESS 비밀번호 변경 완료
+            400: INVALID_PARAMETER_ACCOUNT_NO
             500: DB_CURSOR_ERROR, INVALID_KEY
 
         Authors:
@@ -107,16 +109,17 @@ class SellerDao:
 
         History:
             2020-03-31 (leejm3@brandi.co.kr): 초기 생성
+            2020-04-12 (leejm3@brandi.co.kr):
+                - 비밀번호 변경을 적용할 계정번호가 없으면 'INVALID_PARAMETER_ACCOUNT_NO' 반환하도록 수정
+                - 받는 인자 명칭을 명확히 하기 위해 변경(account_info -> change_info)
+                - sql 바인딩용 데이터를 따로 만들었는데, 인자로 받은 change_info 를 그대로 사용하도록 변경
+                - 주석 수정(Args)
+                    - change_info 인자 중 dao 에서 사용하는 인자에 대한 설명 추가
+                    - INVALID_PARAMETER_ACCOUNT_NO 에러 추가
         """
 
         try:
             with db_connection.cursor() as db_cursor:
-
-                # SELECT 문에서 확인할 데이터
-                account_info_data = {
-                    'account_no': account_info['parameter_account_no'],
-                    'password': account_info['new_password'],
-                }
 
                 # accounts 테이블 UPDATE
                 update_password_statement = """
@@ -125,14 +128,20 @@ class SellerDao:
                     SET
                     password = %(password)s
                     WHERE
-                    account_no = %(account_no)s
+                    account_no = %(parameter_account_no)s
                 """
 
                 # UPDATE 문 실행
-                db_cursor.execute(update_password_statement, account_info_data)
+                db_cursor.execute(update_password_statement, change_info)
+
+                # 비밀번호 변경을 적용할 계정번호가 없으면 에러 반환
+                # 적용된 쿼리가 없으면 rowcount = 0 을 반환하는것을 이용
+                if db_cursor.rowcount == 0:
+                    return jsonify({'message': 'INVALID_PARAMETER_ACCOUNT_NO'}), 400
 
                 # 실행 결과 반영
                 db_connection.commit()
+
                 return jsonify({'message': 'SUCCESS'}), 200
 
         except KeyError:
