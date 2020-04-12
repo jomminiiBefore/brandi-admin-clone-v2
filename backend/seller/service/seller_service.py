@@ -261,7 +261,7 @@ class SellerService:
 
         return jsonify({'message': 'AUTHORIZATION_REQUIRED'}), 403
 
-    def change_seller_status(self, valid_param, user, db_connection):
+    def change_seller_status(self, target_seller_info, user, db_connection):
 
         """ 마스터 권한 셀러 상태 변경
             Args:
@@ -287,14 +287,12 @@ class SellerService:
 
         # 마스터 유저이면 dao에 db_connection 전달
         if auth_type_id == 1:
-            seller_status_id = valid_param.get('seller_status_id', None)
-            seller_account_id = valid_param.get('seller_account_id', None)
 
             # 셀러 상태 번호와 셀러 계정 번호가 둘다 들어오지 않으면 400 리턴
-            if not seller_status_id or not seller_account_id:
+            if not target_seller_info['seller_account_id'] or not target_seller_info['seller_status_id']:
                 return jsonify({'message': 'INVALID_VALUE'}), 400
 
-            seller_list_result = seller_dao.change_seller_status(seller_status_id, seller_account_id, db_connection)
+            seller_list_result = seller_dao.change_seller_status(target_seller_info, db_connection)
             return seller_list_result
 
         return jsonify({'message': 'AUTHORIZATION_REQUIRED'}), 403

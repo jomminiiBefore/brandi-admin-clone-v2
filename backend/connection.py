@@ -9,6 +9,20 @@ from config import DATABASES, S3_CONFIG
 
 # make s3 connection
 def get_s3_connection():
+
+    """ s3와 커넥션을 만들어주는 함수.
+    s3 connection 생성.
+    import되어서 사용될 때 마다 하나의 s3 커넥션이 생긴다.
+
+    Returns:
+        s3_connection 객체
+
+    Authors:
+        yoonhc@brandi.co.kr (윤희철)
+
+    History:스
+        2020-04-01 (yoonhc@brandi.co.kr): 초기 생성
+    """
     s3_connection = boto3.client(
         's3',
         aws_access_key_id=S3_CONFIG['AWS_ACCESS_KEY_ID'],
@@ -23,8 +37,10 @@ class DatabaseConnection:
 
     def __init__(self):
 
-        """ 데이터베이스 커넥션을 만들어주는 클래
-        database connection 생성
+        """ 데이터베이스 커넥션을 만들어주는 클래스.
+        database connection 생성.
+        import되어서 사용될 때 마다 하나의 데이터베이스 커넥션이 생긴다.
+        하나의 요청에 하나의 커넥션이라는 독립성을 지켜주기 위해서 connection은 요청이 들어올 때 마다 만들어준다.
 
         Returns:
             database connection 객체
