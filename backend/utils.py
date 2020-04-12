@@ -774,7 +774,7 @@ class ImageUpload:
 
         banner_image = request.files.get('banner_image', None)
         detail_image = request.files.get('detail_image', None)
-
+        print(list(request.files.items()))
         # 필수로 들어와야 하는 파일의 존재여부 확인.
         if banner_image:
 
@@ -843,3 +843,67 @@ class ImageUpload:
             data["s3_detail_image_url"] = uploaded_image_url
 
         return data
+
+    # noinspection PyMethodMayBeStatic
+    def upload_images(self, request):
+
+        """ 공통으로 사용할 이미지 업로더
+        셀러 / 기획전의 등록 / 수정 시 사용되는 이미지 업로더
+        기존에 셀러용, 기획전용으로 나눠있던 것을 하나로 합쳐 공통으로 사용
+
+        Args:
+            request: 이미지 파일을 포함한 요청 값
+
+        Returns:
+            200: s3 버킷에 올라간 이미지 파일의 url (dictionary)
+
+        Authors:
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-12 (leejm3@brandi.co.kr): 초기 생성
+        """
+
+        # s3에서 만들어진 url 을 반환할 dictionary 생성
+        data = {}
+
+        # request 로 받은 이미지 파일 리스트 키 값 저장
+        image_name_list = list(request.files.keys())
+
+        for name in image_name_list:
+            image = request.files[name]
+
+            # 들어온 파일의 사이즈를 구함.
+            image_file_size = os.fstat(image.fileno()).st_size
+            image_file_form = image.content_type
+
+            # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
+            if not ('image' in image_file_form):
+                return jsonify({'message': f'INVALID_{name}_FILE'}), 400
+
+            # 들어온 이미지 크기가 10MB 보다 크면 request 를 받지 않음.
+            if image_file_size > 10485760:
+                return jsonify({'message': f'INVALID_{name}_IMAGE_SIZE'}), 400
+
+            uploaded_image_name = str(uuid.uuid4())
+            s3 = get_s3_connection()
+
+            # s3에 올리는 과정에서 발생하는 애러를 잡아줌
+            try:
+                s3.put_object(
+                    Body=name,
+                    Bucket="brandi-intern",
+                    Key=uploaded_image_name,
+                    ContentType='image/jpeg'
+                )
+
+            except Exception as e:
+                return jsonify({'message': f'{name}_S3_UPLOAD_FAIL'}), 500
+
+            uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
+
+            # data dict 에 값 저장
+            data[name] = uploaded_image_url
+
+        return data
+

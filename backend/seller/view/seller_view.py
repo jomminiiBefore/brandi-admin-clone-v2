@@ -442,11 +442,13 @@ class SellerView:
             2020-04-09 (leejm3@brandi.co.kr):
                  이미지 파일을 새로 업로드하면, 이 파일을 저장한 s3 url 을 저장하고,
                  수정을 안해서 기존에 DB에 저장된 url 을 보내주면, 해당 url 을 저장함
-                 필수값인 셀러 프로필, 등록증 2개가 들어오지 않으면 에러처
+                 필수값인 셀러 프로필, 등록증 2개가 들어오지 않으면 에러처리
 
+            2020-04-12 (leejm3@brandi.co.kr):
+                셀러용 이미지 업로더를 사용하는 것에서 공통 업로더를 사용하도록 변경
         """
 
-        # manager_infos 유효성 확인
+        # manager_infos 유효성 확인을 확인하기 위해 따로 저장
         manager_info_list = json.loads(args[16])
 
         # manger_infos 리스트를 돌면서 각각의 유효성을 충족하는지 체크
@@ -472,13 +474,14 @@ class SellerView:
                 # 유효성을 만족시키지 못하면 에러 반환
                 else:
                     return jsonify({"message": "VALIDATION_ERROR_MANAGER_INFO"}), 400
+
             # 키가 안들어오면 에러 반환
             else:
                 return jsonify({"message": "NO_SPECIFIC_MANAGER_INFO"}), 400
 
-        # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url을 사전형으로 가져옴.
+        # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url 을 딕셔너리로 가져옴.
         image_upload = ImageUpload()
-        seller_image = image_upload.upload_seller_image(request)
+        seller_image = image_upload.upload_images(request)
 
         if (400 or 500) in seller_image:
             return seller_image
@@ -488,7 +491,7 @@ class SellerView:
             'auth_type_id': g.account_info['auth_type_id'],
             'decorator_account_no': g.account_info['account_no'],
             'parameter_account_no': args[0],
-            'profile_image_url': seller_image.get('s3_profile_image_url', None),
+            'profile_image_url': seller_image.get('seller_profile_image', None),
             'seller_status_no': args[1],
             'seller_type_no': args[2],
             'name_kr': args[3],
@@ -498,10 +501,10 @@ class SellerView:
             'ceo_name': args[7],
             'company_name': args[8],
             'business_number': args[9],
-            'certificate_image_url': seller_image.get('s3_certificate_image_url', None),
+            'certificate_image_url': seller_image.get('certificate_image', None),
             'online_business_number': args[10],
-            'online_business_image_url': seller_image.get('s3_online_business_image_url', None),
-            'background_image_url': seller_image.get('s3_background_image_url', None),
+            'online_business_image_url': seller_image.get('online_business_image', None),
+            'background_image_url': seller_image.get('background_image', None),
             'short_description': args[11],
             'long_description': args[12],
             'site_url': args[14],
@@ -523,7 +526,7 @@ class SellerView:
             'seller_account_id': args[31]
         }
 
-        # file 로 이미지가 안들어올 경우, FORM 으로 받은 이미지 url로 대체
+        # file 로 이미지가 안들어올 경우, FORM 으로 받은 이미지 url 로 대체
         if not account_info['profile_image_url']:
             account_info['profile_image_url'] = args[34]
 

@@ -36,8 +36,7 @@ class EventView:
     @login_required
     @validate_params(
         # 전체 기획전 필수값
-        Param('event_type_id', FORM, str,
-              rules=[Pattern(r"^[1-5]{1}$")]),
+        Param('event_type_id', FORM, int),
         Param('event_sort_id', FORM, int),
         Param('is_on_main', FORM, str,
               rules=[Pattern(r"^[0-1]{1}$")]),
@@ -72,7 +71,9 @@ class EventView:
         Param('youtube_url', FORM, str, required=False,
               rules=[Pattern(r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$")]),
         Param('youtube_url', FORM, str, required=False,
-              rules=[MaxLength(200)])
+              rules=[MaxLength(200)]),
+        Param('event_type_id', FORM, str,
+              rules=[Pattern(r"^[1-5]{1}$")])
     )
     def register_event_info(*args):
         """ 기획전 등록 엔드포인트
@@ -125,14 +126,17 @@ class EventView:
             2020-04-07 (leejm3@brandi.co.kr): 초기생성 / 이벤트 기획전 부분 작성
             2020-04-08 (leejm3@brandi.co.kr): 기획전 기간 밸리데이션 추가
             2020-04-10 (yoonhc@brandi.co.kr): 상품(이미지), 상품(텍스트), 유튜브 기획전 작성
-
+            2020-04-12 (leejm3@brandi.co.kr):
+                - event_type_id 를 int 로 받아오도록 validator 변경
+                - 기획전용 이미지 업로더를 사용하는 것에서 공통 업로더를 사용하도록 변경
+                - 기획전 상품 정보를 json loads로 파싱하는 과정을 try/except 방식에서 if 문 방식으로 변경
         """
         if g.account_info['auth_type_id'] != 1:
             return jsonify({'message': 'NO_AUTHORIZATION'}), 403
 
-        # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url을 사전형으로 가져옴.
+        # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url 을 딕셔너리으로 가져옴.
         image_upload = ImageUpload()
-        event_image = image_upload.upload_event_image(request)
+        event_image = image_upload.upload_images(request)
 
         # 함수의 실행결과에 400이 포함된 경우 애러메세지를 그대로 리턴함.
         if (400 or 500) in event_image:
@@ -149,8 +153,8 @@ class EventView:
             'event_end_time': args[6],
             'short_description': args[7],
             'long_description': args[8],
-            'banner_image_url': event_image.get('s3_banner_image_url', None),
-            'detail_image_url': event_image.get('s3_detail_image_url', None),
+            'banner_image_url': event_image.get('banner_image', None),
+            'detail_image_url': event_image.get('detail_image', None),
             'button_name': args[13],
             'button_link_type_id': args[14],
             'button_link_description': args[15],
@@ -159,21 +163,19 @@ class EventView:
             'account_no': g.account_info['account_no']
             }
 
-        # file 로 이미지가 안들어올 경우, FORM 으로 받은 이미지 url로 대체
+        # file 로 이미지가 안들어올 경우, FORM 으로 받은 이미지 url 로 대체
         if not event_info['banner_image_url']:
             event_info['banner_image_url'] = args[10]
 
         if not event_info['detail_image_url']:
             event_info['detail_image_url'] = args[12]
 
-        # 리스트로 들어온 product 정보를 따로 저장 (dao 에서 에러를 막기 위해), 값이 안들어오면 None으로 넘겨줌.
-        try:
-            # form데이터로 값을 받으면 str처리가 되기 때문에 json.loads통해서 array 자료형으로 만들어준다.
-            event_product_info = json.loads(args[16])
+        # 리스트로 들어온 product 정보를 따로 저장 (dao 에서 에러를 막기 위해)
+        event_product_info = args[16]
 
-        except:
-            # form data로 값이 들어오지 않으면 None type을 파싱하는 경우가 생기기 때문에 except처리를 넣고 넘겨줄 값에 None을 담는다.
-            event_product_info = None
+        # form 데이터로 값을 받으면 str 처리가 되기 때문에 json.loads 로 읽을 수 있게 파싱
+        if event_product_info:
+            event_product_info = json.loads(event_product_info)
 
         # 기획전 기간 밸리데이션
         now = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M')
@@ -182,57 +184,68 @@ class EventView:
         if event_info['event_start_time'] < now or event_info['event_start_time'] > event_info['event_end_time']:
             return jsonify({'message': 'INVALID_EVENT_TIME'}), 400
 
-        # 기획전 타입이 이벤트일 경우 필수값 확인
-        if event_info['event_type_id'] == "1":
+        # 기획전 타입이 이벤트일 경우 필수값과 기획전 종류 범위 확인
+        if event_info['event_type_id'] == 1:
             if not event_info['short_description']:
                 return jsonify({'message': 'NO_SHORT_DESCRIPTION'}), 400
 
             if not event_info['banner_image_url']:
-                return jsonify({'message': 'BANNER_IMAGE_URL'}), 400
+                return jsonify({'message': 'NO_BANNER_IMAGE'}), 400
 
             if not event_info['detail_image_url']:
-                return jsonify({'message': 'NO_DETAIL_IMAGE_URL'}), 400
+                return jsonify({'message': 'NO_DETAIL_IMAGE'}), 400
 
+            # 기획전 종류 범위 확인
             if event_info['event_sort_id'] not in range(1, 3):
                 return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
 
         # 기획전 타입이 쿠폰일 경우 필수값 확인
-        if event_info['event_type_id'] == "2":
+        if event_info['event_type_id'] == 2:
             if not event_info['short_description']:
                 return jsonify({'message': 'NO_SHORT_DESCRIPTION'}), 400
 
+            # 기획전 종류 범위 확인
             if event_info['event_sort_id'] not in range(3, 9):
                 return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
 
-        # 기획전 타입이 상품(이미지)일 경우 필수값 확인
-        if event_info['event_type_id'] == "3":
+        # 기획전 타입이 상품(이미지)일 경우 필수값과 기획전 종류 범위 확인
+        if event_info['event_type_id'] == 3:
             if not event_info['banner_image_url']:
-                return jsonify({'message': 'MISSING_BANNER_IMAGE'}), 400
+                return jsonify({'message': 'NO_BANNER_IMAGE'}), 400
 
             if not event_info['detail_image_url']:
-                return jsonify({'message': 'MISSING_DETAIL_IMAGE'}), 400
-            
-            if event_info['event_sort_id'] not in range(9,11):
+                return jsonify({'message': 'NO_DETAIL_IMAGE'}), 400
+
+            # 기획전 종류 범위 확인
+            if event_info['event_sort_id'] not in range(9, 11):
                 return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
 
-        # 기획전 타입이 상품(텍스트)일 경우 필수값 확인
-        if event_info['event_type_id'] == "4":
+        # 기획전 타입이 상품(텍스트)일 경우 필수값과 기획전 종류 범위 확인
+        if event_info['event_type_id'] == 4:
             if not event_info['short_description']:
-                return jsonify({'message': 'MISSING_SHORT_DESC'}), 400
+                return jsonify({'message': 'NO_SHORT_DESCRIPTION'}), 400
 
             if not event_info['banner_image_url']:
-                return jsonify({'message': 'MISSING_BANNER_IMAGE'}), 400
+                return jsonify({'message': 'NO_BANNER_IMAGE'}), 400
 
-        # 기획전 타입이 유튜브일 경우 필수값 확인
-        if event_info['event_type_id'] == "5":
+            # 기획전 종류 범위 확인
+            if event_info['event_sort_id'] not in range(11, 13):
+                return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
+
+        # 기획전 타입이 유튜브일 경우 필수값 확인과 기획전 종류 범위 확인
+        if event_info['event_type_id'] == 5:
             if not event_info['short_description']:
-                return jsonify({'message': 'MISSING_SHORT_DESC'}), 400
+                return jsonify({'message': 'NO_SHORT_DESCRIPTION'}), 400
 
             if not event_info['banner_image_url']:
-                return jsonify({'message': 'MISSING_BANNER_IMAGE'}), 400
+                return jsonify({'message': 'NO_BANNER_IMAGE'}), 400
 
             if not event_info['youtube_url']:
-                return jsonify({'message': 'MISSING_YOUTUBE_URL'}), 400
+                return jsonify({'message': 'NO_YOUTUBE_URL'}), 400
+
+            # 기획전 종류 범위 확인
+            if event_info['event_sort_id'] not in range(13, 15):
+                return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
 
         # 입력 인자 관계에 따른 필수값 확인
         if event_info['button_link_type_id']:
@@ -496,6 +509,8 @@ class EventView:
         Returns: http 응답코드
             200: SUCCESS 수정(새로운 이력 생성) 완료
             400: NOT_ALLOWED_TO_CHANGE_EVENT_TYPE_OR_SORT, INVALID_EVENT_NO
+                 NO_SHORT_DESCRIPTION, NO_BANNER_IMAGE, NO_DETAIL_IMAGE,
+                 INVALID_EVENT_SORT, NO_YOUTUBE_URL, NO_BUTTON_NAME, NO_BUTTON_LINK_DESCRIPTION
             500: DB_CURSOR_ERROR, INVALID_KEY, NO_DATABASE_CONNECTION
 
         Authors:
@@ -505,18 +520,21 @@ class EventView:
         History:
             2020-04-10 (leejm3@brandi.co.kr): 초기 생성
             2020-04-11 (yoonhc@brandi.co.kr):
-                - utils.py에서 나오는 결과값에 애러코드 400이있으면 애러메세지를 그대로 리턴하는 코드 추가
-                - 기획전 상품이 validation을 통과하면 json loads를 통해서 array자료형으로 파싱하는 코드 추가.
-
+                - utils.py 에서 나오는 결과값에 애러코드 400이있으면 애러메세지를 그대로 리턴하는 코드 추가
+                - 기획전 상품이 validation을 통과하면 json loads 를 통해서 array 자료형으로 파싱하는 코드 추가.
+            2020-04-12 (leejm3@brandi.co.kr):
+                - 기획전용 이미지 업로더를 사용하는 것에서 공통 업로더를 사용하도록 변경
+                - 기획전 상품 정보를 json loads로 파싱하는 과정을 try/except 방식에서 if 문 방식으로 변경
+                - 기획전 타입이 상품(텍스트), 유튜브 일 경우 기획전 종류 유효성 확인 추가
         """
 
         # 마스터 권한이 아니면 반려
         if g.account_info['auth_type_id'] != 1:
             return jsonify({'message': 'NO_AUTHORIZATION'}), 403
 
-        # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url을 사전형으로 가져옴.
+        # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url 을 딕셔너리로 가져옴.
         image_upload = ImageUpload()
-        event_image = image_upload.upload_event_image(request)
+        event_image = image_upload.upload_images(request)
 
         # 함수의 실행결과에 400이 포함된 경우 애러메세지를 그대로 리턴함.
         if (400 or 500) in event_image:
@@ -534,8 +552,8 @@ class EventView:
             'event_end_time': args[7],
             'short_description': args[8],
             'long_description': args[9],
-            'banner_image_url': event_image.get('s3_banner_image_url', None),
-            'detail_image_url': event_image.get('s3_detail_image_url', None),
+            'banner_image_url': event_image.get('banner_image', None),
+            'detail_image_url': event_image.get('detail_image', None),
             'button_name': args[14],
             'button_link_type_id': args[15],
             'button_link_description': args[16],
@@ -544,20 +562,19 @@ class EventView:
             'account_no': g.account_info['account_no']
             }
 
-        # file 로 이미지가 안들어올 경우, FORM 으로 받은 이미지 url로 대체
+        # file 로 이미지가 안들어올 경우, FORM 으로 받은 이미지 url 로 대체
         if not event_info['banner_image_url']:
             event_info['banner_image_url'] = args[10]
 
         if not event_info['detail_image_url']:
             event_info['detail_image_url'] = args[12]
 
-        # 리스트로 들어온 product 정보를 따로 저장 (dao 에서 에러를 막기 위해), 값이 안들어오면 None으로 넘겨줌.
-        try:
-            # form데이터로 값을 받으면 str처리가 되기 때문에 json.loads통해서 array 자료형으로 만들어준다.
-            event_product_info = json.loads(args[17])
-        except:
-            # form data로 값이 들어오지 않으면 None type을 파싱하는 경우가 생기기 때문에 except처리를 넣고 넘겨줄 값에 None을 담는다.
-            event_product_info = None
+        # 리스트로 들어온 product 정보를 따로 저장 (dao 에서 에러를 막기 위해)
+        event_product_info = args[17]
+
+        # form 데이터로 값을 받으면 str 처리가 되기 때문에 json.loads 로 읽을 수 있게 파싱
+        if event_product_info:
+            event_product_info = json.loads(event_product_info)
 
         # 기획전 기간 밸리데이션
         now = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M')
@@ -566,17 +583,18 @@ class EventView:
         if event_info['event_start_time'] < now or event_info['event_start_time'] > event_info['event_end_time']:
             return jsonify({'message': 'INVALID_EVENT_TIME'}), 400
 
-        # 기획전 타입이 이벤트일 경우 필수값 확인
+        # 기획전 타입이 이벤트일 경우 필수값과 기획전 종류 범위 확인
         if event_info['event_type_id'] == 1:
             if not event_info['short_description']:
                 return jsonify({'message': 'NO_SHORT_DESCRIPTION'}), 400
 
             if not event_info['banner_image_url']:
-                return jsonify({'message': 'BANNER_IMAGE_URL'}), 400
+                return jsonify({'message': 'NO_BANNER_IMAGE'}), 400
 
             if not event_info['detail_image_url']:
-                return jsonify({'message': 'NO_DETAIL_IMAGE_URL'}), 400
+                return jsonify({'message': 'NO_DETAIL_IMAGE'}), 400
 
+            # 기획전 종류 범위 확인
             if event_info['event_sort_id'] not in range(1, 3):
                 return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
 
@@ -585,38 +603,48 @@ class EventView:
             if not event_info['short_description']:
                 return jsonify({'message': 'NO_SHORT_DESCRIPTION'}), 400
 
+            # 기획전 종류 범위 확인
             if event_info['event_sort_id'] not in range(3, 9):
                 return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
 
-        # 기획전 타입이 상품(이미지)일 경우 필수값 확인
+        # 기획전 타입이 상품(이미지)일 경우 필수값과 기획전 종류 범위 확인
         if event_info['event_type_id'] == 3:
             if not event_info['banner_image_url']:
-                return jsonify({'message': 'MISSING_BANNER_IMAGE'}), 400
+                return jsonify({'message': 'NO_BANNER_IMAGE'}), 400
 
             if not event_info['detail_image_url']:
-                return jsonify({'message': 'MISSING_DETAIL_IMAGE'}), 400
+                return jsonify({'message': 'NO_DETAIL_IMAGE'}), 400
 
+            # 기획전 종류 범위 확인
             if event_info['event_sort_id'] not in range(9, 11):
                 return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
 
-        # 기획전 타입이 상품(텍스트)일 경우 필수값 확인
+        # 기획전 타입이 상품(텍스트)일 경우 필수값과 기획전 종류 범위 확인
         if event_info['event_type_id'] == 4:
             if not event_info['short_description']:
-                return jsonify({'message': 'MISSING_SHORT_DESC'}), 400
+                return jsonify({'message': 'NO_SHORT_DESCRIPTION'}), 400
 
             if not event_info['banner_image_url']:
-                return jsonify({'message': 'MISSING_BANNER_IMAGE'}), 400
+                return jsonify({'message': 'NO_BANNER_IMAGE'}), 400
 
-        # 기획전 타입이 유튜브일 경우 필수값 확인
+            # 기획전 종류 범위 확인
+            if event_info['event_sort_id'] not in range(11, 13):
+                return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
+
+        # 기획전 타입이 유튜브일 경우 필수값 확인과 기획전 종류 범위 확인
         if event_info['event_type_id'] == 5:
             if not event_info['short_description']:
-                return jsonify({'message': 'MISSING_SHORT_DESC'}), 400
+                return jsonify({'message': 'NO_SHORT_DESCRIPTION'}), 400
 
             if not event_info['banner_image_url']:
-                return jsonify({'message': 'MISSING_BANNER_IMAGE'}), 400
+                return jsonify({'message': 'NO_BANNER_IMAGE'}), 400
 
             if not event_info['youtube_url']:
-                return jsonify({'message': 'MISSING_YOUTUBE_URL'}), 400
+                return jsonify({'message': 'NO_YOUTUBE_URL'}), 400
+
+            # 기획전 종류 범위 확인
+            if event_info['event_sort_id'] not in range(13, 15):
+                return jsonify({'message': 'INVALID_EVENT_SORT'}), 400
 
         # 입력 인자 관계에 따른 필수값 확인
         if event_info['button_link_type_id']:
@@ -636,13 +664,13 @@ class EventView:
                 return info
 
             except Exception as e:
-                return jsonify({'view_message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 400
 
             finally:
                 try:
                     db_connection.close()
 
                 except Exception as e:
-                    return jsonify({'view_message': f'{e}'}), 400
+                    return jsonify({'message': f'{e}'}), 400
         else:
-            return jsonify({'view_message': 'NO_DATABASE_CONNECTION'}), 500
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
