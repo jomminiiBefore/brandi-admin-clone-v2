@@ -163,3 +163,23 @@ class ProductService:
             return jsonify({'message': 'NO_AUTHORIZATION'}), 403
 
         return jsonify({'message': 'INVALID_AUTH_ID'}), 400
+
+    # noinspection PyMethodMayBeStatic
+    def get_color_filters(self, db_connection):
+
+        """ 상품 등록시 컬러 필터 표출
+
+        Args:
+            db_connection: 데이터베이스 연결 객체
+
+        Returns:
+            200: 상품 등록시 선택할 수 있는 색상 필터
+
+        Authors:
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+            2020-04-09 (leesh3@brandi.co.kr): 초기 생성
+        """
+        product_dao = ProductDao()
+        return product_dao.get_color_filters(db_connection)

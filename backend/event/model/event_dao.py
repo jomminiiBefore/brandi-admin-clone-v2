@@ -819,7 +819,6 @@ class EventDao:
                 데이터베이스에 event_info의 새로운 이력과 기획전 타입별로 생성되어야 하는 테이블을 생성함.
                 기획전타입이 이벤트, 쿠폰인 경우 event_detail_infos 테이블에 row추가.
                 기획전타입이 상품이미지, 상품텍스트, 유튜브인 경우 event_detail_product_infos테이블에 row추가(값이 들어왔다면).
-
         """
         try:
             with db_connection.cursor() as db_cursor:
@@ -961,3 +960,56 @@ class EventDao:
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
+    def get_all_events(self, event_info, db_connection):
+
+        """ 등록된 모든 이벤트 목록 표출
+
+        Args:
+            event_info: 이벤트 정보
+                event_type_id: 이벤트 타입
+                event_name: 검색어에 포함되는 이벤트 이름
+                event_start_time: 검색할 이벤트 등록 날짜 시작 지점
+                event_end_time: 검색할 이벤트 등록 날짜 끝 지점
+
+            db_connection: 데이터베이스 커넥션 객체
+
+        Returns:
+            200: 검색 조건에 맞는 이벤트 목록
+            400: key error
+            500: 데이터베이스 에러
+
+        Authors:
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+            2020-04-12 (leesh3@brandi.co.kr): 초기 생성
+        """
+        try:
+            with db_connection.cursor() as db_cursor:
+                get_event_stmt = """
+                    SELECT
+                        *
+                    FROM
+                        event_infos
+                    WHERE
+                        (event_type_id = %(event_type_id)s OR %(event_type_id)s IS NULL)
+                    AND
+                        (event_start_time > %(event_start_time)s OR %(event_start_time)s IS NULL)
+                    AND
+                        (event_end_time < %(event_end_time)s OR %(event_end_time)s IS NULL)
+                    AND
+                        (name LIKE %(event_name)s OR %(event_name)s IS NULL)
+                """
+
+                db_cursor.execute(get_event_stmt, event_info)
+                events = db_cursor.fetchall()
+                return jsonify({'events': events}), 200
+
+        except KeyError as e:
+            print(f'KEY_ERROR WITH {e}')
+            return jsonify({'message': 'INVALID_KEY'}), 400
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500

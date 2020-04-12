@@ -906,4 +906,3 @@ class ImageUpload:
             data[name] = uploaded_image_url
 
         return data
-

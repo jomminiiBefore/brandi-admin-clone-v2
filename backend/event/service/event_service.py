@@ -282,3 +282,32 @@ class EventService:
 
         except Exception as e:
             return jsonify({'message': f'{e}'}), 400
+
+    # noinspection PyMethodMayBeStatic
+    def get_all_events(self, event_info, db_connection):
+
+        """ 등록된 모든 이벤트 목록 표출
+
+        Args:
+            event_info: 이벤트 정보
+                event_type_id: 이벤트 타입
+                event_name: 검색어에 포함되는 이벤트 이름
+                event_start_time: 검색할 이벤트 등록 날짜 시작 지점
+                event_end_time: 검색할 이벤트 등록 날짜 끝 지점
+
+            db_connection: 데이터베이스 커넥션 객체
+
+        Returns:
+            200: 검색 조건에 맞는 이벤트 목록
+            403: no_authorization
+        Authors:
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+            2020-04-12 (leesh3@brandi.co.kr): 초기 생성
+        """
+        if event_info['auth_type_id'] == 1:
+            event_dao = EventDao()
+            events = event_dao.get_all_events(event_info, db_connection)
+            return events
+        return jsonify({'message': 'NO_AUTHORIZATION'}), 403

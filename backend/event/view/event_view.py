@@ -674,3 +674,62 @@ class EventView:
                     return jsonify({'message': f'{e}'}), 400
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+    @event_app.route("", methods=["GET"], endpoint='get_all_events')
+    @login_required
+    @validate_params(
+        Param('event_type_id', GET, int, required=False),
+        Param('event_name', GET, str, required=False),
+        Param('event_start_time', GET, str, required=False),
+        Param('event_end_time', GET, str, required=False)
+    )
+    def get_all_events(*args):
+
+        """ 등록된 모든 이벤트 목록 표출 엔드포인트
+
+        Args:
+            *args: 이벤트 정보
+                event_type_id: 이벤트 타입
+                event_name: 검색어에 포함되는 이벤트 이름
+                event_start_time: 검색할 이벤트 등록 날짜 시작 지점
+                event_end_time: 검색할 이벤트 등록 날짜 끝 지점
+
+        Returns:
+            200: 검색 조건에 맞는 이벤트 목록
+            400: 유효하지 않은 검색 날짜 조건
+            500: 데이터베이스 에러
+
+        Authors:
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+            2020-04-12 (leesh3@brandi.co.kr): 초기 생성
+        """
+        event_info = {
+            'auth_type_id': g.account_info['auth_type_id'],
+            'event_type_id': args[0],
+            # 이벤트명 검색시 mysql LIKE 문을 위해 %%를 붙여줌
+            'event_name': f'%{args[1]}%',
+            'event_start_time': args[2],
+            'event_end_time': args[3]
+        }
+        if event_info['event_start_time'] and event_info['event_end_time']:
+            if datetime.strptime(event_info['event_start_time'], "%Y-%m-%d") > datetime.strptime(event_info['event_end_time'], "%Y-%m-%d"):
+                return jsonify({'message': 'INVALID_EVENT_DATE'}), 400
+
+        db_connection = get_db_connection()
+        if db_connection:
+            try:
+                event_service = EventService()
+                events = event_service.get_all_events(event_info, db_connection)
+                return events
+
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 500
+
+            finally:
+                try:
+                    db_connection.close()
+
+                except Exception as e:
+                    return jsonify({'message': f'{e}'}), 500

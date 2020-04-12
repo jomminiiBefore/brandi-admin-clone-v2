@@ -658,3 +658,46 @@ class ProductDao:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
+
+    # noinspection PyMethodMayBeStatic
+    def get_color_filters(self, db_connection):
+
+        """ 상품 등록시 컬러 필터 표출
+
+        Args:
+            db_connection: 데이터베이스 연결 객체
+
+        Returns:
+            200: 상품 등록시 선택할 수 있는 색상 필터
+            400: key_error
+            500: 데이터베이스 에러
+
+        Authors:
+            leesh3@brandi.co.kr (이소헌)
+
+        History:
+            2020-04-09 (leesh3@brandi.co.kr): 초기 생성
+        """
+        try:
+            with db_connection.cursor() as db_cursor:
+                get_colors_stmt = """
+                    SELECT
+                        *
+                    FROM
+                        color_filters
+                    WHERE NOT
+                        color_filter_no=19
+                """
+                db_cursor.execute(get_colors_stmt)
+                colors = db_cursor.fetchall()
+
+                return jsonify({'colors': colors}), 200
+
+        except KeyError as e:
+            print(f'KEY_ERROR WITH {e}')
+            return jsonify({'message': 'INVALID_KEY'}), 400
+
+        except Error as e:
+            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
+            db_connection.rollback()
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500

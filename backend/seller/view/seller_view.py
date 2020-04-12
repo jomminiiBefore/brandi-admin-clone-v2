@@ -883,3 +883,8 @@ class SellerView:
 
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+    @seller_app.route("/auth_type", methods=["GET"])
+    @login_required
+    def identify_auth_type():
+        return jsonify(g.account_info['auth_type_id']), 200
