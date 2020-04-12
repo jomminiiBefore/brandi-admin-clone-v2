@@ -558,13 +558,13 @@ class SellerDao:
                 # 셀러 상태를 확인하여 해당 상태에서 취할 수 있는 action을 기존의 seller_info에 넣어줌.
                 for seller in seller_info:
                     if seller['seller_status'] == '입점':
-                        seller['action'] = ['휴점 신청', '퇴점 신청 처리']
+                        seller['action'] = {'휴점 신청': 5, '퇴점 신청 처리': 4}
                     elif seller['seller_status'] == '입점대기':
-                        seller['action'] = ['입점 승인', '입점 거절']
+                        seller['action'] = {'입점 승인': 2, '입점 거절': 4}
                     elif seller['seller_status'] == '휴점':
-                        seller['action'] = ['휴점 해제', '퇴점 신청 처리']
+                        seller['action'] = {'휴점 해제': 2, '퇴점 신청 처리': 4}
                     elif seller['seller_status'] == '퇴점대기':
-                        seller['action'] = ['휴점 신청', '퇴점 확정 처리', '퇴점 철회 처리']
+                        seller['action'] = {'휴점 신청': 5, '퇴점 확정 처리': 4, '퇴점 철회 처리': 2}
 
                 # pagination을 위해서 전체 셀러가 몇명인지 count해서 기존의 seller_info에 넣어줌.
                 seller_count_statement = '''
@@ -929,7 +929,7 @@ class SellerDao:
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
     # noinspection PyMethodMayBeStatic
-    def change_seller_status(self, seller_status_id, seller_account_id, db_connection):
+    def change_seller_status(self, target_seller_info, db_connection):
 
         """ 마스터 권한 셀러 상태 변경
         마스터 권한을 가진 유저가 데이터베이스의 셀러의 상태를 변경함.
@@ -964,22 +964,25 @@ class SellerDao:
                 # 자동 커밋 비활성화
                 db_cursor.execute("SET AUTOCOMMIT=0")
 
-                # seller_infos : service에서 넘어온 셀러 데이터
-                seller_data = {
-                    'seller_status_id': seller_status_id,
-                    'seller_account_id': seller_account_id
-                }
 
-                # 새로운 이력 생성 이전의 셀러 인포 번호를 가져와서 셀러데이터에 저장
+                # 새로운 이력 생성 이전의 셀러 정보를 가져옴
                 db_cursor.execute('''
-                SELECT seller_info_no
+                SELECT seller_info_no, seller_status_id
                 FROM seller_infos
                 WHERE seller_account_id = %(seller_account_id)s
                 AND close_time = '2037-12-31 23:59:59'
-                ''', seller_data)
+                AND is_deleted = 0
+                ''', target_seller_info)
 
-                # 새로운 버전 이전의 버전의 셀러 번호를 seller_data에 저장장
-                seller_data['previous_seller_info_no'] = db_cursor.fetchone()['seller_info_no']
+                # 가져온 셀러정보를 타겟셀러 정보를 변수화
+                previous_seller_info = db_cursor.fetchone()
+
+                # 요청으로 들어온 상태값이랑 데이터베이스에 있는 타겟 셀러 정보의 상태값이 같은지 확인
+                if previous_seller_info['seller_status_id'] == target_seller_info['seller_status_id']:
+                    return jsonify({'message': 'INVALID_ACTION'}), 400
+
+                # 새로운 버전 이전의 버전의 셀러 번호를 target_seller_info에 저장장
+                target_seller_info['previous_seller_info_no'] = previous_seller_info['seller_info_no']
 
                 # seller_infos : 셀러 상태 변경 sql 명령문
                 update_seller_status_statement = """
@@ -1059,14 +1062,14 @@ class SellerDao:
                 """
 
                 # seller_infos : 데이터 sql명령문과 셀러 데이터 바인딩 후 새로운 셀러 정보 이력의 primary key 딕셔너리에 담음
-                db_cursor.execute(update_seller_status_statement, seller_data)
+                db_cursor.execute(update_seller_status_statement, target_seller_info)
                 new_seller_info_id = db_cursor.lastrowid
-                seller_data['new_seller_info_id'] = new_seller_info_id
+                target_seller_info['new_seller_info_id'] = new_seller_info_id
 
-                # 선분이력을 닫아주는 시간을 쿼리로 가져옴. 선분이력을 닫아주는 시간을 seller_data에 저장함.
+                # 선분이력을 닫아주는 시간을 쿼리로 가져옴. 선분이력을 닫아주는 시간을 타겟 셀러 정보에 저장함.
                 db_cursor.execute('SELECT NOW()')
                 close_time = db_cursor.fetchone()
-                seller_data['close_time'] = close_time['NOW()']
+                target_seller_info['close_time'] = close_time['NOW()']
 
                 # seller_infos 테이블에 해당 seller_account의 새로운 이력이 생겼기 때문에 이전의 이력을 끊어주는 작업.
                 update_previous_seller_infos_stat = '''
@@ -1078,9 +1081,9 @@ class SellerDao:
                 seller_info_no = %(previous_seller_info_no)s
                 AND seller_account_id = %(seller_account_id)s
                 '''
-                db_cursor.execute(update_previous_seller_infos_stat, seller_data)
+                db_cursor.execute(update_previous_seller_infos_stat, target_seller_info)
 
-                # manager_infos : 매니저 정보에서 셀러 인포 foreign key를 새로 생성된 이력으로 바꿔는 명령문.
+                # manager_infos : 매니저 정보에서 셀러 인포 foreign key를 새로 생성된 이력으로 바꿔주는 명령문.
                 insert_manager_info_statement = """
                     INSERT INTO manager_infos (
                         name,
@@ -1100,7 +1103,7 @@ class SellerDao:
                         AND ranking = 1
                 """
 
-                db_cursor.execute(insert_manager_info_statement, seller_data)
+                db_cursor.execute(insert_manager_info_statement, target_seller_info)
                 db_connection.commit()
                 return jsonify({'message': 'SUCCESS'}), 200
 

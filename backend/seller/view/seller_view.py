@@ -703,7 +703,7 @@ class SellerView:
         user = g.account_info
 
         # 유효성검사를 통과한 parameter를 딕셔너리 담는다.
-        valid_param = {
+        target_seller_info = {
             'seller_account_id': args[0],
             'seller_status_id': args[1]
         }
@@ -712,7 +712,7 @@ class SellerView:
         if db_connection:
             try:
                 seller_service = SellerService()
-                status_change_result = seller_service.change_seller_status(valid_param, user, db_connection)
+                status_change_result = seller_service.change_seller_status(target_seller_info, user, db_connection)
                 return status_change_result
 
             except Exception as e:
