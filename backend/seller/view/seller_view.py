@@ -49,17 +49,18 @@ class SellerView:
         url parameter:
             parameter_account_no: 비밀번호가 바뀌어야할 계정 번호
 
-        g.account_info: 데코레이터에서 넘겨받은 계정 정보
+        g.account_info: 데코레이터에서 넘겨받은 계정 정보(비밀번호 변경을 수행하려는 계정)
             auth_type_id: 계정의 권한정보
-            account_no: 데코레이터에서 확인된 계정번호
+            account_no: 계정번호
 
-        request.body: request로 전달 받은 정보
-            original_password: 기존 비밀번호(마스터는 안보내줌)
-            new_password: 새로운 비밀번호
+        request.body: request 로 전달 받은 정보
+            original_password: 기존 비밀번호(비밀번호 변경을 수행하는자가 셀러 권한일 경우에만 전달 받음)
+            new_password: 변경하려는 새로운 비밀번호
 
         Returns: http 응답코드
             200: SUCCESS 비밀번호 변경 완료
             400: VALIDATION_ERROR, INVALID_AUTH_TYPE_ID, NO_ORIGINAL_PASSWORD
+                 TOO_SHORT_PASSWORD, INVALID_PARAMETER_ACCOUNT_NO
             401: INVALID_PASSWORD
             403: NO_AUTHORIZATION
             500: DB_CURSOR_ERROR, NO_DATABASE_CONNECTION
@@ -72,29 +73,36 @@ class SellerView:
             2020-04-02 (leejm3@brandi.co.kr): 파라미터 validation 추가, 데코레이터 적용
             2020-04-06 (leejm3@brandi.co.kr):
                 url path 변경('/<int:parameter_account_no>' -> '/<int:parameter_account_no>/password')
+            2020-04-12 (leejm3@brandi.co.kr): 리팩토링
+                - 주석 수정 : 비밀번호 변경을 수행하려는 주체에 대해 명확히 명시
+                - 변경할 비밀번호 길이 제한 추가(4글자 이상)
+                - 전달 인자 명칭을 명확히 하기 위해 변경(account_info -> change_info)
 
         """
 
-        # validation 확인이 된 data 를 account_info 로 재정의
-        account_info = {
+        # validation 확인이 된 data 를 change_info 로 재정의
+        change_info = {
             'parameter_account_no': args[0],
             'original_password': args[1],
             'new_password': args[2],
             'auth_type_id': g.account_info['auth_type_id'],
-            'account_no': g.account_info['account_no'],
-
+            'decorator_account_no': g.account_info['account_no']
         }
 
         # 셀러 권한일 때 original_password 가 없으면 에러반환
-        if account_info['auth_type_id'] == 2:
-            if account_info['original_password'] is None:
+        if change_info['auth_type_id'] == 2:
+            if change_info['original_password'] is None:
                 return jsonify({"message": "NO_ORIGINAL_PASSWORD"}), 400
+
+        # 변경할 비밀번호 길이가 4글자 미만이면 에러 반환
+        if len(change_info['new_password']) < 4:
+            return jsonify({'message': 'TOO_SHORT_PASSWORD'}), 400
 
         db_connection = get_db_connection()
         if db_connection:
             try:
                 seller_service = SellerService()
-                changing_password_result = seller_service.change_password(account_info, db_connection)
+                changing_password_result = seller_service.change_password(change_info, db_connection)
                 return changing_password_result
 
             except Exception as e:
@@ -142,7 +150,6 @@ class SellerView:
             400: INVALID_ACCOUNT_NO, INVALID_AUTH_TYPE_ID
             403: NO_AUTHORIZATION
             500: NO_DATABASE_CONNECTION, DB_CURSOR_ERROR, INVALID_KEY
-
 
         Authors:
             leejm3@brandi.co.kr (이종민)

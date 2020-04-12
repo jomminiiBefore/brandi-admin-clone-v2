@@ -20,11 +20,11 @@ class SellerService:
     """
 
     # noinspection PyMethodMayBeStatic
-    def change_password(self, account_info, db_connection):
+    def change_password(self, change_info, db_connection):
 
         """ 계정 비밀번호 변경
 
-        account_info에 담긴 권한 정보를 확인하고,
+        change_info에 담긴 권한 정보를 확인하고,
         마스터 권한일 경우
         -> 비밀번호를 바로 변경해주며,
         셀러 권한일 경우
@@ -32,12 +32,12 @@ class SellerService:
         비밀번호 변경
 
         Args:
-            account_info: 엔드포인트에서 전달 받은 account 정보.
+            change_info: 엔드포인트에서 전달 받은 account 정보
             db_connection: 연결된 database connection 객체
 
         Returns: http 응답코드
             200: SUCCESS 비밀번호 변경 완료
-            400: INVALID_AUTH_TYPE_ID
+            400: INVALID_AUTH_TYPE_ID, INVALID_PARAMETER_ACCOUNT_NO
             401: INVALID_PASSWORD
             500: DB_CURSOR_ERROR, INVALID_KEY
 
@@ -47,52 +47,46 @@ class SellerService:
         History:
             2020-03-31 (leejm3@brandi.co.kr) : 초기 생성
             2020-04-01 (leejm3@brandi.co.kr) :
-            셀러의 경우 decorator account_no 와 parameter account_no이 일치하는 조건 추가
-
+                - 셀러의 경우 decorator account_no 와 parameter account_no이 일치하는 조건 추가
+            2020-04-12 (leejm3@brandi.co.kr):
+                - 'INVALID_PARAMETER_ACCOUNT_NO' 에러 추가
+                - 받는 인자 명칭을 명확히 하기 위해 변경(account_info -> change_info)
+                - parameter validator 를 사용하기 전에 들어온 값을 확인하기 위해 만들었던 new_change_info 를 제거
         """
 
         seller_dao = SellerDao()
         try:
-            # Key 가 모두 들어오는지 확인하기 위해 새로운 dict 에 정보를 담음
-            new_account_info = {
-                'auth_type_id': account_info.get('auth_type_id', None),
-                'decorator_account_no': account_info.get('account_no', None),
-                'parameter_account_no': account_info.get('parameter_account_no', None),
-                'original_password': account_info.get('original_password', None),
-                'new_password': account_info.get('new_password', None)
-            }
-
             # 계정이 가진 권한 타입을 가져옴
-            account_auth_type_id = new_account_info['auth_type_id']
+            account_auth_type_id = change_info['auth_type_id']
 
             # 마스터 권한일 때
             if account_auth_type_id == 1:
 
-                # 인자로 전달 받은 새로운 비밀번호를 암호화 시킨 후 디코드 시켜 'new_password' 로 저장
-                crypted_password = bcrypt.hashpw(new_account_info['new_password'].encode('utf-8'), bcrypt.gensalt())
-                new_account_info['new_password'] = crypted_password.decode('utf-8')
+                # 인자로 전달 받은 새로운 비밀번호를 암호화 시킨 후 디코드 시켜 'password' 로 저장
+                crypted_password = bcrypt.hashpw(change_info['new_password'].encode('utf-8'), bcrypt.gensalt())
+                change_info['password'] = crypted_password.decode('utf-8')
 
                 # 새로운 비밀번호를 담아서 seller_dao 의 비밀번호 변경 dao 를 호출 및 반환
-                changing_password_result = seller_dao.change_password(new_account_info, db_connection)
+                changing_password_result = seller_dao.change_password(change_info, db_connection)
                 return changing_password_result
 
             # 셀러 권한일 때
             elif account_auth_type_id == 2:
 
-                if new_account_info['decorator_account_no'] == new_account_info['parameter_account_no']:
+                if change_info['decorator_account_no'] == change_info['parameter_account_no']:
                     # DB 에서 기존에 저장되어있는 암호화된 비밀번호를 가져옴
-                    original_password = seller_dao.get_account_password(new_account_info, db_connection)
+                    original_password = seller_dao.get_account_password(change_info, db_connection)
 
                     # DB 에서 가져온 기존 비밀번호와 셀러가 입력한 기존 비밀번호가 일치하는지 확인
-                    if bcrypt.checkpw(new_account_info['original_password'].encode('utf-8'),
+                    if bcrypt.checkpw(change_info['original_password'].encode('utf-8'),
                                       original_password['password'].encode('utf-8')):
-                        # 일치하는지 확인되면 새로운 비밀번호를 암호화해서 new_account_info 에 저장해줌
-                        crypted_password = bcrypt.hashpw(new_account_info['new_password'].encode('utf-8'),
-                                                         bcrypt.gensalt())
-                        new_account_info['new_password'] = crypted_password.decode('utf-8')
+
+                        # 일치하는지 확인되면 새로운 비밀번호를 암호화해서 change_info 에 저장해줌
+                        crypted_password = bcrypt.hashpw(change_info['new_password'].encode('utf-8'), bcrypt.gensalt())
+                        change_info['password'] = crypted_password.decode('utf-8')
 
                         # 새로운 비밀번호를 담아서 seller_dao 의 비밀번호 변경 dao 를 호출 및 반환
-                        changing_password_result = seller_dao.change_password(new_account_info, db_connection)
+                        changing_password_result = seller_dao.change_password(change_info, db_connection)
                         return changing_password_result
 
                     # 기존 비밀번호와 일치하지 않을 경우
