@@ -1122,8 +1122,23 @@ class SellerDao:
                         -- WHERE manager_info_no = (SELECT manager_info_no FROM manager_infos WHERE seller_info_id = %(previous_seller_info_no)s AND ranking = 1)
                         -- AND ranking = 1
                 """
-
                 db_cursor.execute(insert_manager_info_statement, target_seller_info)
+
+                # 셀러 변경 이력 테이블에 새로운 row 추가
+                db_cursor.execute('''
+                INSERT INTO seller_status_change_histories(
+                    seller_account_id,
+                    changed_time,
+                    seller_status_id,
+                    modifier
+                ) VALUES (
+                    %(seller_account_id)s,
+                    %(close_time)s,
+                    %(seller_status_id)s,
+                    %(modifier)s
+                )
+                ''', target_seller_info)
+
                 db_connection.commit()
                 return jsonify({'message': 'SUCCESS'}), 200
 
