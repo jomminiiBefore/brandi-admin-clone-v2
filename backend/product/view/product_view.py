@@ -11,7 +11,7 @@ from flask_request_validator import (
     validate_params
 )
 from product.service.product_service import ProductService
-from connection import get_db_connection
+from connection import get_db_connection, DatabaseConnection
 from utils import login_required, ImageUpload
 
 

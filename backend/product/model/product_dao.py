@@ -816,17 +816,6 @@ class ProductDao:
                 db_cursor.execute(select_product_list_statement, parameter)
                 product_info = db_cursor.fetchall()
 
-                # 셀러 상태를 확인하여 해당 상태에서 취할 수 있는 action을 기존의 seller_info에 넣어줌.
-                # for seller in seller_info:
-                #     if seller['seller_status'] == '입점':
-                #         seller['action'] = ['휴점 신청', '퇴점 신청 처리']
-                #     elif seller['seller_status'] == '입점대기':
-                #         seller['action'] = ['입점 승인', '입점 거절']
-                #     elif seller['seller_status'] == '휴점':
-                #         seller['action'] = ['휴점 해제', '퇴점 신청 처리']
-                #     elif seller['seller_status'] == '퇴점대기':
-                #         seller['action'] = ['휴점 신청', '퇴점 확정 처리', '퇴점 철회 처리']
-
                 print(filter_query)
                 # pagination을 위해서 상품 몇개인지 count해서 기존의 product_info에 넣어줌.
                 product_count_statement = f'''

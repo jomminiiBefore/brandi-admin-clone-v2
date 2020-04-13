@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react';
+import { withRouter } from 'react-router-dom';
+import { YJURL } from 'src/utils/config';
 import PropTypes from 'prop-types';
 import EnhancedTableHead from 'src/component/sellerAccountManagement/EnhancedTableHead';
 import CustomButton from 'src/component/common/CustomButton';
@@ -162,7 +164,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function TestingTable() {
+function TestingTable(props) {
   const classes = useStyles();
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('calories');
@@ -198,16 +200,18 @@ export default function TestingTable() {
   const [limit, setLimit] = React.useState(10);
   const [offset, setOffset] = React.useState(0);
 
+  // 검색어 필터 input 변경
   const onChangeInput = (e) => {
     setInput({ ...input, [e.target.name]: e.target.value });
   };
 
+  // 처음 실행 시 전체 셀러 리스트 받아오기
   useEffect(() => {
     getSellerList();
   }, []);
 
   const getSellerList = () => {
-    fetch('http://localhost:5000/seller', {
+    fetch(`${YJURL}/seller`, {
       method: 'GET',
       headers: {
         Authorization:
@@ -265,29 +269,12 @@ export default function TestingTable() {
     setSelected(newSelected);
   };
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    console.log('rowspaerpage: ', event.target.value);
-    // setRowsPerPage(parseInt(event.target.value, 10));
-    // setPage(0);
-  };
-
-  const handleChangeDense = (event) => {
-    setDense(event.target.checked);
-  };
-
-  const onSelectChange = (event) => {};
-
   const isSelected = (name) => selected.indexOf(name) !== -1;
 
   const emptyRows =
     rowsPerPage - Math.min(rowsPerPage, itemRows.length - page * rowsPerPage);
 
-  const submitDatas = () => {};
-
+  // 등록 조회 시작일 달력
   const onChangedStartPeriod = (e) => {
     let year = e.getFullYear();
     let month = e.getMonth() + 1;
@@ -298,6 +285,7 @@ export default function TestingTable() {
     setDateStart(e);
   };
 
+  // 등록 조회 종료일 달력
   const onChangedEndPeriod = (e) => {
     let year = e.getFullYear();
     let month = e.getMonth() + 1;
@@ -306,13 +294,13 @@ export default function TestingTable() {
     setInput({ ...input, close_time: date });
     setDateEnd(e);
   };
-
   // limit 값 변경시 useEffect 호출
   useEffect(() => {
-    console.log('useEffect!!');
+    console.log('useEffect() limit, offset');
     onSearch();
   }, [limit, offset]);
 
+  // 필터 검색하기
   const onSearch = () => {
     console.log('onSearch(): ');
 
@@ -332,7 +320,7 @@ export default function TestingTable() {
     }
 
     console.log('queryString: ', queryString);
-    fetch(`http://localhost:5000/seller?${queryString}`, {
+    fetch(`${YJURL}/seller?${queryString}`, {
       method: 'GET',
       headers: {
         Authorization:
@@ -342,8 +330,8 @@ export default function TestingTable() {
     })
       .then((res) => res.json())
       .then((res) => {
-        console.log('input:::', input);
-        console.log('result:: ', res);
+        console.log('onSearch() input:', input);
+        console.log('onSearch() result: ', res);
         // 검색어가 있을 경우 필터된 리스트의 총 개수를 가져온다.
         if (input) {
           console.log('122');
@@ -365,11 +353,28 @@ export default function TestingTable() {
       });
   };
 
-  const onChangeLimit = (e) => {
-    console.log('onChangeLimit()');
-    setLimit(e.target.value);
+  // 한 페이지에 표시할 아이템 수
+  const onChangeLimit = (val, tp) => {
+    // 총 페이지 수
+    let totalPage = sellerList.count / val;
+    totalPage = parseInt(totalPage);
+    // 총 아이템 수와 limit를 나눠서 나누어떨어지지 않으면 페이지를 하나 추가한다.
+    if (sellerList.count % limit > 0) {
+      totalPage++;
+    }
+    console.log('onChangeLimit() tp: ', tp);
+    console.log('onChangeLimit() total: ', totalPage);
+    console.log('onChangeLimit() offset:', offset);
+
+    if (tp > totalPage) {
+      console.log('bigger');
+      setOffset(0);
+    }
+    console.log('setLimit');
+    setLimit(val);
   };
 
+  // 다음 페이지 버튼 클릭
   const onIncreaseOffset = (total) => {
     console.log('onIncreaseOffset() total: ', total, 'offset: ', offset);
 
@@ -379,6 +384,7 @@ export default function TestingTable() {
     }
   };
 
+  // 이전 페이지 버튼 클릭
   const onDecreaseOffset = (total) => {
     console.log('onDecreaseOffset()', total, 'offset: ', offset);
 
@@ -388,18 +394,13 @@ export default function TestingTable() {
     }
   };
 
+  // 현재 페이지
   const onChangeOffsetInput = (e) => {
     console.log('onChangeOffsetInput value: ', e.target.value);
     if (e.key === 'Enter') {
       setOffset(e.target.value);
     }
   };
-
-  // 화면상 보여지는 offset 값
-  const displayOffset = offset + 1;
-  //   console.log('selected: ', selected);
-  //   console.log('input: ', input);
-  //   console.log('limit::  ', limit);
 
   // 총 페이지 수
   let totalPage = sellerList.count / limit;
@@ -409,7 +410,42 @@ export default function TestingTable() {
     totalPage++;
   }
 
-  console.log('totalPage: ', parseInt(totalPage));
+  // 검색어
+  let queryString = new URLSearchParams();
+  for (let key in input) {
+    //   if (!input.hasOwnProperty()) continue;
+    queryString.append(key, input[key]);
+  }
+  if (offset) {
+    console.log('offset: ', offset * limit);
+    queryString.append('offset', offset * limit);
+  }
+  if (limit) {
+    console.log('limit: ', limit);
+    queryString.append('limit', limit);
+  }
+
+  const moveToSellerLink = (id) => {
+    console.log('moveToSellerLink() id: ', id);
+    props.history.push(`/sellerInfoEdit?id=${id}`);
+  };
+
+  const getExcelFile = (queryString) => {
+    console.log('query: ', queryString);
+    fetch(`http://192.168.1.173:5000/seller?excel=1&${queryString}`, {
+      method: 'GET',
+      headers: {
+        Authorization:
+          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        window.location.assign(res.file_url);
+      });
+  };
+
   return (
     <Container>
       <div className={classes.root}>
@@ -595,7 +631,7 @@ export default function TestingTable() {
                   //   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
                   sellerList.list.map((row, index) => {
-                    console.log('index: ', index);
+                    // console.log('index: ', index);
                     const isItemSelected = isSelected(row.seller_account_id);
                     const labelId = `enhanced-table-checkbox-${index}`;
 
@@ -626,7 +662,15 @@ export default function TestingTable() {
                         >
                           {row.seller_account_id}
                         </TableCell>
-                        <TableCell align="right">{row.login_id}</TableCell>
+                        <TableCell align="right">
+                          <SellerLoginIdLink
+                            onClick={() =>
+                              moveToSellerLink(row.seller_account_id)
+                            }
+                          >
+                            {row.login_id}
+                          </SellerLoginIdLink>
+                        </TableCell>
                         <TableCell align="right">{row.name_en}</TableCell>
                         <TableCell align="right">{row.name_kr}</TableCell>
                         <TableCell align="right">일반셀러</TableCell>
@@ -649,7 +693,7 @@ export default function TestingTable() {
                         <TableCell align="right">{row.created_at}</TableCell>
                         <TableCell align="right">
                           {/* {console.log('row:: ', row.action)} */}
-                          {row.action &&
+                          {/* {row.action &&
                             row.action.map((item, key) => {
                               //휴점신청 F0AC4E 퇴점신청처리 D9534F 휴점해제 5CB85B 입점승인 5BC0DE
                               let color;
@@ -679,7 +723,7 @@ export default function TestingTable() {
                                   //   onClickEvent={}
                                 />
                               );
-                            })}
+                            })} */}
                         </TableCell>
                       </TableRow>
                     );
@@ -703,8 +747,9 @@ export default function TestingTable() {
             <PaginationInputForm
               type="text"
               onKeyPress={onChangeOffsetInput}
-              //   value="1"
+              value={offset + 1}
               placeholder="1"
+              onChange={onChangeInput}
             />
             {offset + 1 < parseInt(totalPage) && (
               <CustomButton
@@ -724,7 +769,7 @@ export default function TestingTable() {
               <Select
                 name="limit"
                 value={limit}
-                onChange={(e) => onChangeLimit(e)}
+                onChange={(e) => onChangeLimit(e.target.value, totalPage)}
               >
                 <MenuItem value="">
                   <em>Select</em>
@@ -737,6 +782,12 @@ export default function TestingTable() {
               </Select>
             </FormControl>
             <span>records | Found total {sellerList.count} records</span>
+            <CustomButton
+              name="엑셀 다운로드"
+              color="#5cb85b"
+              textColor="#fff"
+              onClickEvent={() => getExcelFile(queryString)}
+            />
           </PaginationContainer>
         </Paper>
         {/* <FormControlLabel
@@ -747,6 +798,8 @@ export default function TestingTable() {
     </Container>
   );
 }
+
+export default withRouter(TestingTable);
 
 const Container = styled.div`
   padding: 10px 20px 20px 20px;
@@ -779,4 +832,10 @@ const PaginationInputForm = styled.input`
   border: 1px solid #bdbdbd;
   padding: 6px 10px;
   text-align: center;
+`;
+
+const SellerLoginIdLink = styled.div`
+  &:hover {
+    cursor: pointer;
+  }
 `;
