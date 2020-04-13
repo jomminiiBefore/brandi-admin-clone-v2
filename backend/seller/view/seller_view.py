@@ -284,7 +284,8 @@ class SellerView:
               rules=[Pattern(r'^[가-힣a-zA-Z0-9\ ]{1,45}$')]),
         Param('name_en', FORM, str,
               rules=[Pattern(r'^[a-z\ ]{1,45}$')]),
-        Param('account_no', FORM, int),
+        Param('background_image_url', FORM, str, required=False,
+              rules=[MaxLength(200)]),
         Param('brandi_app_user_app_id', FORM, str,
               rules=[Pattern(r'^[가-힣a-zA-Z0-9]{1,45}$')]),
         Param('ceo_name', FORM, str,
@@ -356,8 +357,6 @@ class SellerView:
         Param('certificate_image_url', FORM, str, required=False,
               rules=[MaxLength(200)]),
         Param('online_business_image_url', FORM, str, required=False,
-              rules=[MaxLength(200)]),
-        Param('background_image_url', FORM, str, required=False,
               rules=[MaxLength(200)])
     )
     def change_seller_info(*args):
@@ -385,7 +384,6 @@ class SellerView:
             seller_type_no 셀러 속성번호 int
             name_kr 셀러 한글명 str 한글,영문,숫자
             name_en 셀러 영문명 str required False 영문 소문자
-            account_no 계정번호 int
             seller_account_id 셀러 계정번호 int
             brandi_app_user_app_id 브랜디앱 유저 아이디 str
             ceo_name 대표자명 str
@@ -497,7 +495,6 @@ class SellerView:
             'seller_type_no': args[2],
             'name_kr': args[3],
             'name_en': args[4],
-            'account_no': args[5],
             'brandi_app_user_app_id': args[6],
             'ceo_name': args[7],
             'company_name': args[8],

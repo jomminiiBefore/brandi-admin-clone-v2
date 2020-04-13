@@ -1012,7 +1012,7 @@ class EventDao:
                     FROM
                         event_infos
                     WHERE
-                        (event_type_id IN %(event_type_id)s)
+                        (event_type_id IN %(event_type_id)s) OR %(event_type_id)s) IS NULL)
                     AND
                         (event_start_time > %(event_start_time)s OR %(event_start_time)s IS NULL)
                     AND
