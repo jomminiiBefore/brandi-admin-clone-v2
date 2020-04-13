@@ -73,7 +73,7 @@ class ProductView:
 
         # 유효한 카테고리 범위 벗어날 시 에러 반환
         Param('first_category_no', PATH, str,
-              rules=[Pattern(r'^([0-9]|[1][0-1])$')]),
+              rules=[Pattern(r'^([0-9]|[0-3][0-9])$')]),
     )
     def get_second_categories(*args):
 
