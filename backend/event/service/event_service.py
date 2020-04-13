@@ -300,6 +300,7 @@ class EventService:
         Returns:
             200: 검색 조건에 맞는 이벤트 목록
             403: no_authorization
+
         Authors:
             leesh3@brandi.co.kr (이소헌)
 

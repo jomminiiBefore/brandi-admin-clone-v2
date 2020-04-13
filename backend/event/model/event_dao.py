@@ -962,7 +962,9 @@ class EventDao:
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
+    # noinspection PyMethodMayBeStatic
     def get_all_events(self, event_info, db_connection):
+        print(event_info)
 
         """ 등록된 모든 이벤트 목록 표출
 
@@ -978,6 +980,7 @@ class EventDao:
         Returns:
             200: 검색 조건에 맞는 이벤트 목록
             400: key error
+            404: not found error
             500: 데이터베이스 에러
 
         Authors:
@@ -988,13 +991,28 @@ class EventDao:
         """
         try:
             with db_connection.cursor() as db_cursor:
+
                 get_event_stmt = """
                     SELECT
-                        *
+                        banner_image_url,
+                        detail_image_url,
+                        event_start_time,                      
+                        event_end_time,
+                        event_id,
+                        event_info_no,
+                        event_sort_id,
+                        event_type_id,
+                        is_deleted,
+                        is_on_event,
+                        is_on_main,
+                        long_description,
+                        name,
+                        short_description,
+                        youtube_url
                     FROM
                         event_infos
                     WHERE
-                        (event_type_id = %(event_type_id)s OR %(event_type_id)s IS NULL)
+                        (event_type_id IN %(event_type_id)s)
                     AND
                         (event_start_time > %(event_start_time)s OR %(event_start_time)s IS NULL)
                     AND
@@ -1003,9 +1021,19 @@ class EventDao:
                         (name LIKE %(event_name)s OR %(event_name)s IS NULL)
                 """
 
+                if event_info['event_name']:
+                    event_info['event_name'] = f"%{event_info['event_name']}%"
+
+                if event_info['event_type_id']:
+                    event_info['event_type_id'] = tuple(event_info['event_type_id'])
+
+                print(event_info['event_type_id'])
+
                 db_cursor.execute(get_event_stmt, event_info)
                 events = db_cursor.fetchall()
-                return jsonify({'events': events}), 200
+                if events:
+                    return jsonify({'events': events}), 200
+                return jsonify({'message': 'EVENT_DOES_NOT_EXIST'}), 404
 
         except KeyError as e:
             print(f'KEY_ERROR WITH {e}')

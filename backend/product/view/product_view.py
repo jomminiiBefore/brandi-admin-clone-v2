@@ -1,21 +1,20 @@
-import re, json
+import json
 
 from flask import request, Blueprint, jsonify, g
 from flask_request_validator import (
     GET,
     FORM,
     PATH,
-    JSON,
     Param,
     Pattern,
     validate_params
 )
 from product.service.product_service import ProductService
-from connection import get_db_connection, DatabaseConnection
+from connection import get_db_connection
 from utils import login_required, ImageUpload
 
 
-class ProductView():
+class ProductView:
     """
     프로덕트 뷰
     """
@@ -23,7 +22,10 @@ class ProductView():
 
     @product_app.route("/category", methods=["GET"])
     @login_required
-    def get_first_categories():
+    @validate_params(
+        Param('account_no', GET, int, required=False)
+    )
+    def get_first_categories(*args):
 
         """ 상품 분류별 1차 카테고리 표 엔드포인트
 
@@ -37,13 +39,16 @@ class ProductView():
 
         History:
             2020-04-02 (leesh3@brandi.co.kr): 초기 생성
-
+            2020-04-13 (leesh3@brandi.co.kr): 셀러 정보 얻어오는 경로를 token 내부 데이터에서 query string 으로 변경
         """
+        account_info = {
+            'account_no': args[0]
+        }
         db_connection = get_db_connection()
         if db_connection:
             try:
                 product_service = ProductService()
-                categories = product_service.get_first_categories(db_connection)
+                categories = product_service.get_first_categories(account_info, db_connection)
 
                 return categories
 
@@ -65,15 +70,20 @@ class ProductView():
     @login_required
     @validate_params(
         Param('first_category_no', PATH, int),
+
+        # 유효한 카테고리 범위 벗어날 시 에러 반환
+        Param('first_category_no', PATH, str,
+              rules=[Pattern(r'^([0-9]|[1][0-1])$')]),
     )
-    def get_second_categories(first_category_no):
+    def get_second_categories(*args):
 
         """ 상품 2차 카테고리 목록 표출
 
         선택된 상품 1차 카테고릭에 따라 해당하는 2차카테고리 목록 표출
 
         Args:
-            first_category_no(integer): 1차 카테고리 인덱스 번호
+            *args:
+                first_category_no(integer): 1차 카테고리 인덱스 번호
 
         Returns:
             200: 1차 카테고리에 해당하는 2차 카테고리 목록
@@ -81,14 +91,13 @@ class ProductView():
             500: server error
 
         Authors:
-
             leesh3@brandi.co.kr (이소헌)
 
         History:
             2020-04-02 (leesh3@brandi.co.kr): 초기 생성
             2020-04-07 (leesh3@brandi.co.kr): URL 구조 변경
         """
-
+        first_category_no = args[0]
         db_connection = get_db_connection()
 
         if db_connection:
@@ -112,7 +121,7 @@ class ProductView():
     @product_app.route("/<int:product_no>", methods=["GET"], endpoint='get_product_detail')
     @login_required
     @validate_params(Param('product_no', PATH, int))
-    def get_product_detail1(product_no):
+    def get_product_detail(product_no):
 
         """ 상품 등록/수정시 나타나는 개별 상품의 기존 정보 표출 엔드포인트
 
@@ -159,7 +168,7 @@ class ProductView():
         Param('first_category_id', FORM, int),
         Param('second_category_id', FORM, int, required=False),
         Param('name', FORM, str,
-              rules=[Pattern(r"^((?!(?=.*\")(?=.*\')).)*$")]),
+              rules=[Pattern(r"[^\"\']")]),
         Param('short_description', FORM, str, required=False),
         Param('color_filter_id', FORM, int),
         Param('style_filter_id', FORM, int),
@@ -173,7 +182,17 @@ class ProductView():
         Param('min_unit', FORM, int),
         Param('max_unit', FORM, int),
         Param('tags', FORM, str, required=False),
-        Param('selected_account_no', FORM, int)
+        Param('selected_account_no', FORM, int),
+
+        # integer parameter 범위 지정을 위한 검증
+        Param('is_available', FORM, str,
+              rules=[Pattern(r'^([0-1])$')]),
+        Param('is_on_display', FORM, str,
+              rules=[Pattern(r'^([0-1])$')]),
+        Param('first_category_id', FORM, str,
+              rules=[Pattern(r'^([0-9]|[1][0-1])$')]),
+        Param('second_category_id', FORM, str,
+              rules=[Pattern(r'^([0-9]|[0-9][0-9]|[1][0][0-9]|[1][1][0-4])$')]),
     )
     def insert_new_product(*args):
         """ 상품 등록 엔드포인트
@@ -204,8 +223,6 @@ class ProductView():
 
         image_uploader = ImageUpload()
         uploaded_images = image_uploader.upload_product_image(request)
-        if (400 or 500) in uploaded_images:
-            return uploaded_images
 
         product_info = {
             'auth_type_id': g.account_info['auth_type_id'],
@@ -233,7 +250,6 @@ class ProductView():
             'selected_account_no': args[18],
             'images': uploaded_images,
         }
-        print(uploaded_images)
         db_connection = get_db_connection()
 
         if db_connection:
@@ -393,57 +409,3 @@ class ProductView():
                     return jsonify({'message': f'{e}'}), 500
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
-
-
-
-    @product_app.route('', methods=['GET'], endpoint='get_all_products')
-    @login_required
-    @validate_params(
-        Param('period_start', GET, str, required=False),
-        Param('period_end', GET, str, required=False),
-        Param('seller_name', GET, str, required=False),
-        Param('product_name', GET, str, required=False),
-        Param('product_number', GET, int, required=False),
-        Param('seller_types', GET, str, required=False),
-        Param('available', GET, str, required=False),
-        Param('is_on_display', GET, str, required=False),
-        Param('is_on_discount', GET, str, required=False),
-    )
-    def get_product_list(*args):
-
-        """ 상품 리스트
-
-        Returns:
-            200:
-
-        Authors:
-            kimsj5@barndi.co.kr (김승준)
-
-        History:
-            2020-04-09 (kimsj5@brandi.co.kr): 초기 생성
-        """
-
-        # 데이터베이스 커넥션을 열어줌.
-        db_connection = DatabaseConnection()
-
-        # request에 통과한 쿼리파라미터를 담을 리스트를 생성.
-        request.valid_param = {}
-
-        # request안에 valid_param 리스트에 validation을 통과한 query parameter을 넣어줌.
-        request.valid_param['period_start'] = args[0] # 조회 기간 시작
-        request.valid_param['period_end'] = args[1] # 조회 기간 끝
-        request.valid_param['seller_name'] = args[2] # 셀러명
-        request.valid_param['product_name'] = args[3] # 상품명
-        request.valid_param['product_number'] = args[4] # 상품번호
-        request.valid_param['seller_types'] = args[5] # 셀러속성
-        request.valid_param['available'] = args[6] # 판매여부
-        request.valid_param['is_on_display'] = args[7] # 진열여부
-        request.valid_param['is_on_discount'] = args[8] # 할인여부
-
-
-        # 유저 정보를 g에서 읽어와서 service에 전달
-        user = g.account_info
-        product_service = ProductService()
-        product_list_result = product_service.get_product_list(request, user, db_connection)
-
-        return product_list_result
