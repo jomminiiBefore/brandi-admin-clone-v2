@@ -26,10 +26,11 @@ import PasswordModal from 'src/component/sellerInfoEdit/PasswordModal';
 import BusinessHour from './BusinessHour';
 import { makeStyles } from '@material-ui/core/styles';
 import { JMURL } from 'src/utils/config';
+import { withRouter } from 'react-router-dom';
 import style from 'src/utils/styles';
 import styled from 'styled-components';
 
-const Main = () => {
+const Main = (props) => {
   // 비밀번호 변경 Modal
   const [passwordModal, setPasswordModal] = useState(false);
   const showPasswordModal = () => {
@@ -332,7 +333,12 @@ const Main = () => {
 
   const [sellerTypes, setSellerTypes] = useState([]);
   useEffect(() => {
-    fetch(`http://localhost:5000/seller/2`, {
+    // 쿼리파라미터로 받은 셀러 id값
+    const query = props.location.search.split('&');
+    const sellerId = query[0].split('=')[1];
+    console.log('useEffect() type: ', sellerId);
+
+    fetch(`http://localhost:5000/seller/${sellerId}`, {
       headers: {
         Authorization:
           'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
@@ -377,6 +383,9 @@ const Main = () => {
         });
         setManagerInfo(res.manager_infos);
         setSellerTypes({ ...sellerTypes, sellerTypes: res.seller_types });
+      })
+      .catch((e) => {
+        console.log('catch: ', e);
       });
   }, []);
 
@@ -966,7 +975,7 @@ const Main = () => {
   );
 };
 
-export default Main;
+export default withRouter(Main);
 
 const Container = styled.div`
   padding: 10px 20px 20px 20px;
