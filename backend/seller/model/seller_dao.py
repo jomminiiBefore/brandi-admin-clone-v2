@@ -411,7 +411,7 @@ class SellerDao:
             2020-04-10(yoonhc@brandi.co.kr): 필터링 키워드가 들어오면 필터된 셀러를 count하고 결과값에 추가하는 기능 작성
         """
 
-        # offset과 limit에 음수가 들어오면  default값 지정
+        # offset 과 limit 에 음수가 들어오면  default 값 지정
         offset = 0 if int(request.args.get('offset', 0)) < 0 else int(request.args.get('offset', 0))
         limit = 10 if int(request.args.get('limit', 10)) < 0 else int(request.args.get('limit', 10))
 
@@ -1118,8 +1118,9 @@ class SellerDao:
                         ranking,
                         %(new_seller_info_id)s
                         FROM manager_infos
-                        WHERE manager_info_no = (SELECT manager_info_no FROM manager_infos WHERE seller_info_id = %(previous_seller_info_no)s AND ranking = 1)
-                        AND ranking = 1
+                        WHERE seller_info_id = %(previous_seller_info_no)s
+                        -- WHERE manager_info_no = (SELECT manager_info_no FROM manager_infos WHERE seller_info_id = %(previous_seller_info_no)s AND ranking = 1)
+                        -- AND ranking = 1
                 """
 
                 db_cursor.execute(insert_manager_info_statement, target_seller_info)
