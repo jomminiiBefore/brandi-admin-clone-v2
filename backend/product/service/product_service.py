@@ -120,16 +120,17 @@ class ProductService:
         auth_type = product_info['auth_type_id']
 
         if auth_type == 1:
+            if product_info['selected_account_no']:
+                insert_new_product_result = product_dao.insert_new_product(product_info, db_connection)
+
+                return insert_new_product_result
+            return jsonify({'message': 'NO_SELECTED_USER'}), 200
+
+        elif auth_type == 2:
+            product_info['selected_account_no'] = g.account_info['account_no']
             insert_new_product_result = product_dao.insert_new_product(product_info, db_connection)
 
             return insert_new_product_result
-
-        elif auth_type == 2:
-            if product_info['account_no'] == product_info['selected_account_no']:
-                insert_new_product_result = product_dao.insert_new_product(product_info, db_connection)
-                return insert_new_product_result
-
-            return jsonify({'message': 'NO_AUTHORIZATION'}), 403
 
         return jsonify({'message': 'INVALID_AUTH_ID'}), 400
 

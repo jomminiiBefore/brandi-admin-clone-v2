@@ -182,7 +182,7 @@ class ProductView:
         Param('min_unit', FORM, int),
         Param('max_unit', FORM, int),
         Param('tags', FORM, str, required=False),
-        Param('selected_account_no', FORM, int),
+        Param('selected_account_no', FORM, int, required=False),
 
         # integer parameter 범위 지정을 위한 검증
         Param('is_available', FORM, str,

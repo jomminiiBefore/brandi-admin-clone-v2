@@ -1012,8 +1012,6 @@ class EventDao:
                     FROM
                         event_infos
                     WHERE
-                        (event_type_id IN %(event_type_id)s) OR %(event_type_id)s) IS NULL)
-                    AND
                         (event_start_time > %(event_start_time)s OR %(event_start_time)s IS NULL)
                     AND
                         (event_end_time < %(event_end_time)s OR %(event_end_time)s IS NULL)
@@ -1026,8 +1024,7 @@ class EventDao:
 
                 if event_info['event_type_id']:
                     event_info['event_type_id'] = tuple(event_info['event_type_id'])
-
-                print(event_info['event_type_id'])
+                    get_event_stmt += """AND (event_type_id IN %(event_type_id)s)"""
 
                 db_cursor.execute(get_event_stmt, event_info)
                 events = db_cursor.fetchall()
