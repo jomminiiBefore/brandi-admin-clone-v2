@@ -1,5 +1,4 @@
 from flask import jsonify, g
-
 from product.model.product_dao import ProductDao
 
 
@@ -9,13 +8,14 @@ class ProductService:
     상품 서비스
     """
     # noinspection PyMethodMayBeStatic
-    def get_first_categories(self, db_connection):
+    def get_first_categories(self, account_info, db_connection):
 
         """ 상품 1차 카테고리 목록 표출
 
         seller마다 다른 product_type을 기준으로 1차 상품 카테고리를 표출
 
         Args:
+            account_info: 상품 등록시 상품 소유 셀러
             db_connection: 데이터베이스 커넥션 객체
 
         Returns:
@@ -28,7 +28,14 @@ class ProductService:
             2020-04-02 (leesh3@brandi.co.kr): 초기 생성
         """
         product_dao = ProductDao()
-        account_no = g.account_info['account_no']
+        auth_type_id = g.account_info['auth_type_id']
+        # 상품을 등록하는 주체가 마스터이면, query string 에 담긴 셀러 어카운트 넘버로 셀러 선택해서 카테고리 탐색
+        if auth_type_id == 1:
+            account_no = account_info['account_no']
+        # 상품을 등록하는 주체가 셀러이면, 자기 토큰을 이용해 카테고리 탐색
+        elif auth_type_id == 2:
+            account_no = g.account_info['account_no']
+
         categories = product_dao.get_first_categories(account_no, db_connection)
 
         return categories
@@ -183,34 +190,3 @@ class ProductService:
         """
         product_dao = ProductDao()
         return product_dao.get_color_filters(db_connection)
-        update_product_result = product_dao.update_product_info(product_info, db_connection)
-        return update_product_result
-
-    # noinspection PyMethodMayBeStatic
-    def get_product_list(self, request, user, db_connection):
-
-        """ 모든 상품 정보 리스트 출력
-        Args:
-            request: 클라이언트에서 온 요청
-            user: 유저 정보
-            db_connection: 데이터베이스 커넥션 객체
-
-        Returns:
-            200: 모든 상 정보 리스트
-           403: 열람 권한 없음
-
-        Authors:
-            kimsj5@brandi.co.kr (김승)
-
-        History:
-            2020-04-09 (kimsj5@brandi.co.kr): 초기 생성
-
-        """
-
-        product_dao = ProductDao()
-        auth_type_id = user.get('auth_type_id', None)
-
-        # 마스터 유저이면 dao에 db_connection 전달
-        if auth_type_id == 1:
-            product_list_result = product_dao.get_product_list(request, db_connection)
-            return product_list_result

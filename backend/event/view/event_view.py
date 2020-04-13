@@ -678,7 +678,7 @@ class EventView:
     @event_app.route("", methods=["GET"], endpoint='get_all_events')
     @login_required
     @validate_params(
-        Param('event_type_id', GET, int, required=False),
+        Param('event_type_id', GET, list, required=False),
         Param('event_name', GET, str, required=False),
         Param('event_start_time', GET, str, required=False),
         Param('event_end_time', GET, str, required=False)
@@ -708,13 +708,13 @@ class EventView:
         event_info = {
             'auth_type_id': g.account_info['auth_type_id'],
             'event_type_id': args[0],
-            # 이벤트명 검색시 mysql LIKE 문을 위해 %%를 붙여줌
-            'event_name': f'%{args[1]}%',
+            'event_name': args[1],
             'event_start_time': args[2],
             'event_end_time': args[3]
         }
         if event_info['event_start_time'] and event_info['event_end_time']:
-            if datetime.strptime(event_info['event_start_time'], "%Y-%m-%d") > datetime.strptime(event_info['event_end_time'], "%Y-%m-%d"):
+            if (datetime.strptime(event_info['event_start_time'], "%Y-%m-%d") \
+                    > datetime.strptime(event_info['event_end_time'], "%Y-%m-%d")):
                 return jsonify({'message': 'INVALID_EVENT_DATE'}), 400
 
         db_connection = get_db_connection()
