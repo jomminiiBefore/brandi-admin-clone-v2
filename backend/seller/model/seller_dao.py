@@ -514,11 +514,16 @@ class SellerDao:
                 db_cursor.execute(select_seller_list_statement, parameter)
                 seller_info = db_cursor.fetchall()
 
-                # 쿼리파라미터에 excel키가 1로 들어오면 엑셀파일을 만듦.
+                # 쿼리파라미터에 excel 키가 1로 들어오면 엑셀파일을 만듦.
                 if request.valid_param['excel'] == 1:
                     s3 = get_s3_connection()
 
-                    # pandas 데이터 프레임을 만들기 위한 column과 value 정리
+                    # 엑셀파일로 만들경우 페이지네이션 적용을 받지않고 검색 적용만 받기 때문에 페이지네이션 부분 쿼리를 제거해준다.
+                    replaced_statement = select_seller_list_statement.replace('LIMIT %(limit)s OFFSET %(offset)s', '')
+                    db_cursor.execute(replaced_statement)
+                    seller_info = db_cursor.fetchall()
+
+                    # pandas 데이터 프레임을 만들기 위한 column 과 value 정리
                     seller_list_dict = {
                         '셀러번호': [seller['seller_account_id'] for seller in seller_info],
                         '관리자계정ID': [seller['login_id'] for seller in seller_info],
@@ -555,7 +560,7 @@ class SellerDao:
 
                     return jsonify({'file_url': file_url}), 200
 
-                # 셀러 상태를 확인하여 해당 상태에서 취할 수 있는 action을 기존의 seller_info에 넣어줌.
+                # 셀러 상태를 확인하여 해당 상태에서 취할 수 있는 action 을 기존의 seller_info 에 넣어줌.
                 for seller in seller_info:
                     if seller['seller_status'] == '입점':
                         seller['action'] = [
@@ -579,7 +584,7 @@ class SellerDao:
                             {'name': '퇴점 철회 처리', 'seller_status_id': 2}
                         ]
 
-                # pagination을 위해서 전체 셀러가 몇명인지 count해서 기존의 seller_info에 넣어줌.
+                # pagination 을 위해서 전체 셀러가 몇명인지 count 해서 기존의 seller_info 에 넣어줌.
                 seller_count_statement = '''
                     SELECT 
                     COUNT(seller_account_id) as total_seller_count

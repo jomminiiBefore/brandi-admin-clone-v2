@@ -204,6 +204,8 @@ class ProductView():
 
         image_uploader = ImageUpload()
         uploaded_images = image_uploader.upload_product_image(request)
+        if (400 or 500) in uploaded_images:
+            return uploaded_images
 
         product_info = {
             'auth_type_id': g.account_info['auth_type_id'],
@@ -231,6 +233,7 @@ class ProductView():
             'selected_account_no': args[18],
             'images': uploaded_images,
         }
+        print(uploaded_images)
         db_connection = get_db_connection()
 
         if db_connection:
