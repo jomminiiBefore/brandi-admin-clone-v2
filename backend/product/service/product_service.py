@@ -190,3 +190,39 @@ class ProductService:
         """
         product_dao = ProductDao()
         return product_dao.get_color_filters(db_connection)
+
+    # noinspection PyMethodMayBeStatic
+    def get_product_list(self, filter_info, db_connection):
+
+        """ 모든 상품 정보 리스트 출력
+
+        뷰에서 받아온 필터링 쿼리 정보를 Dao 에 넘깁니다.
+
+        Args:
+            filter_info: 필터에 쓰이는 쿼리 정보
+            db_connection: 데이터베이스 커넥션 객체
+
+        Returns:
+            200: 필터링된 상품 정보 리스트
+            500: DB_CURSOR_ERROR
+
+        Authors:
+            kimsj5@brandi.co.kr (김승준)
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-09 (kimsj5@brandi.co.kr): 초기 생성
+            2020-04-13 (leejm3@brandi.co.kr):
+                - 마스터 권한 확인을 view 에서 하도록 변경(db connection 열리기 전에)
+                - 사용되지 않는 user 인자 제거
+                - try / except 추가
+
+        """
+
+        product_dao = ProductDao()
+        try:
+            product_list_result = product_dao.get_product_list(filter_info, db_connection)
+            return product_list_result
+
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
