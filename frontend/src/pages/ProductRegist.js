@@ -1,5 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { render } from "react-dom";
 import { withRouter } from "react-router-dom";
+import styled from "styled-components";
+import { SHURL } from "src/utils/config";
+import Layout from "src/component/common/Layout";
+import TableBox from "src/component/common/TableBox";
+import TableItem from "src/component/common/TableItem";
+import CustomButton from "src/component/common/CustomButton";
+import ColorFilter from "src/component/productRegist/ColorFilter";
+import SellerSelect from "src/component/productRegist/SellerSelect";
+import styles from "src/utils/styles";
+import { Warning } from "@styled-icons/entypo";
+import { Home } from "@styled-icons/fa-solid";
+import "date-fns";
+import DateFnsUtils from "@date-io/date-fns";
+import Grid from "@material-ui/core/Grid";
+import {
+  MuiPickersUtilsProvider,
+  KeyboardTimePicker,
+  KeyboardDatePicker,
+  DateTimePicker,
+  KeyboardDateTimePicker
+} from "@material-ui/pickers";
+import { WithContext as ReactTags } from "react-tag-input";
+// import { EditorState } from "draft-js";
+// import { Editor } from "react-draft-wysiwyg";
+import Wysiwyg from "src/component/productRegist/Wysiwyg";
 // import CKEditor from "@ckeditor/ckeditor5-react";
 // import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 // import Essentials from "@ckeditor/ckeditor5-essentials/src/essentials";
@@ -7,39 +33,268 @@ import { withRouter } from "react-router-dom";
 // import Bold from "@ckeditor/ckeditor5-basic-styles/src/bold";
 // import Italic from "@ckeditor/ckeditor5-basic-styles/src/italic";
 // import Heading from "@ckeditor/ckeditor5-heading/src/heading";
-import styled from "styled-components";
-import Layout from "src/component/common/Layout";
-import TableBox from "src/component/common/TableBox";
-import TableItem from "src/component/common/TableItem";
-import InputContainer from "src/component/common/InputContainer";
-import CustomButton from "src/component/common/CustomButton";
-import styles from "src/utils/styles";
-import { Warning } from "@styled-icons/entypo";
-import { Home } from "@styled-icons/fa-solid";
+
+const KeyCodes = {
+  comma: 188,
+  enter: 13
+};
+
+const delimiters = [KeyCodes.comma, KeyCodes.enter];
 
 const ProductRegist = () => {
-  // const [serchSeller, setSerchSeller] = useState(false);
-  // const handleSerchSeller = () => {
-  //   setSerchSeller(true);
+  const [sellerName, setSellerName] = useState("");
+
+  const [sellerSelect, setSellerSelect] = useState(false);
+
+  const [colorFilter, setColorFilter] = useState(false);
+
+  const [categoryOne, setCategoryOne] = useState([]);
+
+  const [categoryTwo, setCategoryTwo] = useState([]);
+
+  const [images, setImages] = useState({
+    first: null,
+    seconds: [null, null, null, null]
+  });
+
+  const [radioSelect, setRadioSelect] = useState({
+    productInfo: false,
+    colorFilter: false,
+    stock: false,
+    deadline: false,
+    more: false,
+    less: false,
+    safety: 0
+  });
+
+  const [editorMode, setEditorMode] = useState(false);
+
+  const [colorData, setColorData] = useState("");
+
+  const [postData, setPostData] = useState({
+    is_available: null,
+    is_on_display: null,
+    first_category_id: null,
+    second_category_id: null,
+    name: "",
+    color_filter_id: "",
+    style_filter_id: null,
+    long_description: null,
+    stock: null,
+    price: null,
+    discount_rate: null,
+    discount_start_time: null,
+    discount_end_time: null,
+    min_unit: null,
+    max_unit: null,
+    tags: [null, null],
+    short_description: "",
+    youtube_url: null,
+    image_file_1: null,
+    image_file_2: null,
+    image_file_3: null,
+    image_file_4: null,
+    image_file_5: null
+  });
+
+  const [stockCount, setStockCount] = useState("");
+
+  const [currentPrice, setCurrentPrice] = useState({
+    offPrice: "",
+    finalPrice: ""
+  });
+
+  const [moreQuantityCount, setMoreQuantityCount] = useState("");
+
+  const [lessQuantityCount, setLessQuantityCount] = useState("");
+
+  const [selectedDate, setSelectedDate] = React.useState(new Date());
+
+  const [offDate, setOffDate] = useState({
+    start: new Date(),
+    end: new Date()
+  });
+
+  const [tags, setTags] = useState([]);
+
+  // const [editorState, setEditorState] = useState(EditorState.createEmpty());
+  // onEditorStateChange: Function = (editorState) => {
+  //   // console.log(editorState)
+  //   this.setState({
+  //     editorState,
+  //   });
+  // };
+  // const uploadImageCallBack = file => {
+  //   return new Promise((resolve, reject) => {
+  //     const xhr = new XMLHttpRequest();
+  //     xhr.open("POST", "https://api.imgur.com/3/image");
+  //     xhr.setRequestHeader("Authorization", "Client-ID XXXXX");
+  //     const data = new FormData();
+  //     data.append("image", file);
+  //     xhr.send(data);
+  //     xhr.addEventListener("load", () => {
+  //       const response = JSON.parse(xhr.responseText);
+  //       resolve(response);
+  //     });
+  //     xhr.addEventListener("error", () => {
+  //       const error = JSON.parse(xhr.responseText);
+  //       reject(error);
+  //     });
+  //   });
+  // };
+  // const onEditorStateChange = editorState => {
+  //   // console.log(editorState)
+  //   tsetEditorState(editorState);
   // };
 
-  const [sellerTypeId, setSellerTypeId] = useState("");
-  const onChangeRadio = (e) => {
-    setSellerTypeId(e.target.value);
-    console.log(e.target.value);
+  // 카테고리 1 GET 함수
+  const getCategoryOne = (accountNo, nameKr) => {
+    setSellerName(nameKr);
+    fetch(`${SHURL}/product/category?account_no=${accountNo}`, {
+      method: "GET",
+      headers: {
+        Authorization:
+          "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
+      }
+    })
+      .then(res => res.json())
+      .then(res => res && setCategoryOne(res))
+      .catch(e => console.log("카테고리1 에러 이거", e));
   };
 
-  // const [price, setPrice] = useState(0);
-  // const handlePrice = (price, sale) => {
-  //   setPrice(price - price / sale);
-  //   return price;
-  // };
+  // 카테고리 2 GET 함수
 
-  const [textUpload, setTextUpload] = useState(true);
-  const handleTextUpload = (e) => {
-    e.prevwntDefault();
-    setTextUpload(!textUpload);
+  // 색상필터 색상 데이터
+  const getColorData = data => {
+    setPostData({ ...postData, color_filter_id: data.color_filter_no });
+    setColorData(data);
+    setColorFilter(false);
   };
+
+  const handleDelete = i => {
+    setTags(tags.filter((tag, index) => index !== i));
+  };
+
+  const handleAddition = tag => {
+    setTags([...tags, tag]);
+  };
+
+  const handleDrag = (tag, currPos, newPos) => {
+    // const tags = [...tags];
+    // const newTags = tags.slice();
+    // newTags.splice(currPos, 1);
+    // newTags.splice(newPos, 0, tag);
+    // // re-render
+    // setTags(newTags);
+  };
+
+  const handleDateChange = date => {
+    setSelectedDate(date);
+  };
+
+  // 셀러검색 modal
+  const showSellerSelect = () => {
+    setSellerSelect(!sellerSelect);
+  };
+
+  // 색상필터 modal
+  const [colors, setColors] = useState([]);
+  const showColorFilter = () => {
+    fetch(`${SHURL}/product/color`)
+      .then(res => res.json())
+      .then(res => {
+        if (res) {
+          setColors(res.colors);
+          setColorFilter(!colorFilter);
+        }
+      });
+  };
+
+  // 대표 이미지 업로드
+  const handleUploadFirstImages = e => {
+    console.dir(e.target);
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    console.log(reader);
+    reader.onloadend = () => {
+      setImages({ ...images, first: reader.result });
+    };
+  };
+
+  // 이미지 업로드
+  const handleUploadImages = (e, index) => {
+    console.dir(e.target);
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    console.log(reader);
+    reader.onloadend = () => {
+      let newImages = images;
+      newImages[index] = reader.result;
+      setImages({ ...images, seconds: newImages });
+    };
+  };
+
+  // 이미지 삭제
+  const deleteImages = index => {
+    let newImages = images;
+    newImages[index] = null;
+    setImages({ ...images, seconds: newImages });
+  };
+
+  // 재고
+  const handleStock = boolean => {
+    if (!boolean) {
+      setPostData({ ...postData, stock: -1 });
+      setRadioSelect({ ...radioSelect, stock: false });
+    } else if (boolean) {
+      setPostData({ ...postData, stock: stockCount });
+      setRadioSelect({ ...radioSelect, stock: true });
+    }
+  };
+  useEffect(() => {
+    handleStock(radioSelect.stock);
+  }, [stockCount]);
+
+  // 할인가격 계산
+  const handlePrice = (offPrice, finalPrice) => {
+    setCurrentPrice({
+      ...currentPrice,
+      offPrice: offPrice,
+      finalPrice: finalPrice
+    });
+  };
+
+  // 최소 판매 수량
+  const handleMoreQuantity = boolean => {
+    if (!boolean) {
+      setPostData({ ...postData, min_unit: 1 });
+      setRadioSelect({ ...radioSelect, more: false });
+    } else if (boolean) {
+      setPostData({ ...postData, min_unit: moreQuantityCount });
+      setRadioSelect({ ...radioSelect, more: true });
+    }
+  };
+  useEffect(() => {
+    handleMoreQuantity(radioSelect.more);
+  }, [moreQuantityCount]);
+
+  // 최대 판매 수량
+  const handleLessQuantity = boolean => {
+    if (!boolean) {
+      setPostData({ ...postData, max_unit: 20 });
+      setRadioSelect({ ...radioSelect, less: false });
+    } else if (boolean) {
+      setPostData({ ...postData, max_unit: lessQuantityCount });
+      setRadioSelect({ ...radioSelect, less: true });
+    }
+  };
+  useEffect(() => {
+    handleLessQuantity(radioSelect.less);
+  }, [lessQuantityCount]);
+
+  console.log("포스트데이터 이거!!", postData);
 
   return (
     <Layout>
@@ -58,17 +313,13 @@ const ProductRegist = () => {
           <TableBox title={"기본 정보"}>
             <TableItem title={"셀러 선택"} isRequired={true}>
               <InnerBox>
-                <InputContainer
-                  width="393"
-                  height="34"
-                  placeholder="셀러검색을 해주세요."
+                <JustBox
+                  width="390px"
+                  height="34px"
+                  placeholder={sellerName ? sellerName : "셀러검색을 해주세요."}
+                  disabled
                 />
-                <CustomButton
-                  name="셀러검색"
-                  textColor="white"
-                  color={styles.color.buttonGreen}
-                  // onClickEvent={handleSerchSeller}
-                />
+                <SearchButton onClick={showSellerSelect}>셀러검색</SearchButton>
               </InnerBox>
             </TableItem>
             <TableItem title={"판매 여부"} isRequired={false}>
@@ -80,7 +331,12 @@ const ProductRegist = () => {
                     name="sale"
                     value="saleYes"
                     defaultChecked="checked"
-                    onChange={onChangeRadio}
+                    onChange={() =>
+                      setPostData({
+                        ...postData,
+                        is_available: 1
+                      })
+                    }
                   />
                   <label>판매</label>
                 </InputButtonBox>
@@ -90,7 +346,12 @@ const ProductRegist = () => {
                     id="saleNo"
                     name="sale"
                     value="saleNo"
-                    onChange={onChangeRadio}
+                    onChange={() =>
+                      setPostData({
+                        ...postData,
+                        is_available: 0
+                      })
+                    }
                   />
                   <label>미판매</label>
                 </InputButtonBox>
@@ -111,7 +372,9 @@ const ProductRegist = () => {
                     name="shown"
                     value="shownYes"
                     defaultChecked="checked"
-                    onChange={onChangeRadio}
+                    onChange={() =>
+                      setPostData({ ...postData, is_on_display: 1 })
+                    }
                   />
                   <label>진열</label>
                 </InputButtonBox>
@@ -121,7 +384,9 @@ const ProductRegist = () => {
                     id="shownNo"
                     name="shown"
                     value="shownNo"
-                    onChange={onChangeRadio}
+                    onChange={() =>
+                      setPostData({ ...postData, is_on_display: 0 })
+                    }
                   />
                   <label>미진열</label>
                 </InputButtonBox>
@@ -142,21 +407,25 @@ const ProductRegist = () => {
                   </CategoryTableTr>
                   <CategoryTableTr>
                     <CategoryTableTd>
-                      <CategoryTableSelect id="category1">
+                      <CategoryTableSelect
+                        onChange={e =>
+                          setPostData({
+                            ...postData,
+                            first_category_id: e.target.value
+                          })
+                        }
+                        id="category1"
+                      >
                         <option value="1차 카테고리를 선택해주세요.">
                           1차 카테고리를 선택해주세요.
                         </option>
-                        <option value="아우터">아우터</option>
-                        <option value="상의">상의</option>
-                        <option value="스커트">스커트</option>
-                        <option value="바지.">바지</option>
-                        <option value="원피스">원피스</option>
-                        <option value="신발">신발</option>
-                        <option value="가방">가방</option>
-                        <option value="잡화">잡화</option>
-                        <option value="주얼리">주얼리</option>
-                        <option value="라이프웨어">라이프웨어</option>
-                        <option value="빅사이즈">빅사이즈</option>
+                        {categoryOne.map((el, index) => {
+                          return (
+                            <>
+                              <option value={index}>{el}</option>
+                            </>
+                          );
+                        })}
                       </CategoryTableSelect>
                     </CategoryTableTd>
                     <CategoryTableTd>
@@ -170,33 +439,88 @@ const ProductRegist = () => {
                 </tbody>
               </CategoryTable>
             </TableItem>
-            <TableItem title={"상품 정보 고시"} isRequired={true}>
-              <RadioButtonContainer>
-                <InputButtonBox>
-                  <input
-                    type="radio"
-                    id="productInfoYes"
-                    name="productInfo"
-                    value="productInfoYes"
-                    defaultChecked="checked"
-                    onChange={onChangeRadio}
-                  />
-                  <label>상품상세 참조</label>
-                </InputButtonBox>
-                <InputButtonBox>
-                  <input
-                    type="radio"
-                    id="productInfoNo"
-                    name="productInfo"
-                    value="productInfoNo"
-                    onChange={onChangeRadio}
-                  />
-                  <label>직접입력</label>
-                </InputButtonBox>
-              </RadioButtonContainer>
+            <TableItem title={"상품 정보 고시"} isRequired={false}>
+              <div>
+                <RadioButtonContainer>
+                  <InputButtonBox>
+                    <input
+                      type="radio"
+                      id="productInfoReference"
+                      name="productInfo"
+                      value="productInfoReference"
+                      checked={!radioSelect.productInfo}
+                      onChange={() => {
+                        setRadioSelect({ ...radioSelect, productInfo: false });
+                      }}
+                    />
+                    <label>상품상세 참조</label>
+                  </InputButtonBox>
+                  <InputButtonBox>
+                    <input
+                      type="radio"
+                      id="productInfoSelf"
+                      name="productInfo"
+                      value="productInfoSelf"
+                      checked={radioSelect.productInfo}
+                      onChange={() => {
+                        setRadioSelect({ ...radioSelect, productInfo: true });
+                      }}
+                    />
+                    <label>직접입력</label>
+                  </InputButtonBox>
+                </RadioButtonContainer>
+                {radioSelect.productInfo ? (
+                  <SelfWriteContainer>
+                    <Manufacturer>
+                      <ManufacturerText>제조사(수입사) : </ManufacturerText>
+                      <ManufacturerInput />
+                    </Manufacturer>
+                    <ManufacturerDate>
+                      <ManufacturerDateText>제조일자 : </ManufacturerDateText>
+                      <Calendar>
+                        <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                          <Grid container justify="space-around">
+                            <KeyboardDatePicker
+                              disableToolbar
+                              variant="inline"
+                              format="MM/dd/yyyy"
+                              margin="normal"
+                              id="date-picker-inline"
+                              label="Date picker inline"
+                              value={selectedDate}
+                              onChange={handleDateChange}
+                              KeyboardButtonProps={{
+                                "aria-label": "change date"
+                              }}
+                            />
+                          </Grid>
+                        </MuiPickersUtilsProvider>
+                      </Calendar>
+                    </ManufacturerDate>
+                    <Oigin>
+                      <OiginText>원산지 :</OiginText>
+                      <OiginSelect>
+                        <option value="기타">기타</option>
+                        <option value="중국">중국</option>
+                        <option value="한국" selected>
+                          한국
+                        </option>
+                        <option value="베트남">베트남</option>
+                      </OiginSelect>
+                    </Oigin>
+                  </SelfWriteContainer>
+                ) : null}
+              </div>
             </TableItem>
             <TableItem title={"상품명"} isRequired={true}>
-              <InputContainer width="1000" height="34" />
+              <NormalInput
+                defaultValue={postData.name}
+                onChange={e => {
+                  setPostData({ ...postData, name: e.target.value });
+                }}
+                width="390"
+                height="34"
+              />
               <InfoText>
                 <WarningIcon>
                   <Warning />
@@ -205,29 +529,178 @@ const ProductRegist = () => {
               </InfoText>
             </TableItem>
             <TableItem title={"한줄 상품 설명"} isRequired={false}>
-              <InputContainer width="1000" height="34" />
+              <NormalInput
+                value={postData.short_description}
+                onChange={e => {
+                  setPostData({
+                    ...postData,
+                    short_description: e.target.value
+                  });
+                }}
+                width="390"
+                height="34"
+              />
             </TableItem>
             <TableItem title={"이미지 등록"} isRequired={true}>
               <InnerBox>
                 <ImgInnerBox>
-                  <ImgBox />
-                  <CustomButton name="*대표 이미지 선택" />
+                  <ImgBox
+                    images={images}
+                    style={
+                      images.first
+                        ? { backgroundImage: `url(${images.first})` }
+                        : null
+                    }
+                  />
+                  {images.first ? (
+                    <ButtonWrapper>
+                      * 대표 이미지 변경
+                      <UploadButton
+                        onChange={handleUploadFirstImages}
+                        type="file"
+                      />
+                    </ButtonWrapper>
+                  ) : (
+                    <ButtonWrapper>
+                      * 대표 이미지 선택
+                      <UploadButton
+                        onChange={handleUploadFirstImages}
+                        type="file"
+                      />
+                    </ButtonWrapper>
+                  )}
                 </ImgInnerBox>
                 <ImgInnerBox>
-                  <ImgBox />
-                  <CustomButton name="이미지 선택" />
+                  <ImgBox
+                    images={images}
+                    style={
+                      images.seconds[0]
+                        ? { backgroundImage: `url(${images.seconds[0]})` }
+                        : null
+                    }
+                  />
+                  {images.seconds[0] ? (
+                    <div style={{ display: "flex" }}>
+                      <ButtonWrapper>
+                        이미지 변경
+                        <UploadButton
+                          style={{ width: "106px" }}
+                          onChange={e => handleUploadImages(e, 0)}
+                          type="file"
+                        />
+                      </ButtonWrapper>
+                      <DeleteButton onClick={() => deleteImages(0)}>
+                        삭제
+                      </DeleteButton>
+                    </div>
+                  ) : (
+                    <ButtonWrapper>
+                      이미지 선택
+                      <UploadButton
+                        onChange={e => handleUploadImages(e, 0)}
+                        type="file"
+                      />
+                    </ButtonWrapper>
+                  )}
                 </ImgInnerBox>
                 <ImgInnerBox>
-                  <ImgBox />
-                  <CustomButton name="이미지 선택" />
+                  <ImgBox
+                    images={images}
+                    style={
+                      images.seconds[1]
+                        ? { backgroundImage: `url(${images.seconds[1]})` }
+                        : null
+                    }
+                  />
+                  {images.seconds[1] ? (
+                    <div style={{ display: "flex" }}>
+                      <ButtonWrapper>
+                        이미지 변경
+                        <UploadButton
+                          style={{ width: "106px" }}
+                          onChange={e => handleUploadImages(e, 1)}
+                          type="file"
+                        />
+                      </ButtonWrapper>
+                      <DeleteButton onClick={() => deleteImages(1)}>
+                        삭제
+                      </DeleteButton>
+                    </div>
+                  ) : (
+                    <ButtonWrapper>
+                      이미지 선택
+                      <UploadButton
+                        onChange={e => handleUploadImages(e, 1)}
+                        type="file"
+                      />
+                    </ButtonWrapper>
+                  )}
                 </ImgInnerBox>
                 <ImgInnerBox>
-                  <ImgBox />
-                  <CustomButton name="이미지 선택" />
+                  <ImgBox
+                    images={images}
+                    style={
+                      images.seconds[2]
+                        ? { backgroundImage: `url(${images.seconds[2]})` }
+                        : null
+                    }
+                  />
+                  {images.seconds[2] ? (
+                    <div style={{ display: "flex" }}>
+                      <ButtonWrapper>
+                        이미지 변경
+                        <UploadButton
+                          style={{ width: "106px" }}
+                          onChange={e => handleUploadImages(e, 2)}
+                          type="file"
+                        />
+                      </ButtonWrapper>
+                      <DeleteButton onClick={() => deleteImages(2)}>
+                        삭제
+                      </DeleteButton>
+                    </div>
+                  ) : (
+                    <ButtonWrapper>
+                      이미지 선택
+                      <UploadButton
+                        onChange={e => handleUploadImages(e, 2)}
+                        type="file"
+                      />
+                    </ButtonWrapper>
+                  )}
                 </ImgInnerBox>
                 <ImgInnerBox>
-                  <ImgBox />
-                  <CustomButton name="이미지 선택" />
+                  <ImgBox
+                    images={images}
+                    style={
+                      images.seconds[3]
+                        ? { backgroundImage: `url(${images.seconds[3]})` }
+                        : null
+                    }
+                  />
+                  {images.seconds[3] ? (
+                    <div style={{ display: "flex" }}>
+                      <ButtonWrapper>
+                        이미지 변경
+                        <UploadButton
+                          style={{ width: "106px" }}
+                          onChange={e => handleUploadImages(e, 3)}
+                          type="file"
+                        />
+                      </ButtonWrapper>
+                      <DeleteButton onClick={() => deleteImages(3)}>
+                        삭제
+                      </DeleteButton>
+                    </div>
+                  ) : (
+                    <ButtonWrapper>
+                      이미지 선택
+                      <UploadButton
+                        onChange={e => handleUploadImages(e, 3)}
+                        type="file"
+                      />
+                    </ButtonWrapper>
+                  )}
                 </ImgInnerBox>
               </InnerBox>
               <InfoText>
@@ -248,7 +721,9 @@ const ProductRegist = () => {
                       name="colorFilter"
                       value="colorFilterNo"
                       defaultChecked="checked"
-                      onChange={onChangeRadio}
+                      onChange={() =>
+                        setPostData({ ...postData, color_filter_id: 19 })
+                      }
                     />
                     <label>사용안함</label>
                   </InputButtonBox>
@@ -258,17 +733,30 @@ const ProductRegist = () => {
                       id="colorFilterYes"
                       name="colorFilter"
                       value="colorFilterYes"
-                      onChange={onChangeRadio}
+                      onChange={() =>
+                        setPostData({
+                          ...postData,
+                          color_filter_id: colors.color_filter_no
+                        })
+                      }
                     />
                     <label>사용함</label>
                   </InputButtonBox>
                 </RadioButtonContainer>
-                <InputContainer width="204" height="34" />
-                <CustomButton
-                  name="적용할 색상 찾기"
-                  textColor="white"
-                  color={styles.color.buttonGreen}
-                />
+                <ColorSelected disabled>
+                  {colorData ? (
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <Color src={colorData.image_url} />
+                      <ColorName>
+                        {colorData.name_kr}({colorData.name_en})
+                      </ColorName>
+                    </div>
+                  ) : null}
+                </ColorSelected>
+
+                <ColorButton onClick={showColorFilter}>
+                  적용할 색상 찾기
+                </ColorButton>
               </InnerBox>
               <InfoText>
                 <WarningIcon>
@@ -295,7 +783,9 @@ const ProductRegist = () => {
                     name="styleFilter"
                     value="styleFilterNone"
                     defaultChecked="checked"
-                    onChange={onChangeRadio}
+                    onChange={() =>
+                      setPostData({ ...postData, style_filter_id: 1 })
+                    }
                   />
                   <label>선택안함</label>
                 </InputButtonBox>
@@ -305,7 +795,9 @@ const ProductRegist = () => {
                     id="simpleBasic"
                     name="styleFilter"
                     value="simpleBasic"
-                    onChange={onChangeRadio}
+                    onChange={() =>
+                      setPostData({ ...postData, style_filter_id: 2 })
+                    }
                   />
                   <label>심플베이직</label>
                 </InputButtonBox>
@@ -315,7 +807,9 @@ const ProductRegist = () => {
                     id="lovely"
                     name="styleFilter"
                     value="lovely"
-                    onChange={onChangeRadio}
+                    onChange={() =>
+                      setPostData({ ...postData, style_filter_id: 3 })
+                    }
                   />
                   <label>러블리</label>
                 </InputButtonBox>
@@ -325,7 +819,9 @@ const ProductRegist = () => {
                     id="feminine"
                     name="styleFilter"
                     value="feminine"
-                    onChange={onChangeRadio}
+                    onChange={() =>
+                      setPostData({ ...postData, style_filter_id: 4 })
+                    }
                   />
                   <label>페미닌</label>
                 </InputButtonBox>
@@ -335,7 +831,9 @@ const ProductRegist = () => {
                     id="casual"
                     name="styleFilter"
                     value="casual"
-                    onChange={onChangeRadio}
+                    onChange={() =>
+                      setPostData({ ...postData, style_filter_id: 5 })
+                    }
                   />
                   <label>캐주얼</label>
                 </InputButtonBox>
@@ -345,7 +843,9 @@ const ProductRegist = () => {
                     id="sexyGlam"
                     name="styleFilter"
                     value="sexyGlam"
-                    onChange={onChangeRadio}
+                    onChange={() =>
+                      setPostData({ ...postData, style_filter_id: 6 })
+                    }
                   />
                   <label>섹시글램</label>
                 </InputButtonBox>
@@ -366,7 +866,7 @@ const ProductRegist = () => {
                 상품의 경우 선택하실 수 없습니다.
               </InfoText>
             </TableItem>
-            <TableItem title={"연령 필터"} isRequired={true}>
+            <TableItem title={"연령 필터"} isRequired={false}>
               <CustomButton />
               <InfoText>
                 <WarningIcon>
@@ -399,7 +899,7 @@ const ProductRegist = () => {
                     name="upload"
                     value="easyUpload"
                     defaultChecked="checked"
-                    onChange={onChangeRadio}
+                    onChange={() => setEditorMode(false)}
                   />
                   <label>간편업로드</label>
                 </InputButtonBox>
@@ -409,7 +909,7 @@ const ProductRegist = () => {
                     id="editor"
                     name="upload"
                     value="editor"
-                    onChange={onChangeRadio}
+                    onChange={() => setEditorMode(true)}
                   />
                   <label>에디터 사용 (html 가능)</label>
                   <EditorInfoText>
@@ -425,26 +925,30 @@ const ProductRegist = () => {
                 상품상세이미지의 권장 사이즈는 가로사이즈 1000px 이상입니다.
               </InfoText>
               <Border />
-              <EasyUploadBox>
-                <EasyUploadInnerBox>
-                  <CustomButton name="사진삽입" />
-                  <ImgInfoText>
-                    이미지 확장자는 JPG, PNG만 등록 가능합니다.
-                  </ImgInfoText>
-                </EasyUploadInnerBox>
-                <DetailTextareaBox>
-                  <textarea
-                    style={{
-                      width: "100%",
-                      height: "350px",
-                      padding: "10px",
-                      border: "2px solid #eeeeee",
-                      borderRadius: "5px",
-                      fontSize: "13px",
-                    }}
-                  />
-                </DetailTextareaBox>
-              </EasyUploadBox>
+              {editorMode ? (
+                <Wysiwyg />
+              ) : (
+                <EasyUploadBox>
+                  <EasyUploadInnerBox>
+                    <CustomButton name="사진삽입" />
+                    <ImgInfoText>
+                      이미지 확장자는 JPG, PNG만 등록 가능합니다.
+                    </ImgInfoText>
+                  </EasyUploadInnerBox>
+                  <DetailTextareaBox>
+                    <textarea
+                      style={{
+                        width: "100%",
+                        height: "350px",
+                        padding: "10px",
+                        border: "2px solid #eeeeee",
+                        borderRadius: "5px",
+                        fontSize: "13px"
+                      }}
+                    />
+                  </DetailTextareaBox>
+                </EasyUploadBox>
+              )}
               <WysiwygEditorBox>
                 {/* <CKEditor
                   editor={ClassicEditor}
@@ -474,7 +978,13 @@ const ProductRegist = () => {
             </TableItem>
             <TableItem title={"유튜브 영상 URL"} isRequired={true}>
               <InnerBox>
-                <InputContainer width="1000" height="34" />
+                <NormalInput
+                  onChange={e => {
+                    setPostData({ ...postData, youtube_url: e.target.value });
+                  }}
+                  width="390"
+                  height="34"
+                />
                 <CustomButton
                   name="미리보기"
                   textColor="white"
@@ -516,7 +1026,7 @@ const ProductRegist = () => {
                   </OptionTableTr>
                   <OptionTableTr>
                     <OptionTableTd>
-                      <InputContainer width="300" height="34" />
+                      <NormalInput width="300" height="34" />
                     </OptionTableTd>
                     <OptionTableTd>
                       <RadioButtonContainer>
@@ -526,8 +1036,8 @@ const ProductRegist = () => {
                             id="stockNo"
                             name="stock"
                             value="stockNo"
-                            defaultChecked="checked"
-                            onChange={onChangeRadio}
+                            checked={!radioSelect.stock}
+                            onChange={() => handleStock(false)}
                           />
                           <label>재고관리 안함</label>
                         </InputButtonBox>
@@ -539,9 +1049,18 @@ const ProductRegist = () => {
                             id="stockYes"
                             name="stock"
                             value="stockYes"
-                            onChange={onChangeRadio}
+                            checked={radioSelect.stock}
+                            onChange={() => handleStock(true)}
                           />
-                          <InputContainer width="100" height="34" />
+                          <NormalInput
+                            width="100"
+                            height="34"
+                            disabled={radioSelect.stock ? false : true}
+                            value={stockCount}
+                            onChange={e => {
+                              setStockCount(e.target.value);
+                            }}
+                          />
                           <label>개</label>
                         </InputButtonBox>
                       </RadioButtonContainer>
@@ -567,10 +1086,16 @@ const ProductRegist = () => {
         <SaleInfoContainer>
           <TableBox title={"판매 정보"}>
             <TableItem title={"도매 원가"} isRequired={false}>
-              <InputContainer width="200" height="34" />
+              <NormalInput width="200" height="34" />
             </TableItem>
             <TableItem title={"판매가"} isRequired={true}>
-              <InputContainer width="200" height="34" />
+              <NormalInput
+                onChange={e =>
+                  setPostData({ ...postData, price: Number(e.target.value) })
+                }
+                width="200"
+                height="34"
+              />
               <InfoText>
                 <WarningIcon>
                   <Warning />
@@ -588,47 +1113,126 @@ const ProductRegist = () => {
                   </DiscountTr>
                   <DiscountTr>
                     <DiscountTd>
-                      <InputContainer width="80" height="34" />
+                      <NormalInput
+                        onChange={e => {
+                          setPostData({
+                            ...postData,
+                            discount_rate: Number(e.target.value)
+                          });
+                        }}
+                        width="80"
+                        height="34"
+                      />
                     </DiscountTd>
                     <DiscountTd>
-                      <CustomButton
-                        name="할인판매가적용"
-                        textColor="white"
-                        color={styles.color.buttonBlue}
-                      />
-                      원
+                      {currentPrice.offPrice}원
+                      <ClacButton
+                        onClick={() => {
+                          handlePrice(
+                            postData.price * (postData.discount_rate / 100),
+                            postData.price -
+                              postData.price * (postData.discount_rate / 100)
+                          );
+                        }}
+                      >
+                        할인판매가적용
+                      </ClacButton>
                     </DiscountTd>
                   </DiscountTr>
                   <DiscountTr>
                     <DiscountTh>할인 판매가</DiscountTh>
-                    <DiscountTd>원</DiscountTd>
+                    <DiscountTd>{currentPrice.finalPrice}원</DiscountTd>
                   </DiscountTr>
                   <DiscountTr>
                     <DiscountTh>할인 기간</DiscountTh>
                     <DiscountTd>
-                      <RadioButtonContainer>
-                        <InputButtonBox>
-                          <input
-                            type="radio"
-                            id="noDeadline"
-                            name="saleDeadline"
-                            value="noDeadline"
-                            defaultChecked="checked"
-                            onChange={onChangeRadio}
-                          />
-                          <label>무기한</label>
-                        </InputButtonBox>
-                        <InputButtonBox>
-                          <input
-                            type="radio"
-                            id="selectDate"
-                            name="saleDeadline"
-                            value="selectDate"
-                            onChange={onChangeRadio}
-                          />
-                          <label>기간설정</label>
-                        </InputButtonBox>
-                      </RadioButtonContainer>
+                      <div>
+                        <RadioButtonContainer>
+                          <InputButtonBox>
+                            <input
+                              type="radio"
+                              id="noDeadline"
+                              name="saleDeadline"
+                              value="noDeadline"
+                              checked={!radioSelect.deadline}
+                              onChange={() =>
+                                setRadioSelect({
+                                  ...radioSelect,
+                                  deadline: false
+                                })
+                              }
+                            />
+                            <label>무기한</label>
+                          </InputButtonBox>
+                          <InputButtonBox>
+                            <input
+                              type="radio"
+                              id="selectDate"
+                              name="saleDeadline"
+                              value="selectDate"
+                              checked={radioSelect.deadline}
+                              onChange={() =>
+                                setRadioSelect({
+                                  ...radioSelect,
+                                  deadline: true
+                                })
+                              }
+                            />
+                            <label>기간설정</label>
+                          </InputButtonBox>
+                        </RadioButtonContainer>
+                        {radioSelect.deadline ? (
+                          <DeadlineBox>
+                            <Calendar>
+                              <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                                <Grid container justify="space-around">
+                                  <KeyboardDateTimePicker
+                                    disableToolbar
+                                    variant="inline"
+                                    format="yyyy/MM/dd HH:mm"
+                                    margin="normal"
+                                    id="date-picker-inline"
+                                    label="시작"
+                                    value={offDate.start}
+                                    onChange={date =>
+                                      setOffDate({
+                                        ...offDate,
+                                        start: date
+                                      })
+                                    }
+                                    KeyboardButtonProps={{
+                                      "aria-label": "change date"
+                                    }}
+                                  />
+
+                                  <KeyboardDateTimePicker
+                                    disableToolbar
+                                    variant="inline"
+                                    format="yyyy/MM/dd HH:mm"
+                                    margin="normal"
+                                    id="date-picker-inline"
+                                    label="끝"
+                                    value={offDate.end}
+                                    onChange={date =>
+                                      setOffDate({
+                                        ...offDate,
+                                        end: date
+                                      })
+                                    }
+                                    KeyboardButtonProps={{
+                                      "aria-label": "change date"
+                                    }}
+                                  />
+                                </Grid>
+                              </MuiPickersUtilsProvider>
+                            </Calendar>
+                            <p style={{ color: "red" }}>
+                              * 할인기간을 설정시 기간만료되면 자동으로 정상가로
+                              변경 됩니다.
+                            </p>
+                          </DeadlineBox>
+                        ) : null}
+                      </div>
                     </DiscountTd>
                   </DiscountTr>
                 </tbody>
@@ -659,11 +1263,11 @@ const ProductRegist = () => {
                   <InputButtonBox>
                     <input
                       type="radio"
-                      id="oneOrMore"
+                      id="one"
                       name="minimumSales"
-                      value="oneOrMore"
-                      defaultChecked="checked"
-                      onChange={onChangeRadio}
+                      value="one"
+                      checked={!radioSelect.more}
+                      onChange={() => handleMoreQuantity(false)}
                     />
                     <label>1개 이상</label>
                   </InputButtonBox>
@@ -672,12 +1276,19 @@ const ProductRegist = () => {
                   >
                     <input
                       type="radio"
-                      id="nOrMore"
+                      id="more"
                       name="minimumSales"
-                      value="nOrMore"
-                      onChange={onChangeRadio}
+                      value="more"
+                      checked={radioSelect.more}
+                      onChange={() => handleMoreQuantity(true)}
                     />
-                    <InputContainer width="100" height="34" />
+                    <NormalInput
+                      width="100"
+                      height="34"
+                      disabled={radioSelect.more ? false : true}
+                      value={moreQuantityCount}
+                      onChange={e => setMoreQuantityCount(e.target.value)}
+                    />
                     <label>개 이상</label>
                   </InputButtonBox>
                 </RadioButtonContainer>
@@ -693,8 +1304,10 @@ const ProductRegist = () => {
                       id="twenty"
                       name="maximumSales"
                       value="twenty"
-                      defaultChecked="checked"
-                      onChange={onChangeRadio}
+                      checked={!radioSelect.less}
+                      onChange={() => {
+                        handleLessQuantity(false);
+                      }}
                     />
                     <label>20개</label>
                   </InputButtonBox>
@@ -703,12 +1316,22 @@ const ProductRegist = () => {
                   >
                     <input
                       type="radio"
-                      id="nOrLess"
+                      id="less"
                       name="maximumSales"
-                      value="nOrLess"
-                      onChange={onChangeRadio}
+                      value="less"
+                      checked={radioSelect.less}
+                      onChange={() => {
+                        handleLessQuantity(true);
+                      }}
                     />
-                    <InputContainer width="100" height="34" />
+                    <NormalInput
+                      width="100"
+                      height="34"
+                      disabled={radioSelect.less ? false : true}
+                      onChange={e => {
+                        setLessQuantityCount(e.target.value);
+                      }}
+                    />
                     <label>개 이하</label>
                   </InputButtonBox>
                 </RadioButtonContainer>
@@ -720,11 +1343,13 @@ const ProductRegist = () => {
                 <InputButtonBox>
                   <input
                     type="radio"
-                    id="safetyProductDetail"
+                    id="detailReference"
                     name="safety"
-                    value="safetyProductDetail"
-                    defaultChecked="checked"
-                    onChange={onChangeRadio}
+                    value="detailReference"
+                    checked={radioSelect.safety === 0}
+                    onChange={() =>
+                      setRadioSelect({ ...radioSelect, safety: 0 })
+                    }
                   />
                   <label>상품상세 참조</label>
                 </InputButtonBox>
@@ -734,7 +1359,10 @@ const ProductRegist = () => {
                     id="certificationTarget"
                     name="safety"
                     value="certificationTarget"
-                    onChange={onChangeRadio}
+                    checked={radioSelect.safety === 1}
+                    onChange={() =>
+                      setRadioSelect({ ...radioSelect, safety: 1 })
+                    }
                   />
                   <label>인증대상</label>
                 </InputButtonBox>
@@ -744,7 +1372,10 @@ const ProductRegist = () => {
                     id="NoneSafety"
                     name="safety"
                     value="NoneSafety"
-                    onChange={onChangeRadio}
+                    checked={radioSelect.safety === 2}
+                    onChange={() =>
+                      setRadioSelect({ ...radioSelect, safety: 2 })
+                    }
                   />
                   <label>해당사항 없음</label>
                 </InputButtonBox>
@@ -773,11 +1404,22 @@ const ProductRegist = () => {
               </SafetyText>
             </TableItem>
             <TableItem title={"상품 태그 관리"} isRequired={true}>
-              <InputContainer
-                width="1000"
-                height="34"
-                placeholder="해시태그(#) 를 제외한 상품 태그를 입력해주세요."
-              />
+              <div>
+                <NormalInput
+                  width="390"
+                  height="34"
+                  placeholder="해시태그(#) 를 제외한 상품 태그를 입력해주세요."
+                />
+              </div>
+              <div>
+                <ReactTags
+                  tags={tags}
+                  handleDelete={handleDelete}
+                  handleAddition={handleAddition}
+                  handleDrag={() => {}}
+                  delimiters={delimiters}
+                />
+              </div>
             </TableItem>
           </TableBox>
         </SaleInfoContainer>
@@ -794,6 +1436,19 @@ const ProductRegist = () => {
           />
         </BottomButtoBox>
       </Container>
+      {colorFilter && (
+        <ColorFilter
+          showColorFilter={showColorFilter}
+          getColorData={getColorData}
+          colors={colors}
+        />
+      )}
+      {sellerSelect && (
+        <SellerSelect
+          showSellerSelect={showSellerSelect}
+          getCategoryOne={getCategoryOne}
+        />
+      )}
     </Layout>
   );
 };
@@ -818,6 +1473,14 @@ const SaleInfoContainer = styled.div`
 const RadioButtonContainer = styled.div`
   display: felx;
   align-items: center;
+`;
+
+const SelfWriteContainer = styled.div`
+  margin-top: 5px;
+  border-radius: 3px;
+  padding: 10px;
+  font-size: 13px;
+  background-color: #eeeeee;
 `;
 
 // Box
@@ -847,6 +1510,18 @@ const PageBarBox = styled.div`
   background-color: #eee;
 `;
 
+const SearchButton = styled.div`
+  padding: 10px;
+  color: white;
+  border-radius: 5px;
+  font-size: 13px;
+  background-color: ${styles.color.buttonGreen};
+  cursor: pointer;
+  &:hover {
+    filter: ${styles.filter.brightness};
+  }
+`;
+
 const InputButtonBox = styled.div`
   margin-right: 30px;
   font-size: 13px;
@@ -863,7 +1538,7 @@ const ImgBox = styled.img`
   margin: 5px;
   background-size: cover;
   background-repeat: no-repeat;
-  background-image: url("http://sadmin.brandi.co.kr/include/img/no_image.png");
+  background-image: url(http://sadmin.brandi.co.kr/include/img/no_image.png);
 `;
 
 const EasyUploadBox = styled.div``;
@@ -880,6 +1555,8 @@ const BottomButtoBox = styled.div`
   display: flex;
   justify-content: center;
 `;
+
+const DeadlineBox = styled.div``;
 
 // Icons & common
 const HomeIcon = styled.div`
@@ -911,6 +1588,32 @@ const MustRead = styled.span`
   font-weight: bold;
 `;
 
+const NormalInput = styled.input`
+  width: ${props => props.width}px;
+  height: ${props => props.height}px;
+  margin-right: 5px;
+  border: 1px solid #e5e5e5;
+  border-radius: 3px;
+  padding: 10px;
+  font-size: 13px;
+  &:focus {
+    border: 1px solid #e5e5e5;
+  }
+`;
+
+// disabled input
+const JustBox = styled.input`
+  width: ${props => props.width};
+  height: ${props => props.height};
+  margin-right: 10px;
+  border: 1px solid #e5e5e5;
+  border-radius: 3px;
+  padding: 10px;
+  font-size: 12px;
+  background-color: #eeeeee;
+  cursor: not-allowed;
+`;
+
 // Title
 const MainTitle = styled.div`
   color: #666;
@@ -929,7 +1632,7 @@ const SubTitle = styled.div`
 const InfoText = styled.div`
   display: flex;
   align-items: flex-end;
-  margin-top: 5px;
+  margin-top: 10px;
   color: ${styles.color.infoBlue};
   font-size: 12px;
 `;
@@ -1024,4 +1727,138 @@ const DiscountTd = styled.td`
   padding: 8px;
   border: 1px solid #e5e5e5;
   font-size: 13px;
+`;
+
+// 상품 정보 고시 ( 직접 입력 )
+const Manufacturer = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const ManufacturerText = styled.p``;
+
+const ManufacturerInput = styled.input`
+  width: 240px;
+  height: 34px;
+  margin-left: 5px;
+  border: 1px solid #878787;
+  border-radius: 5px;
+  padding: 5px;
+  font-size: 13px;
+  &:focus {
+    border: 1px solid #878787;
+  }
+`;
+
+const ManufacturerDate = styled.div`
+  margin-top: 8px;
+  display: flex;
+`;
+
+const ManufacturerDateText = styled.p``;
+
+const Calendar = styled.div`
+  padding: 5px;
+`;
+
+const Oigin = styled.div`
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+`;
+
+const OiginText = styled.p``;
+
+const OiginSelect = styled.select`
+  width: 240px;
+  height: 34px;
+  margin-left: 5px;
+  padding: 10px;
+`;
+
+// 이미지 버튼
+const ButtonWrapper = styled.span`
+  width: 120px;
+  position: relative;
+  display: inline-block;
+  padding: 5px;
+  border: 1px solid #e5e5e5;
+  border-radius: 5px;
+  text-align: center;
+  font-size: 13px;
+  background-color: white;
+  cursor: pointer;
+  &:hover {
+    filter: ${styles.filter.brightness};
+  }
+`;
+
+const UploadButton = styled.input`
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  opacity: 0;
+`;
+
+const DeleteButton = styled.div`
+  padding: 5px;
+  text-align: center;
+  color: white;
+  font-size: 12px;
+  border-radius: 5px;
+  background-color: ${styles.color.buttonRed};
+  cursor: pointer;
+  &:hover {
+    filter: ${styles.filter.brightness};
+  }
+`;
+
+const ClacButton = styled.div`
+  width: 110px;
+  padding: 10px;
+  border: 1px solid gray;
+  border-radius: 5px;
+  color: white;
+  background-color: ${styles.color.buttonBlue};
+  cursor: pointer;
+  &:hover {
+    filter: ${styles.filter.brightness};
+  }
+`;
+
+// 색상필터
+const Color = styled.img`
+  width: 18px;
+  height: 18px;
+  border-radius: 100%;
+`;
+
+const ColorName = styled.p`
+  margin-left: 5px;
+  font-size: 13px;
+`;
+
+const ColorButton = styled.button`
+  padding: 7px;
+  color: white;
+  border-radius: 5px;
+  font-size: 13px;
+  background-color: ${styles.color.buttonGreen};
+  cursor: pointer;
+  &:hover {
+    filter: ${styles.filter.brightness};
+  }
+`;
+
+const ColorSelected = styled.div`
+  width: 205px;
+  height: 34px;
+  margin-right: 10px;
+  border: 1px solid #e5e5e5;
+  border-radius: 3px;
+  padding: 10px;
+  font-size: 12px;
+  background-color: #eeeeee;
+  cursor: not-allowed;
 `;

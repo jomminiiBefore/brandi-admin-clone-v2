@@ -1,37 +1,37 @@
-import React, { useState } from 'react';
-import CustomButton from 'src/component/common/CustomButton';
-import { JMURL } from 'src/utils/config';
-import { four_length_case } from 'src/utils/regexp';
-import style from 'src/utils/styles';
-import styled, { keyframes, css } from 'styled-components';
+import React, { useState } from "react";
+import CustomButton from "src/component/common/CustomButton";
+import { JMURL } from "src/utils/config";
+import { four_length_case } from "src/utils/regexp";
+import style from "src/utils/styles";
+import styled, { keyframes, css } from "styled-components";
 
 const PasswordModal = ({ showPasswordModal }) => {
   // 비밀번호 변경
   const onChangePassword = () => {
     if (!input.password) {
-      alert('변경할 비밀번호를 입력하세요.');
+      alert("변경할 비밀번호를 입력하세요.");
     } else if (!input.rePassword) {
-      alert('변경할 비밀번호를 한번 더 입력해주세요.');
+      alert("변경할 비밀번호를 한번 더 입력해주세요.");
     } else if (input.password === input.rePassword) {
       if (four_length_case.test(input.password)) {
-        if (confirm('비밀번호를 변경하시겠습니까?')) {
+        if (confirm("비밀번호를 변경하시겠습니까?")) {
           changePassword();
         }
       } else {
-        alert('비밀번호의 최소 길이는 4글자입니다.');
+        alert("비밀번호의 최소 길이는 4글자입니다.");
       }
     } else {
-      alert('비밀번호가 일치하지 않습니다.');
+      alert("비밀번호가 일치하지 않습니다.");
     }
   };
 
   const changePassword = () => {
     fetch(`http://localhost:5000/seller/5/password`, {
-      method: 'PUT',
+      method: "PUT",
       headers: {
         Authorization:
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
-        'Content-Type': 'application/json',
+          "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw",
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         original_password: null,
@@ -40,14 +40,14 @@ const PasswordModal = ({ showPasswordModal }) => {
     })
       .then((res) => res.json())
       .then((res) => {
-        if (res.message === 'SUCCESS') {
-          alert('비밀번호가 변경되었습니다.');
+        if (res.message === "SUCCESS") {
+          alert("비밀번호가 변경되었습니다.");
           showPasswordModal();
         }
       });
   };
 
-  const [input, setInput] = useState({ password: '', rePassword: '' });
+  const [input, setInput] = useState({ password: "", rePassword: "" });
 
   const onSetText = (e) => {
     setInput({ ...input, [e.target.name]: e.target.value });

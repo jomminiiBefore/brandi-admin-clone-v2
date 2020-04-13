@@ -9,6 +9,8 @@ import SellerInfoEdit from "src/pages/SellerInfoEdit";
 import LoginOk from "src/pages/LoginOk";
 import TestingTable from "./component/sellerAccountManagement/TestingTable";
 import ProductRegist from "src/pages/ProductRegist";
+import ColorFilter from "src/component/productRegist/ColorFilter";
+import SellerSelect from "src/component/productRegist/SellerSelect";
 
 const Routes = () => {
   return (
@@ -23,6 +25,8 @@ const Routes = () => {
         <Route exact path="/loginOk" component={LoginOk} />
         <Route exact path="/test" component={TestingTable} />
         <Route exact path="/productRegist" component={ProductRegist} />
+        <Route exact path="/colorFilter" component={ColorFilter} />
+        <Route exact path="/sellerSelect" component={SellerSelect} />
       </Switch>
     </Router>
   );
