@@ -61,9 +61,17 @@ const PasswordModal = ({ showPasswordModal }) => {
         <ModalHeader>비밀번호 변경하기</ModalHeader>
         <ModalBody>
           <InputTitle>변경할 비밀번호</InputTitle>
-          <InputForm name="password" onChange={(e) => onSetText(e)} />
+          <InputForm
+            name="password"
+            onChange={(e) => onSetText(e)}
+            type="password"
+          />
           <InputTitle>비밀번호 재입력</InputTitle>
-          <InputForm name="rePassword" onChange={(e) => onSetText(e)} />
+          <InputForm
+            name="rePassword"
+            onChange={(e) => onSetText(e)}
+            type="password"
+          />
         </ModalBody>
         <ModalFooter>
           <CustomButton name="취소" onClickEvent={showPasswordModal} />
