@@ -559,13 +559,13 @@ class SellerDao:
                 for seller in seller_info:
                     if seller['seller_status'] == '입점':
                         seller['action'] = [
-                            {'name': '휴점신청', 'seller_status_id': 5},
+                            {'name': '휴점 신청', 'seller_status_id': 5},
                             {'name': '퇴점 신청 처리', 'seller_status_id': 4}
                         ]
                     elif seller['seller_status'] == '입점대기':
                         seller['action'] = [
                             {'name': '입점 승인', 'seller_status_id': 2},
-                            {'name': '입점거절', 'seller_status_id': 4}
+                            {'name': '입점 거절', 'seller_status_id': 4}
                         ]
                     elif seller['seller_status'] == '휴점':
                         seller['action'] = [
