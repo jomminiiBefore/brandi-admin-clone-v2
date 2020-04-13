@@ -558,13 +558,26 @@ class SellerDao:
                 # 셀러 상태를 확인하여 해당 상태에서 취할 수 있는 action을 기존의 seller_info에 넣어줌.
                 for seller in seller_info:
                     if seller['seller_status'] == '입점':
-                        seller['action'] = {'휴점 신청': 5, '퇴점 신청 처리': 4}
+                        seller['action'] = [
+                            {'name': '휴점신청', 'seller_status_id': 5},
+                            {'name': '퇴점 신청 처리', 'seller_status_id': 4}
+                        ]
                     elif seller['seller_status'] == '입점대기':
-                        seller['action'] = {'입점 승인': 2, '입점 거절': 4}
+                        seller['action'] = [
+                            {'name': '입점 승인', 'seller_status_id': 2},
+                            {'name': '입점거절', 'seller_status_id': 4}
+                        ]
                     elif seller['seller_status'] == '휴점':
-                        seller['action'] = {'휴점 해제': 2, '퇴점 신청 처리': 4}
+                        seller['action'] = [
+                            {'name': '휴점 해제', 'seller_status_id': 2},
+                            {'name': '퇴점 신청 처리', 'seller_status_id': 4}
+                        ]
                     elif seller['seller_status'] == '퇴점대기':
-                        seller['action'] = {'휴점 신청': 5, '퇴점 확정 처리': 4, '퇴점 철회 처리': 2}
+                        seller['action'] = [
+                            {'name': '휴점 신청', 'seller_status_id': 5},
+                            {'name': '퇴점 확정 처리', 'seller_status_id': 4},
+                            {'name': '퇴점 철회 처리', 'seller_status_id': 2}
+                        ]
 
                 # pagination을 위해서 전체 셀러가 몇명인지 count해서 기존의 seller_info에 넣어줌.
                 seller_count_statement = '''
