@@ -8,6 +8,7 @@ const LoginOk = props => {
   const handleMain = () => {
     props.history.push("/seller");
   };
+
   return (
     <Container>
       <BgBox>

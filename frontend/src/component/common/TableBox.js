@@ -1,6 +1,6 @@
-import React from 'react';
-import style from 'src/utils/styles';
-import styled from 'styled-components';
+import React from "react";
+import style from "src/utils/styles";
+import styled from "styled-components";
 
 /*
  * 테이블 컨테이너

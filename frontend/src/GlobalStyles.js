@@ -171,6 +171,17 @@ select {
 li {
   list-style: none;
 }
+.ReactTags__selected .ReactTags__tag {
+  border: 1px solid #ddd;
+  background: #eee;
+  font-size: 12px;
+  display: inline-block;
+  padding: 5px;
+  margin: 0 5px;
+  cursor:pointer;
+  border-radius: 2px;
+}
+
 `;
 
 export default GlobalStyles;

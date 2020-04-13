@@ -1,8 +1,8 @@
-import React from 'react';
-import Input from 'src/component/common/Input';
-import Validation from 'src/component/common/Validation';
-import style from 'src/utils/styles';
-import styled from 'styled-components';
+import React from "react";
+import Input from "src/component/common/Input";
+import Validation from "src/component/common/Validation";
+import style from "src/utils/styles";
+import styled from "styled-components";
 
 const InputContainer = ({
   width,

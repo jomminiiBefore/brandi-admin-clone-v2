@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { withRouter } from "react-router-dom";
 import styled from "styled-components";
-import { JMURL, YJURL } from "src/utils/config";
+import { JMURL } from "src/utils/config";
 import InputContainer from "src/component/common/InputContainer";
 import CustomButton from "src/component/common/CustomButton";
 import Footer from "src/component/common/Footer";
@@ -144,7 +144,6 @@ const SignUp = props => {
 
   // RadioButton
   const [sellerTypeId, setSellerTypeId] = useState("");
-
   const onChangeRadio = e => {
     setSellerTypeId(e.target.value);
     console.log(e.target.value);
@@ -156,13 +155,6 @@ const SignUp = props => {
     } else {
     }
   };
-
-  // const infoModified = () => {
-  //   console.log("isValid:: ", Object.values(isValid).includes(false));
-  //   if (Object.values(isValid).includes(false)) {
-  //     alert("작성하신 정보를 다시 확인해주세요.");
-  //   }
-  // };
 
   // signUp fetch 함수
   const handleSignUp = () => {
@@ -448,21 +440,20 @@ const SignUp = props => {
         </InputBox>
         <ButtonBox>
           <CustomButton
-            name={"신청"}
-            textColor={"white"}
+            name="신청"
+            textColor="white"
             color={styles.color.buttonBlue}
             onClickEvent={handleSignUp}
           />
           <CustomButton
-            name={"취소"}
-            textColor={"white"}
+            name="취소"
+            textColor="white"
             color={styles.color.buttonRed}
             onClickEvent={goToLogin}
           />
         </ButtonBox>
       </SignUpBox>
       <BottomEmpty />
-
       <Footer />
     </Container>
   );
