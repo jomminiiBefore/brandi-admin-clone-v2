@@ -210,9 +210,8 @@ class ImageUpload:
             # big_size 업로드
             big_size_buffer = self.resize_to_big(image_file_1)
             if not big_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "INVALID_IMAGE33"}), 400
 
-            # 이미지를 올리다가 에러가 날 경우를 잡아줌.
             try:
                 s3.put_object(
                     Body=big_size_buffer[0],
@@ -222,8 +221,8 @@ class ImageUpload:
                 )
 
             except Exception as e:
-                print(f'error1 : {e}')
-                return jsonify({'message' : 'S3_UPLOAD_FAIL'}), 500
+                print(f'error: {e}')
+                return jsonify({'message': 'INVALID_REQUEST'}), 400
 
             big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
             data['image_file_1']['big_size_url'] = big_size_url
@@ -236,15 +235,15 @@ class ImageUpload:
 
             try:
                 s3.put_object(
-                    Body=big_size_buffer[0],
+                    Body=medium_size_buffer[0],
                     Bucket="brandi-intern",
-                    Key=big_size_buffer[1],
+                    Key=medium_size_buffer[1],
                     ContentType='image/jpeg'
                 )
 
             except Exception as e:
-                print(f'error1 : {e}')
-                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+                print(f'error: {e}')
+                return jsonify({'message': 'INVALID_REQUEST'}), 400
 
             medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
             data['image_file_1']['medium_size_url'] = medium_size_url
@@ -257,15 +256,15 @@ class ImageUpload:
 
             try:
                 s3.put_object(
-                    Body=big_size_buffer[0],
+                    Body=small_size_buffer[0],
                     Bucket="brandi-intern",
-                    Key=big_size_buffer[1],
+                    Key=small_size_buffer[1],
                     ContentType='image/jpeg'
                 )
 
             except Exception as e:
-                print(f'error1 : {e}')
-                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+                print(f'error: {e}')
+                return jsonify({'message': 'INVALID_REQUEST'}), 400
 
             small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
             data['image_file_1']['small_size_url'] = small_size_url
@@ -433,16 +432,16 @@ class ImageUpload:
 
             # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
             if not ('image' in image_file_form):
-                return jsonify({'message': 'INVALID_FILE'})
+                return jsonify({'message': 'INVALID_FIL4'}), 400
 
             # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
             if image_file_size > 10485760:
-                return jsonify({'message': 'INVALID_IMAGE1'})
+                return jsonify({'message': 'INVALID_IMAGE4'}), 400
 
             # big_size 업로드
             big_size_buffer = self.resize_to_big(image_file_4)
             if not big_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "INVALID_IMAGE4"}), 400
 
             try:
                 s3.put_object(
@@ -453,8 +452,8 @@ class ImageUpload:
                 )
 
             except Exception as e:
-                print(f'error1 : {e}')
-                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+                print(f'error: {e}')
+                return jsonify({'message': 'INVALID_REQUEST4'}), 400
 
             big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
             data['image_file_4']['big_size_url'] = big_size_url
@@ -474,8 +473,8 @@ class ImageUpload:
                 )
 
             except Exception as e:
-                print(f'error1 : {e}')
-                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+                print(f'error: {e}')
+                return jsonify({'message': 'INVALID_REQUEST'}), 400
 
             medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'
             data['image_file_4']['medium_size_url'] = medium_size_url
@@ -495,8 +494,8 @@ class ImageUpload:
                 )
 
             except Exception as e:
-                print(f'error1 : {e}')
-                return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
+                print(f'error: {e}')
+                return jsonify({'message': 'INVALID_REQUEST'}), 400
 
             small_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{small_size_buffer[1]}'
             data['image_file_4']['small_size_url'] = small_size_url
