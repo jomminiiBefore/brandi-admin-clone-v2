@@ -501,7 +501,9 @@ class SellerDao:
                     LEFT JOIN seller_statuses ON seller_infos.seller_status_id = seller_statuses.status_no
                     LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
                     LEFT JOIN manager_infos on manager_infos.seller_info_id = seller_infos.seller_info_no 
-                    WHERE seller_infos.close_time = '2037-12-31 23:59:59.0' 
+                    WHERE seller_infos.close_time = '2037-12-31 23:59:59.0'
+                    AND accounts.is_deleted = 0
+                    AND seller_accounts.is_deleted = 0
                     AND manager_infos.ranking = 1{filter_query}
                     LIMIT %(limit)s OFFSET %(offset)s                   
                 '''
@@ -982,7 +984,6 @@ class SellerDao:
                 # 자동 커밋 비활성화
                 db_cursor.execute("SET AUTOCOMMIT=0")
 
-
                 # 새로운 이력 생성 이전의 셀러 정보를 가져옴
                 db_cursor.execute('''
                 SELECT seller_info_no, seller_status_id
@@ -1073,7 +1074,7 @@ class SellerDao:
                         bank_name,
                         bank_holder_name,
                         account_number,
-                        modifier
+                        %(modifier)s
                     FROM seller_infos                    
                     WHERE
                     seller_account_id = %(seller_account_id)s AND close_time = '2037-12-31 23:59:59'

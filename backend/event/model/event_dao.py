@@ -760,9 +760,11 @@ class EventDao:
                     FROM product_infos
                     left join event_detail_product_infos ON product_infos.product_id = event_detail_product_infos.product_id 
                     left join products ON products.product_no = product_infos.product_id 
-                    left join seller_infos ON product_infos.seller_id = seller_infos.seller_account_id 
+                    LEFT JOIN seller_accounts ON product_infos.seller_id = seller_accounts.seller_account_no
+                    left join seller_infos ON seller_accounts.seller_account_no = seller_infos.seller_account_id
                     left join product_images ON product_images.product_info_id = product_infos.product_info_no 
                     WHERE product_infos.close_time = '2037-12-31 23:59:59' 
+                    AND seller_infos.close_time = '2037-12-31 23:59:59'
                     AND product_infos.is_deleted = 0 
                     AND event_detail_product_infos.event_info_id  = %(event_info_no)s
                     AND event_detail_product_infos.is_deleted = 0
