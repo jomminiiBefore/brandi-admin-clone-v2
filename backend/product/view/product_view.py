@@ -10,7 +10,7 @@ from flask_request_validator import (
     validate_params
 )
 from product.service.product_service import ProductService
-from connection import get_db_connection
+from connection import get_db_connection, DatabaseConnection
 from utils import login_required, ImageUpload
 
 
@@ -407,5 +407,118 @@ class ProductView:
                     db_connection.close()
                 except Exception as e:
                     return jsonify({'message': f'{e}'}), 500
+        else:
+            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+    @product_app.route('', methods=['GET'], endpoint='get_product_list')
+    @login_required
+    @validate_params(
+        Param('period_start', GET, str, required=False,
+              rules=[Pattern(r"^\d\d\d\d-(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])$")]),
+        Param('period_end', GET, str, required=False,
+              rules=[Pattern(r"^\d\d\d\d-(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])$")]),
+        Param('seller_name', GET, str, required=False),
+        Param('product_name', GET, str, required=False),
+        Param('product_number', GET, int, required=False),
+
+        # 셀러 속성은 다중 값이 들어올 수 있어서 리스트로 받음
+        Param('seller_type_id', GET, list, required=False),
+        Param('is_available', GET, int, required=False),
+        Param('is_on_display', GET, int, required=False),
+        Param('is_on_discount', GET, int, required=False),
+        Param('offset', GET, int),
+        Param('limit', GET, int),
+        Param('is_available', GET, str, required=False,
+              rules=[Pattern(r"^[0-1]{1}$")]),
+        Param('is_on_display', GET, str, required=False,
+              rules=[Pattern(r"^[0-1]{1}$")]),
+        Param('is_on_discount', GET, str, required=False,
+              rules=[Pattern(r"^[0-1]{1}$")])
+    )
+    def get_product_list(*args):
+
+        """ 상품 리스트 표출 엔드포인트
+
+        상품 관리 페이지에서 표출되는 필터링된 상품 리스트를 표출합니다.
+        쿼리 파라미터로 필터링에 사용할 파라미터 값을 받습니다.
+
+        Returns:
+            200: 상품 리스트
+            403: NO_AUTHORIZATION
+            500: NO_DATABASE_CONNECTION, DB_CURSOR_ERROR
+                 NO_DATABASE_CONNECTION
+
+        Authors:
+            kimsj5@barndi.co.kr (김승준)
+            leejm3@brandi.co.kr (이종민)
+
+        History:
+            2020-04-09 (kimsj5@brandi.co.kr): 초기 생성
+            2020-04-13 (leejm3@brandi.co.kr): 수정
+                - 주석 내용 보완
+                - 쿼리파라미터 유효성 검사 추가
+                - 마스터 권한이 아니면 접근 불가 처리(NO_AUTHORIZATION)
+                - db connection try/except 추가
+                - 셀러속성 쿼리 값을 리스트 형태로 받도록 변경
+        """
+
+        if g.account_info['auth_type_id'] != 1:
+            return jsonify({'message': 'NO_AUTHORIZATION'}), 403
+
+        # 유효성 확인 위해 기간 데이터 먼저 정의
+        period_start, period_end = args[0], args[1]
+
+        # 두 값이 모두 들어왔을 때, 시작 기간이 종료 기간보다 늦으면 시작기간 = 종료기간
+        if period_start and period_end:
+            if period_end < period_start:
+                period_start = period_end
+
+        # 두 값이 각각 안들어왔을 경우 default 값 설정
+        if not period_start:
+            period_start = '2016-07-01'
+
+        if not period_end:
+            period_end = '2037-12-31'
+
+        # 유효성 검사를 통과한 쿼리 값을 filter_info 에저장
+        filter_info = {
+            # '2020-04-14' 형식으로 들어오는 기간 데이터 변환
+            'period_start': period_start + ' 00:00:00',
+            'period_end': period_end + ' 23:59:59',
+            'seller_name': args[2],
+            'product_name': args[3],
+            'product_number': args[4],
+            'seller_type_id': args[5],
+            'is_available': args[6],
+            'is_on_display': args[7],
+            'is_on_discount': args[8],
+            'offset': args[9],
+            'limit': args[10]
+        }
+
+        # offset 과 limit 에 음수가 들어오면 default 값 지정
+        if filter_info['offset'] < 0:
+            filter_info['offset'] = 0
+
+        if filter_info['limit'] < 0:
+            filter_info['limit'] = 10
+
+        db_connection = get_db_connection()
+        if db_connection:
+            try:
+                product_service = ProductService()
+                product_list_result = product_service.get_product_list(filter_info, db_connection)
+
+                return product_list_result
+
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 400
+
+            finally:
+                try:
+                    db_connection.close()
+                except Exception as e:
+                    return jsonify({'message': f'{e}'}), 400
+
         else:
             return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
