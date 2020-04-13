@@ -291,7 +291,7 @@ class SellerService:
             # 셀러 상태 번호와 셀러 계정 번호가 둘다 들어오지 않으면 400 리턴
             if not target_seller_info['seller_account_id'] or not target_seller_info['seller_status_id']:
                 return jsonify({'message': 'INVALID_VALUE'}), 400
-
+            target_seller_info['modifier'] = user['account_no']
             seller_list_result = seller_dao.change_seller_status(target_seller_info, db_connection)
             return seller_list_result
 
