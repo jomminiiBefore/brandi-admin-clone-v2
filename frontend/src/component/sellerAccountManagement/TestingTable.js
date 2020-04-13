@@ -23,13 +23,14 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import Select from '@material-ui/core/Select';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import DatePicker from 'react-date-picker';
+import InputLabel from '@material-ui/core/InputLabel';
 
 // select
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 
 import style from 'src/utils/styles';
-import styled from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 
 function createData(name, calories, fat, carbs, protein) {
   return { name, calories, fat, carbs, protein };
@@ -166,6 +167,7 @@ const useStyles = makeStyles((theme) => ({
 
 function TestingTable(props) {
   const classes = useStyles();
+  const [isLoading, setIsLoading] = React.useState(false);
   const [order, setOrder] = React.useState('asc');
   const [orderBy, setOrderBy] = React.useState('calories');
   const [selected, setSelected] = React.useState([]);
@@ -183,14 +185,17 @@ function TestingTable(props) {
     // name_kr: '',
     // brandi_app_user_id: 0,
     // manager_name: '',
-    // seller_status: '',
+    // ,
     // manager_contact_number: '',
     // manager_email: '',
     // seller_type_name: '',
     // created_at_start: '',
     // created_at_end: '',
     //   }
+    // { seller_status: '' }
     ();
+  const [seller_status, setSellerStatus] = React.useState('');
+  const [seller_type_name, setSellerTypeName] = React.useState('');
 
   // DatePicker value 형식에 맞게 값을 저장하기 위해 별도로 state 생성
   const [dateStart, setDateStart] = React.useState();
@@ -205,6 +210,15 @@ function TestingTable(props) {
     setInput({ ...input, [e.target.name]: e.target.value });
   };
 
+  // 셀러 상태 검색 셀렉트 박스
+  const onChangeSellerStatus = (e) => {
+    setSellerStatus(e.target.value);
+  };
+
+  const onChangeSellerTypeName = (e) => {
+    setSellerTypeName(e.target.value);
+  };
+
   // 처음 실행 시 전체 셀러 리스트 받아오기
   useEffect(() => {
     getSellerList();
@@ -215,11 +229,19 @@ function TestingTable(props) {
       method: 'GET',
       headers: {
         Authorization:
+          // localStorage.getItem("token");
           'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
         'Content-Type': 'application/json',
       },
     })
-      .then((res) => res.json())
+      // 네트워크 통신 및 인자로 지정한 URL에 대한 문제가 있는지를 검사
+      .then((res) => {
+        if (res.ok) {
+          return res.json();
+        } else {
+          alert('네트워크 오류');
+        }
+      })
       .then((res) => {
         console.log('get::', res);
         if (input) {
@@ -228,15 +250,17 @@ function TestingTable(props) {
             list: res.seller_list,
             count: res.seller_count.filtered_seller_count,
           });
-          //   setTotalList(res.seller_count.filtered_seller_count);
         } else {
           setSellerList({
             ...sellerList,
             list: res.seller_list,
             count: res.seller_count.total_seller_count,
           });
-          //   setTotalList(res.seller_count.total_seller_count);
         }
+      })
+      // 두번째 then에서 지정한 함수의 실행 시에 어떤 문제가 발생하면 catch함수 호출
+      .catch((err) => {
+        console.log('catch error: ', err);
       });
   };
 
@@ -298,7 +322,16 @@ function TestingTable(props) {
   useEffect(() => {
     console.log('useEffect() limit, offset');
     onSearch();
-  }, [limit, offset]);
+  }, [limit, offset, isLoading]);
+
+  // 검색을 했다가 지웠을 때 객체 키와 빈 문자열이 남는 경우가 있어서
+  // 빈 문자열만 있는 경우에 아무 검색어도 입력하지 않은 것으로 판단하기 위한 함수
+  const isInputEmpty = (obj) => {
+    for (let key in obj) {
+      if (obj[key] !== '') return false;
+    }
+    return true;
+  };
 
   // 필터 검색하기
   const onSearch = () => {
@@ -319,11 +352,20 @@ function TestingTable(props) {
       queryString.append('limit', limit);
     }
 
+    if (seller_status) {
+      queryString.append('seller_status', seller_status);
+    }
+
+    if (seller_type_name) {
+      queryString.append('seller_type_name', seller_type_name);
+    }
+
     console.log('queryString: ', queryString);
     fetch(`${YJURL}/seller?${queryString}`, {
       method: 'GET',
       headers: {
         Authorization:
+          // localStorage.getItem("token");
           'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
         'Content-Type': 'application/json',
       },
@@ -331,9 +373,16 @@ function TestingTable(props) {
       .then((res) => res.json())
       .then((res) => {
         console.log('onSearch() input:', input);
+        console.log('seller_status: ', seller_status);
+        console.log('seller_type_name: ', seller_type_name);
         console.log('onSearch() result: ', res);
+        setIsLoading(false);
         // 검색어가 있을 경우 필터된 리스트의 총 개수를 가져온다.
-        if (input) {
+        if (
+          !isInputEmpty(input) ||
+          seller_status !== '' ||
+          seller_type_name !== ''
+        ) {
           console.log('122');
           setSellerList({
             ...sellerList,
@@ -354,30 +403,27 @@ function TestingTable(props) {
   };
 
   // 한 페이지에 표시할 아이템 수
-  const onChangeLimit = (val, tp) => {
+  const onChangeLimit = (lim, tp) => {
     // 총 페이지 수
-    let totalPage = sellerList.count / val;
+    let totalPage = sellerList.count / lim;
     totalPage = parseInt(totalPage);
     // 총 아이템 수와 limit를 나눠서 나누어떨어지지 않으면 페이지를 하나 추가한다.
     if (sellerList.count % limit > 0) {
       totalPage++;
     }
-    console.log('onChangeLimit() tp: ', tp);
-    console.log('onChangeLimit() total: ', totalPage);
-    console.log('onChangeLimit() offset:', offset);
 
+    // 현재 총 페이지 수가 새로운 총 페이지수 보다 높으면 첫페이지로 이동
     if (tp > totalPage) {
-      console.log('bigger');
       setOffset(0);
     }
     console.log('setLimit');
-    setLimit(val);
+    setLimit(lim);
   };
 
   // 다음 페이지 버튼 클릭
   const onIncreaseOffset = (total) => {
     console.log('onIncreaseOffset() total: ', total, 'offset: ', offset);
-
+    setIsLoading(true);
     // 현재 페이지가 전체 페이지보다 작을 때만 실행
     if (offset + 1 < parseInt(totalPage)) {
       setOffset(offset + 1);
@@ -387,7 +433,7 @@ function TestingTable(props) {
   // 이전 페이지 버튼 클릭
   const onDecreaseOffset = (total) => {
     console.log('onDecreaseOffset()', total, 'offset: ', offset);
-
+    setIsLoading(true);
     // 현재 페이지가 1보다 낮아지지 않게 하기 위한 조건식
     if (offset + 1 > 1) {
       setOffset(offset - 1);
@@ -425,17 +471,28 @@ function TestingTable(props) {
     queryString.append('limit', limit);
   }
 
+  if (seller_status !== '') {
+    console.log('seller_status: ', seller_status);
+    queryString.append('seller_status', seller_status);
+  }
+
+  if (seller_type_name !== '') {
+    console.log('seller_type_name: ', seller_type_name);
+    queryString.append('seller_type_name', seller_type_name);
+  }
+
   const moveToSellerLink = (id) => {
     console.log('moveToSellerLink() id: ', id);
-    props.history.push(`/sellerInfoEdit?id=${id}`);
+    props.history.push(`/sellerInfoEdit?id=${id + 1}`);
   };
 
   const getExcelFile = (queryString) => {
     console.log('query: ', queryString);
-    fetch(`http://192.168.1.173:5000/seller?excel=1&${queryString}`, {
+    fetch(`${YJURL}/seller?excel=1&${queryString}`, {
       method: 'GET',
       headers: {
         Authorization:
+          // localStorage.getItem("token");
           'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
         'Content-Type': 'application/json',
       },
@@ -443,15 +500,143 @@ function TestingTable(props) {
       .then((res) => res.json())
       .then((res) => {
         window.location.assign(res.file_url);
-      });
+      })
+      .catch((res) => console.log(res));
   };
+
+  const onActionClick = (statusName, statusId, sellerId) => {
+    console.log(statusName);
+    console.log(statusId);
+
+    // if (item.name === '휴점 신청') {
+    //   color = '#f0ac4e';
+    // } else if (
+    //   item.name === '퇴점 신청 처리' ||
+    //   item.name === '입점 거절' ||
+    //   item.name === '퇴점 확정 처리'
+    // ) {
+    //   color = '#d9534f';
+    // } else if (
+    //   item.name === '휴점 해제' ||
+    //   item.name === '퇴점 철회 처리'
+    // ) {
+    //   color = '#5cb85b';
+    // } else if (item.name === '입점 승인') {
+    //   color = '#5bc0d3';
+    // }
+
+    switch (statusName) {
+      case '휴점 신청':
+        if (
+          confirm(`휴점처리 시 셀러의 모든 상품이
+      미진열/미판매로 전환 되고
+      상품 관리를 할 수 없게 됩니다.
+      휴점신청을 하시겠습니까?`)
+        ) {
+          onChangeStatus(statusName, statusId, sellerId);
+        }
+        return;
+      case '휴점 해제':
+        if (
+          confirm(`휴점해제 시 셀러의 모든 상품이
+        진열/판매로 전환 되고
+        상품 관리를 할 수 있습니다.
+        휴점해제를 하시겠습니까?`)
+        ) {
+          onChangeStatus(statusName, statusId, sellerId);
+        }
+        return;
+      case '퇴점 신청 처리':
+        if (
+          confirm(`퇴점신청 시 셀러의 모든 상품이
+        미진열/미판매로 전환 되고
+        상품 관리를 할 수 없게 됩니다.
+        퇴점신청을 하시겠습니까?`)
+        ) {
+          onChangeStatus(statusName, statusId, sellerId);
+        }
+        return;
+      case '퇴점 철회 처리':
+        if (
+          confirm(`퇴점철회 시 셀러의 모든 상품이
+        진열/판매로 전환 되고
+        상품 관리를 할 수 있습니다.
+        퇴점철회를 하시겠습니까?`)
+        ) {
+          onChangeStatus(statusName, statusId, sellerId);
+        }
+        return;
+      case '퇴점 확정 처리':
+        if (
+          confirm(`퇴점확정 시 셀러의 모든 상품이
+        미진열/미판매로 전환 되고
+        상품 관리를 할 수 없게 됩니다.
+        퇴점확정을 하시겠습니까?`)
+        ) {
+          onChangeStatus(statusName, statusId, sellerId);
+        }
+        return;
+      case '입점 승인':
+        if (confirm('셀러의 입점을 승인하시겠습니까?')) {
+          onChangeStatus(statusName, statusId, sellerId);
+        }
+        return;
+      case '입점 거절':
+        if (confirm('셀러의 입점을 거절하시겠습니까?')) {
+          onChangeStatus(statusName, statusId, sellerId);
+        }
+        return;
+      default:
+        return false;
+    }
+  };
+
+  const onChangeStatus = (statusName, statusId, sellerId) => {
+    fetch(`${YJURL}/seller/${sellerId}/status`, {
+      method: 'PUT',
+      headers: {
+        Authorization:
+          // localStorage.getItem("token");
+          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        seller_status_id: statusId,
+      }),
+    })
+      .then((res) => {
+        if (res.ok) {
+          return res.json();
+        } else {
+          alert('네트워크 에러');
+        }
+      })
+      .then((res) => {
+        console.log('onActionClick() res:', res);
+        if (res.message === 'SUCCESS') {
+          alert('정상 처리 되었습니다.');
+          onSearch();
+        }
+      })
+      .catch((err) => console.log('catch():', err));
+  };
+
+  console.log('input: ', input);
 
   return (
     <Container>
+      {isLoading && (
+        <Heart>
+          <HeartDiv></HeartDiv>
+        </Heart>
+      )}
+
       <div className={classes.root}>
         <Paper className={classes.paper}>
           <EnhancedTableToolbar numSelected={selected.length} />
           <TableContainer>
+            {isLoading && <LoadingPage />}
+
             <Table
               className={classes.table}
               aria-labelledby="tableTitle"
@@ -479,8 +664,9 @@ function TestingTable(props) {
                     align="center"
                   >
                     <InputForm
-                      name="seller_account_id"
+                      name="seller_account_no"
                       onChange={(e) => onChangeInput(e)}
+                      onKeyPress={onSearch}
                     />
                   </TableCell>
                   {/* 셀러 아이디 */}
@@ -488,6 +674,7 @@ function TestingTable(props) {
                     <InputForm
                       name="login_id"
                       onChange={(e) => onChangeInput(e)}
+                      onKeyPress={onSearch}
                     />
                   </TableCell>
                   {/* 영문 이름 */}
@@ -495,6 +682,7 @@ function TestingTable(props) {
                     <InputForm
                       name="name_en"
                       onChange={(e) => onChangeInput(e)}
+                      onKeyPress={onSearch}
                     />
                   </TableCell>
                   {/* 한글 이름 */}
@@ -502,6 +690,7 @@ function TestingTable(props) {
                     <InputForm
                       name="name_kr"
                       onChange={(e) => onChangeInput(e)}
+                      onKeyPress={onSearch}
                     />
                   </TableCell>
                   {/* 셀러 구분 */}
@@ -511,6 +700,7 @@ function TestingTable(props) {
                     <InputForm
                       name="brandi_app_user_id"
                       onChange={(e) => onChangeInput(e)}
+                      onKeyPress={onSearch}
                     />
                   </TableCell>
                   {/* 담당자 이름 */}
@@ -518,6 +708,7 @@ function TestingTable(props) {
                     <InputForm
                       name="manager_name"
                       onChange={(e) => onChangeInput(e)}
+                      onKeyPress={onSearch}
                     />
                   </TableCell>
                   {/* 셀러 상태 */}
@@ -527,13 +718,11 @@ function TestingTable(props) {
                       className={classes.formControl}
                       margin="dense"
                     >
-                      {/* <InputLabel id="demo-simple-select-outlined-label">
-                        Select
-                      </InputLabel> */}
+                      {/* <InputLabel id="demo-simple-select-outlined-label">Age</InputLabel> */}
                       <Select
                         name="seller_status"
-                        value=""
-                        onChange={(e) => onChangeInput(e)}
+                        value={seller_status}
+                        onChange={onChangeSellerStatus}
                       >
                         <MenuItem value="">
                           <em>Select</em>
@@ -551,6 +740,7 @@ function TestingTable(props) {
                     <InputForm
                       name="manager_contact_number"
                       onChange={(e) => onChangeInput(e)}
+                      onKeyPress={onSearch}
                     />
                   </TableCell>
                   {/* 담당자 이메일 */}
@@ -558,6 +748,7 @@ function TestingTable(props) {
                     <InputForm
                       name="manager_email"
                       onChange={(e) => onChangeInput(e)}
+                      onKeyPress={onSearch}
                     />
                   </TableCell>
                   {/* 셀러 속성 */}
@@ -572,8 +763,8 @@ function TestingTable(props) {
                       </InputLabel> */}
                       <Select
                         name="seller_type_name"
-                        value=""
-                        onChange={(e) => onChangeInput(e)}
+                        value={seller_type_name}
+                        onChange={onChangeSellerTypeName}
                       >
                         <MenuItem value="">
                           <em>Select</em>
@@ -693,37 +884,50 @@ function TestingTable(props) {
                         <TableCell align="right">{row.created_at}</TableCell>
                         <TableCell align="right">
                           {/* {console.log('row:: ', row.action)} */}
-                          {/* {row.action &&
+                          {row.action &&
                             row.action.map((item, key) => {
-                              //휴점신청 F0AC4E 퇴점신청처리 D9534F 휴점해제 5CB85B 입점승인 5BC0DE
+                              // 휴점신청 #F0AC4E 퇴점신청처리 #D9534F 휴점해제 #5CB85B 입점승인 #5BC0DE
                               let color;
-                              if (item === '휴점 신청') {
+                              if (item.name === '휴점 신청') {
                                 color = '#f0ac4e';
                               } else if (
-                                item === '퇴점 신청 처리' ||
-                                item === '입점 거절' ||
-                                item === '퇴점 확정 처리'
+                                item.name === '퇴점 신청 처리' ||
+                                item.name === '입점 거절' ||
+                                item.name === '퇴점 확정 처리'
                               ) {
                                 color = '#d9534f';
                               } else if (
-                                item === '휴점 해제' ||
-                                item === '퇴점 철회 처리'
+                                item.name === '휴점 해제' ||
+                                item.name === '퇴점 철회 처리'
                               ) {
                                 color = '#5cb85b';
-                              } else if (item === '입점 승인') {
+                              } else if (item.name === '입점 승인') {
                                 color = '#5bc0d3';
                               }
 
                               return (
-                                <SmallButton
-                                  key={key}
-                                  name={item}
+                                // <SmallButton
+                                //   key={key}
+                                //   name={item.name}
+                                //   color={color}
+                                //   textColor="#fff"
+                                //   onClickEvent={onActionClick}
+                                // />
+                                <ActionButton
+                                  name={item.name}
                                   color={color}
-                                  textColor="#fff"
-                                  //   onClickEvent={}
-                                />
+                                  onClick={() =>
+                                    onActionClick(
+                                      item.name,
+                                      item.seller_status_id,
+                                      row.seller_account_id
+                                    )
+                                  }
+                                >
+                                  {item.name}
+                                </ActionButton>
                               );
-                            })} */}
+                            })}
                         </TableCell>
                       </TableRow>
                     );
@@ -738,10 +942,17 @@ function TestingTable(props) {
             </Table>
           </TableContainer>
           <PaginationContainer>
-            {offset > 0 && (
+            {offset > 0 ? (
               <CustomButton
                 name="<"
                 onClickEvent={() => onDecreaseOffset(totalPage)}
+              />
+            ) : (
+              <CustomButton
+                name="<"
+                onClickEvent={() => console.log('disabled')}
+                color="#bdbdbd"
+                textColor="#fff"
               />
             )}
             <PaginationInputForm
@@ -751,10 +962,17 @@ function TestingTable(props) {
               placeholder="1"
               onChange={onChangeInput}
             />
-            {offset + 1 < parseInt(totalPage) && (
+            {offset + 1 < parseInt(totalPage) ? (
               <CustomButton
                 name=">"
                 onClickEvent={() => onIncreaseOffset(totalPage)}
+              />
+            ) : (
+              <CustomButton
+                name=">"
+                onClickEvent={() => console.log('disabled')}
+                color="#bdbdbd"
+                textColor="#fff"
               />
             )}
             of {parseInt(totalPage)} | View
@@ -838,4 +1056,91 @@ const SellerLoginIdLink = styled.div`
   &:hover {
     cursor: pointer;
   }
+`;
+
+const LoadingPage = styled.div`
+  position: absolute; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  top: 80;
+  width: 100%; /* Full width */
+  height: 93%; /* Full height */
+  background-color: #000;
+  opacity: 0.5;
+`;
+
+const Heart = styled.div`
+  display: inline-block;
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: rotate(45deg);
+  transform-origin: 40px 40px;
+`;
+
+const HeartDiv = styled.div`
+  & {
+    top: 112px;
+    left: 500px;
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    background: #fe34c3;
+
+    ${(props) => {
+      return css`
+        animation: ${HeartKeyFrames} 1.2s infinite
+          cubic-bezier(0.215, 0.61, 0.355, 1);
+      `;
+    }}
+  }
+  &:after,
+  &:before {
+    content: ' ';
+    position: absolute;
+    display: block;
+    width: 32px;
+    height: 32px;
+    background: #fe34c3;
+  }
+  &:before {
+    left: -24px;
+    border-radius: 50% 0 0 50%;
+  }
+  &:after {
+    top: -24px;
+    border-radius: 50% 50% 0 0;
+  }
+`;
+
+const HeartKeyFrames = keyframes`
+   0% {
+    transform: scale(0.95);
+  }
+  5% {
+    transform: scale(1.1);
+  }
+  39% {
+    transform: scale(0.85);
+  }
+  45% {
+    transform: scale(1);
+  }
+  60% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(0.9);
+  }
+`;
+
+const ActionButton = styled.div`
+  display: inline-block;
+  height: 22px;
+  background-color: ${(props) => props.color};
+  color: #fff;
+  padding: 1px 5px;
+  margin: 0 2px;
+  border: 1px solid #bdbdbd;
+  border-radius: 4px;
+  cursor: pointer;
 `;
