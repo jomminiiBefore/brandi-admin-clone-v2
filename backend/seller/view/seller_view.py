@@ -98,24 +98,24 @@ class SellerView:
         if len(change_info['new_password']) < 4:
             return jsonify({'message': 'TOO_SHORT_PASSWORD'}), 400
 
-        db_connection = get_db_connection()
-        if db_connection:
-            try:
+        try:
+            db_connection = get_db_connection()
+            if db_connection:
                 seller_service = SellerService()
                 changing_password_result = seller_service.change_password(change_info, db_connection)
                 return changing_password_result
 
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
-
-            finally:
-                try:
-                    db_connection.close()
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
-
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('/<int:parameter_account_no>', methods=['GET'], endpoint='get_seller_info')
     @login_required
@@ -124,7 +124,6 @@ class SellerView:
         Param('parameter_account_no', PATH, str, rules=[MaxLength(6)]),
     )
     def get_seller_info(*args):
-
 
         """ 계정 셀러정보 표출 엔드포인트
 
@@ -172,10 +171,9 @@ class SellerView:
         }
 
         db_connection = get_db_connection()
-        if db_connection:
-            try:
+        try:
+            if db_connection:
                 seller_service = SellerService()
-
                 getting_seller_info_result = seller_service.get_seller_info(account_info, db_connection)
 
                 # 셀러정보가 존재하면 리턴
@@ -186,17 +184,17 @@ class SellerView:
                 else:
                     return jsonify({'message': 'INVALID_ACCOUNT_NO'}), 400
 
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
-
-            finally:
-                try:
-                    db_connection.close()
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
-
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('', methods=['GET'], endpoint='get_all_sellers')
     @login_required
@@ -262,17 +260,25 @@ class SellerView:
         user = g.account_info
 
         # 데이터베이스 커넥션을 열어줌.
-        db_connection = DatabaseConnection()
-        if db_connection:
-            try:
+        try:
+            db_connection = DatabaseConnection()
+
+            if db_connection:
                 seller_service = SellerService()
                 seller_list_result = seller_service.get_seller_list(request, user, db_connection)
                 return seller_list_result
+
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
-
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('/<int:parameter_account_no>', methods=['PUT'], endpoint='change_seller_info')
     @login_required
@@ -545,24 +551,23 @@ class SellerView:
             return jsonify({'message': 'NO_ONLINE_BUSINESS_IMAGE'}), 400
 
         # 데이터베이스 연결
-        db_connection = get_db_connection()
-        if db_connection:
-            try:
+        try:
+            db_connection = get_db_connection()
+            if db_connection:
                 seller_service = SellerService()
                 changing_seller_info_result = seller_service.change_seller_info(account_info, db_connection)
-
                 return changing_seller_info_result
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
-
-            finally:
-                try:
-                    db_connection.close()
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('/name', methods=['GET'], endpoint='get_seller_name_list')
     @login_required
@@ -589,17 +594,17 @@ class SellerView:
         History:
             2020-04-04 (leesh3@brandi.co.kr): 초기 생성
         """
-
-        db_connection = get_db_connection()
-        if db_connection:
-            try:
+        try:
+            db_connection = get_db_connection()
+            if db_connection:
                 seller_service = SellerService()
                 seller_name_list_result = seller_service.get_seller_name_list(keyword, db_connection)
-
                 return seller_name_list_result
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
-            except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
 
     @seller_app.route('/login', methods=['POST'])
     @validate_params(
@@ -637,33 +642,30 @@ class SellerView:
             'password': args[1]
         }
 
-        # DB에 연결
-        db_connection = get_db_connection()
-
-        # DB가 열렸을 경우
-        if db_connection:
-            try:
+        try:
+            # DB에 연결
+            db_connection = get_db_connection()
+            if db_connection:
                 # service 에 있는 SellerService 를 가져와서 seller_service 라는 인스턴스를 만듬
                 seller_service = SellerService()
 
                 # 로그인 함수를 실행한 결과값을 login_result 에 저장
                 login_result = seller_service.login(account_info, db_connection)
-
                 return login_result
+                # DB가 열리지 않았을 경우
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
-            # 정의하지 않은 모든 error 를 잡아줌
+        # 정의하지 않은 모든 error 를 잡아줌
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+        # try 랑 except 에 상관없이 무조건 실행
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
-
-            # try 랑 except 에 상관없이 무조건 실행
-            finally:
-                try:
-                    db_connection.close()
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
-        # DB가 열리지 않았을 경우
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('/<int:seller_account_id>/status', methods=['PUT'], endpoint='change_seller_status')
     @login_required
@@ -702,18 +704,17 @@ class SellerView:
             'seller_status_id': args[1]
         }
 
-        db_connection = DatabaseConnection()
-        if db_connection:
-            try:
+        try:
+            db_connection = DatabaseConnection()
+            if db_connection:
                 seller_service = SellerService()
                 status_change_result = seller_service.change_seller_status(target_seller_info, user, db_connection)
                 return status_change_result
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
-            except Exception as e:
-                return({'message': f'{e}'}), 400
-
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+        except Exception as e:
+            return ({'message': f'{e}'}), 400
 
     @seller_app.route('', methods=['POST'])
     @validate_params(
@@ -798,24 +799,23 @@ class SellerView:
         }
 
         # 데이터베이스 연결
-        db_connection = get_db_connection()
-        if db_connection:
-            try:
+        try:
+            db_connection = get_db_connection()
+            if db_connection:
                 seller_service = SellerService()
-
                 sign_up_result = seller_service.sign_up(account_info, db_connection)
                 return sign_up_result
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
-
-            finally:
-                try:
-                    db_connection.close()
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route('/mypage', methods=['GET'], endpoint='get_my_page')
     @login_required
@@ -852,11 +852,10 @@ class SellerView:
             'auth_type_id': g.account_info['auth_type_id']
         }
 
-        db_connection = get_db_connection()
-        if db_connection:
-            try:
+        try:
+            db_connection = get_db_connection()
+            if db_connection:
                 seller_service = SellerService()
-
                 getting_seller_info_result = seller_service.get_my_page(account_info, db_connection)
 
                 # 셀러정보가 존재하면 리턴
@@ -867,17 +866,17 @@ class SellerView:
                 else:
                     return jsonify({'message': 'INVALID_ACCOUNT_NO'}), 400
 
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
-
-            finally:
-                try:
-                    db_connection.close()
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
-
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @seller_app.route("/auth_type", methods=["GET"])
     @login_required

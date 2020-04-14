@@ -44,25 +44,25 @@ class ProductView:
         account_info = {
             'account_no': args[0]
         }
-        db_connection = get_db_connection()
-        if db_connection:
-            try:
+
+        try:
+            db_connection = get_db_connection()
+            if db_connection:
                 product_service = ProductService()
                 categories = product_service.get_first_categories(account_info, db_connection)
-
                 return categories
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
 
-            finally:
-                try:
-                    db_connection.close()
-
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 
     @product_app.route(
         "/category/<int:first_category_no>",
@@ -100,23 +100,22 @@ class ProductView:
         first_category_no = args[0]
         db_connection = get_db_connection()
 
-        if db_connection:
-            try:
+        try:
+            if db_connection:
                 product_service = ProductService()
                 categories = product_service.get_second_categories(db_connection, first_category_no)
                 return categories
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
-
-            finally:
-                try:
-                    db_connection.close()
-
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 
     @product_app.route("/<int:product_no>", methods=["GET"], endpoint='get_product_detail')
     @login_required
@@ -141,24 +140,24 @@ class ProductView:
             2020-04-03 (leesh3@brandi.co.kr): 초기 생성
             2020-04-07 (leesh3@brandi.co.kr): 파라미터 변수를 product_info_no -> product_no로 변경
         """
-        db_connection = get_db_connection()
-        if db_connection:
-            try:
+
+        try:
+            db_connection = get_db_connection()
+            if db_connection:
                 product_service = ProductService()
                 product_infos = product_service.get_product_detail(product_no, db_connection)
-
                 return product_infos
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 500
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 500
-
-            finally:
-                try:
-                    db_connection.close()
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 500
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @product_app.route('', methods=['POST'], endpoint='insert_new_product')
     @login_required
@@ -258,24 +257,23 @@ class ProductView:
             'images': uploaded_images,
         }
 
-        db_connection = get_db_connection()
-
-        if db_connection:
-            try:
+        try:
+            db_connection = get_db_connection()
+            if db_connection:
                 product_service = ProductService()
                 product_insert_result = product_service.insert_new_product(product_info, db_connection)
                 return product_insert_result
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 500
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 500
-
-            finally:
-                try:
-                    db_connection.close()
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 500
-
-        return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @product_app.route("/<int:product_id>", methods=['PUT'], endpoint='update_product_info')
     @login_required
@@ -365,24 +363,23 @@ class ProductView:
             'images': uploaded_images,
         }
 
-        db_connection = get_db_connection()
-        if db_connection:
-            try:
+        try:
+            db_connection = get_db_connection()
+            if db_connection:
                 product_service = ProductService()
                 product_update_result = product_service.update_product_info(product_info, db_connection)
-
                 return product_update_result
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 500
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 500
-
-            finally:
-                try:
-                    db_connection.close()
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 500
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @product_app.route("/color", methods=["GET"])
     def get_color_filters():
@@ -399,23 +396,23 @@ class ProductView:
         History:
             2020-04-09 (leesh3@brandi.co.kr): 초기 생성
         """
-        db_connection = get_db_connection()
-        if db_connection:
-            try:
+        try:
+            db_connection = get_db_connection()
+            if db_connection:
                 product_service = ProductService()
                 get_color_result = product_service.get_color_filters(db_connection)
-
                 return get_color_result
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
+
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 500
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 500
-
-            finally:
-                try:
-                    db_connection.close()
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 500
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
     @product_app.route('', methods=['GET'], endpoint='get_product_list')
     @login_required
@@ -510,22 +507,20 @@ class ProductView:
         if filter_info['limit'] < 0:
             filter_info['limit'] = 10
 
-        db_connection = get_db_connection()
-        if db_connection:
-            try:
+        try:
+            db_connection = get_db_connection()
+            if db_connection:
                 product_service = ProductService()
                 product_list_result = product_service.get_product_list(filter_info, db_connection)
-
                 return product_list_result
+            else:
+                return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400
+
+        finally:
+            try:
+                db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
-
-            finally:
-                try:
-                    db_connection.close()
-                except Exception as e:
-                    return jsonify({'message': f'{e}'}), 400
-
-        else:
-            return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
