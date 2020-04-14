@@ -373,7 +373,6 @@ class SellerDao:
                 # seller_info_result 에 auth_type_id 저장
 
                 seller_info_result['auth_type_id'] = account_info['auth_type_id']
-                print(seller_info_result)
                 return seller_info_result
 
         except KeyError as e:
@@ -505,7 +504,8 @@ class SellerDao:
                     AND accounts.is_deleted = 0
                     AND seller_accounts.is_deleted = 0
                     AND manager_infos.ranking = 1{filter_query}
-                    LIMIT %(limit)s OFFSET %(offset)s                   
+                    ORDER BY seller_account_id ASC
+                    LIMIT %(limit)s OFFSET %(offset)s
                 '''
                 parameter = {
                     'limit': limit,
