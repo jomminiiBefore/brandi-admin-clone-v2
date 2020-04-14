@@ -1012,17 +1012,16 @@ class EventDao:
                     FROM
                         event_infos
                     WHERE
-                        (event_start_time > %(event_start_time)s OR %(event_start_time)s IS NULL)
-                    AND
-                        (event_end_time < %(event_end_time)s OR %(event_end_time)s IS NULL)
-                    AND
-                        (name LIKE %(event_name)s OR %(event_name)s IS NULL)
-                """
-
-                if event_info['event_name']:
+                        1=1 
+                    """
+                if event_info.get('event_start_time', None):
+                    get_event_stmt += " AND event_start_time > %(event_start_time)s"
+                if event_info.get('event_end_time', None):
+                    get_event_stmt += " AND event_end_time < %(event_end_time)s"
+                if event_info.get('event_name', None):
+                    get_event_stmt += " AND name LIKE %(event_name)s"
                     event_info['event_name'] = f"%{event_info['event_name']}%"
-
-                if event_info['event_type_id']:
+                if event_info.get('event_type_id', None):
                     event_info['event_type_id'] = tuple(event_info['event_type_id'])
                     get_event_stmt += """AND (event_type_id IN %(event_type_id)s)"""
 
