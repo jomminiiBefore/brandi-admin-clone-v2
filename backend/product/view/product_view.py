@@ -218,11 +218,18 @@ class ProductView:
             
         History:
             2020-04-06 (leesh3@brandi.co.kr): 초기 생성
-
+            2020-04-14 (leesh3@brandi.co.kr): 이미지 순서 문제 캐치
         """
-
         image_uploader = ImageUpload()
         uploaded_images = image_uploader.upload_product_image(request)
+        # 상품 등록시 대표 사진인 1번 사진부터 들어와야함
+        if not uploaded_images['image_file_1']:
+            return jsonify({'message': 'REPRESENTATIVE_IMAGE_DOES_NOT_EXIST'}), 400
+        # 1번 사진부터 순서대로 들어와야함
+        for i in range(2, 6):
+            if uploaded_images[f'image_file_{i}']:
+                if not uploaded_images[f'image_file_{i-1}']:
+                    return jsonify({'message': 'IMAGES_SHOULD_BE_IN_ORDER'}), 400
 
         product_info = {
             'auth_type_id': g.account_info['auth_type_id'],
@@ -250,13 +257,13 @@ class ProductView:
             'selected_account_no': args[18],
             'images': uploaded_images,
         }
+
         db_connection = get_db_connection()
 
         if db_connection:
             try:
                 product_service = ProductService()
                 product_insert_result = product_service.insert_new_product(product_info, db_connection)
-
                 return product_insert_result
 
             except Exception as e:
