@@ -439,6 +439,7 @@ class ProductDao:
         Returns:
             200: 상품 정보 수정됨.
             400: key_error
+            403: 셀러 불일
             500: database_error
 
         Authors:
@@ -455,6 +456,26 @@ class ProductDao:
                 db_cursor.execute("START TRANSACTION")
                 # 자동 커밋 비활성화
                 db_cursor.execute("SET AUTOCOMMIT=0")
+
+                get_product_owner_stmt = """
+                    SELECT
+                        account_id
+                    FROM
+                        seller_accounts
+                    INNER JOIN
+                        product_infos ON product_infos.seller_id = seller_accounts.seller_account_no
+                    WHERE
+                        product_id=%(product_id)s
+                    AND
+                        product_infos.close_time='2037-12-31 23:59:59'
+                """
+                db_cursor.execute(get_product_owner_stmt, product_info)
+                validated_account = db_cursor.fetchone()
+                if not validated_account:
+                    return jsonify({'message': 'PRODUCT_DOES_NOT_EXIST'}), 404
+                # 상품 변경을 시도하는 계정과 상품의 셀러가 다를 경우
+                if validated_account['account_id'] != product_info['token_account_no']:
+                    return jsonify({'message': 'NO_AUTHORIZATION'}), 403
 
                 db_cursor.execute("SELECT NOW()")
                 updated_time = db_cursor.fetchone()
