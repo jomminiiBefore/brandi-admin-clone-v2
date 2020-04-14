@@ -139,7 +139,7 @@ class EventView:
         event_image = image_upload.upload_images(request)
 
         # 함수의 실행결과에 400이 포함된 경우 애러메세지를 그대로 리턴함.
-        if (400 or 500) in event_image:
+        if (400 in event_image) or (500 in event_image):
             return event_image
 
         # validation(형식) 확인된 데이터 저장
@@ -707,6 +707,7 @@ class EventView:
                     > datetime.strptime(event_info['event_end_time'], "%Y-%m-%d")):
                 return jsonify({'message': 'INVALID_EVENT_DATE'}), 400
 
+        db_connection = None
         try:
             db_connection = get_db_connection()
             if db_connection:
@@ -721,6 +722,7 @@ class EventView:
 
         finally:
             try:
-                db_connection.close()
+                if db_connection:
+                    db_connection.close()
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 500

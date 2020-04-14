@@ -29,10 +29,13 @@ class ImageService:
                 big = (int(standard_size), int(opened_image.size[1]*(standard_size/opened_image.size[0])))
                 resized_image_big = opened_image.resize(big)
                 big_io = io.BytesIO()
-                resized_image_big.save(big_io, "JPEG")
+                image_file_form = image_file.content_type
+                if 'png' in image_file_form:
+                    resized_image_big.save(big_io, 'png')
+                if 'jpeg' in image_file_form:
+                    resized_image_big.save(big_io, 'jpeg')
                 big_io.seek(0)
                 return [big_io, str(uuid.uuid4())]
-
         except:
             return None
 
@@ -195,7 +198,7 @@ class ImageService:
                 # big_size 업로드
                 big_size_buffer = self.resize_to_big(image_file_2)
                 if not big_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
+                    return jsonify({"message": "INVALID_IMAGE2"}), 400
                 s3.put_object(Body=big_size_buffer[0], Bucket="brandi-intern", Key=big_size_buffer[1],
                               ContentType='image/jpeg')
                 big_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{big_size_buffer[1]}'
@@ -205,7 +208,7 @@ class ImageService:
                 # medium_size 업로드
                 medium_size_buffer = self.resize_to_medium(image_file_2)
                 if not medium_size_buffer:
-                    return jsonify({"message": "INVALID_IMAGE"}), 400
+                    return jsonify({"message": "INVALID_IMAGE33"}), 400
                 s3.put_object(Body=medium_size_buffer[0], Bucket="brandi-intern", Key=medium_size_buffer[1],
                               ContentType='image/jpeg')
                 medium_size_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{medium_size_buffer[1]}'

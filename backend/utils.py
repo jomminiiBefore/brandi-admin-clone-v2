@@ -55,6 +55,7 @@ class ImageUpload:
         pillow 라이브러리를 사용하여 들어온 이미지 파일을 pillow객체로 만들고 pillow객체에 있는 매서드를 사용하여 리사이즈.
         가로의 길이를 고정 사이즈로 이용하여 세로의 길이를 구해서 리사이즈함.
         리사이즈 된 pillow객체를 bytesIO buffer에 담고 랜덤으로 생성한 이름과 buffer 자체를 리턴함.
+        각파일의 확장자를 반영하여 메모리에 저장
 
         Args:
             image_file: 이미지 파일 객체
@@ -68,6 +69,7 @@ class ImageUpload:
 
         History:
             2020-04-02 (yoonhc@brandi.co.kr): 초기 생성
+            2020-04-14 (yoonhc@brandi.co.kr): 확장자별(png, jpg)로 메모리에 저장하는 로직 구현.
         """
 
         standard_size = 640
@@ -76,7 +78,13 @@ class ImageUpload:
                 big = (int(standard_size), int(opened_image.size[1]*(standard_size/opened_image.size[0])))
                 resized_image_big = opened_image.resize(big)
                 big_io = io.BytesIO()
-                resized_image_big.save(big_io, "JPEG")
+                image_file_form = image_file.content_type
+
+                # 파일 타입을 화인하여 파일객체 확장자와 변환하고자하는 파일의 확장자를 맞춰줌.
+                if 'png' in image_file_form:
+                    resized_image_big.save(big_io, 'png')
+                if 'jpeg' in image_file_form:
+                    resized_image_big.save(big_io, 'jpeg')
                 big_io.seek(0)
                 return [big_io, str(uuid.uuid4())]
 
@@ -102,6 +110,7 @@ class ImageUpload:
 
         History:
             2020-04-02 (yoonhc@brandi.co.kr): 초기 생성
+            2020-04-14 (yoonhc@brandi.co.kr): 확장자별(png, jpg)로 메모리에 저장하는 로직 구현.
         """
         standard_size = 320
         try:
@@ -109,7 +118,13 @@ class ImageUpload:
                 medium = (int(standard_size), int(opened_image.size[1]*(standard_size/opened_image.size[0])))
                 resized_image_medium = opened_image.resize(medium)
                 medium_io = io.BytesIO()
-                resized_image_medium.save(medium_io, "JPEG")
+                image_file_form = image_file.content_type
+
+                # 파일 타입을 화인하여 파일객체 확장자와 변환하고자하는 파일의 확장자를 맞춰줌.
+                if 'png' in image_file_form:
+                    resized_image_medium.save(medium_io, 'png')
+                if 'jpeg' in image_file_form:
+                    resized_image_medium.save(medium_io, 'jpeg')
                 medium_io.seek(0)
                 return [medium_io, str(uuid.uuid4())]
 
@@ -135,6 +150,7 @@ class ImageUpload:
 
         History:
             2020-04-02 (yoonhc@brandi.co.kr): 초기 생성
+            2020-04-14 (yoonhc@brandi.co.kr): 확장자별(png, jpg)로 메모리에 저장하는 로직 구현.
         """
         standard_size = 120
         try:
@@ -142,7 +158,13 @@ class ImageUpload:
                 small = (int(standard_size), int(opened_image.size[1]*(standard_size/opened_image.size[0])))
                 resized_image_small = opened_image.resize(small)
                 small_io = io.BytesIO()
-                resized_image_small.save(small_io, "JPEG")
+                image_file_form = image_file.content_type
+
+                # 파일 타입을 화인하여 파일객체 확장자와 변환하고자하는 파일의 확장자를 맞춰줌.
+                if 'png' in image_file_form:
+                    resized_image_small.save(small_io, 'png')
+                if 'jpeg' in image_file_form:
+                    resized_image_small.save(small_io, 'jpeg')
                 small_io.seek(0)
                 return [small_io, str(uuid.uuid4())]
 
@@ -849,6 +871,7 @@ class ImageUpload:
         """ 공통으로 사용할 이미지 업로더
         셀러 / 기획전의 등록 / 수정 시 사용되는 이미지 업로더
         기존에 셀러용, 기획전용으로 나눠있던 것을 하나로 합쳐 공통으로 사용
+        이미지파일 확장자별로 s3업로드(png, jpeg 만 가능).
 
         Args:
             request: 이미지 파일을 포함한 요청 값
@@ -858,9 +881,11 @@ class ImageUpload:
 
         Authors:
             leejm3@brandi.co.kr (이종민)
+            yoonhc@brandi.co.kr (윤희철)
 
         History:
             2020-04-12 (leejm3@brandi.co.kr): 초기 생성
+            2020-04-14 (yoonhc@brandi.co.kr): 이미지 확장자별 s3업로드 로직 추가.
         """
 
         # s3에서 만들어진 url 을 반환할 dictionary 생성
@@ -887,18 +912,20 @@ class ImageUpload:
             uploaded_image_name = str(uuid.uuid4())
             s3 = get_s3_connection()
 
-            # s3에 올리는 과정에서 발생하는 애러를 잡아줌
+            # s3에 올리는 과정에서 발생하는 애러를 잡아줌. 위에서 확인한 이미지파일 form 을 컨텐츠 타입으로 지정.
             try:
                 s3.put_object(
-                    Body=name,
+                    Body=image,
                     Bucket="brandi-intern",
                     Key=uploaded_image_name,
-                    ContentType='image/jpeg'
+                    ContentType=image_file_form
                 )
 
             except Exception as e:
+                print({'error': e})
                 return jsonify({'message': f'{name}_S3_UPLOAD_FAIL'}), 500
 
+            # s3주소에 올라간 파일 이름을 넣어주어 리턴할 url을 만들어줌.
             uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
 
             # data dict 에 값 저장

@@ -486,7 +486,7 @@ class SellerView:
         image_upload = ImageUpload()
         seller_image = image_upload.upload_images(request)
 
-        if (400 or 500) in seller_image:
+        if (400 in seller_image) or (500 in seller_image):
             return seller_image
 
         # validation 확인이 된 data 를 account_info 로 재정의
