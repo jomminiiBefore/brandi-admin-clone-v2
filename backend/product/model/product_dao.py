@@ -333,7 +333,6 @@ class ProductDao:
                     )"""
 
                 db_cursor.execute(insert_product_info_stmt, product_info)
-
                 product_info_id = db_cursor.lastrowid
 
                 # 3. TABLE product_images
