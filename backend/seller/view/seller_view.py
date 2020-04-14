@@ -335,7 +335,6 @@ class SellerView:
               rules=[MaxLength(45)]),
         Param('account_number', FORM, str,
               rules=[MaxLength(45)]),
-        Param('seller_account_id', FORM, int),
 
         # int 를 str 로 인식해서 정규식 유효성 확인
         Param('seller_status_no', FORM, str,
@@ -365,7 +364,7 @@ class SellerView:
         셀러정보를 수정하는 엔드포인트 입니다.
         url 로 셀러정보를 수정하고 싶은 계정 번호를 받습니다.
         셀러정보 수정을 수행하려는 계정의 정보를 데코레이터로부터 받습니다.
-        수정하려는 내용은 request.body 로 받습니다.
+        수정하려는 내용은 form 으로 받습니다.
 
         받은 정보를 유효성 검사를 거친 후 account_info 로 저장해 service 로 넘겨줍니다.
 
@@ -379,12 +378,11 @@ class SellerView:
             auth_type_id: 계정의 권한정보
             account_no: 데코레이터에서 확인된 계정번호
 
-        request.body:
+        form:
             seller_status_no 셀러 상태번호 int
             seller_type_no 셀러 속성번호 int
             name_kr 셀러 한글명 str 한글,영문,숫자
             name_en 셀러 영문명 str required False 영문 소문자
-            seller_account_id 셀러 계정번호 int
             brandi_app_user_app_id 브랜디앱 유저 아이디 str
             ceo_name 대표자명 str
             company_name 사업자명 str
@@ -422,6 +420,7 @@ class SellerView:
             400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
             400: VALIDATION_ERROR_MANAGER_INFO, NO_SPECIFIC_MANAGER_INFO,
                  INVALID_AUTH_TYPE_ID, NO_PROFILE_IMAGE, NO_CERTIFICATE_IMAGE
+                 NO_CHANGEABLE_STATUS
             403: NO_AUTHORIZATION, NO_AUTHORIZATION_FOR_STATUS_CHANGE, NO_ONLINE_BUSINESS_IMAGE
             500: INVALID_KEY, DB_CURSOR_ERROR, NO_DATABASE_CONNECTION
 
@@ -442,7 +441,6 @@ class SellerView:
                  이미지 파일을 새로 업로드하면, 이 파일을 저장한 s3 url 을 저장하고,
                  수정을 안해서 기존에 DB에 저장된 url 을 보내주면, 해당 url 을 저장함
                  필수값인 셀러 프로필, 등록증 2개가 들어오지 않으면 에러처리
-
             2020-04-12 (leejm3@brandi.co.kr):
                 셀러용 이미지 업로더를 사용하는 것에서 공통 업로더를 사용하도록 변경
         """
@@ -521,21 +519,20 @@ class SellerView:
             'bank_name': args[28],
             'bank_holder_name': args[29],
             'account_number': args[30],
-            'seller_account_id': args[31]
         }
 
         # file 로 이미지가 안들어올 경우, FORM 으로 받은 이미지 url 로 대체
         if not account_info['profile_image_url']:
-            account_info['profile_image_url'] = args[34]
+            account_info['profile_image_url'] = args[33]
 
         if not account_info['certificate_image_url']:
-            account_info['certificate_image_url'] = args[35]
+            account_info['certificate_image_url'] = args[34]
 
         if not account_info['online_business_image_url']:
-            account_info['online_business_image_url'] = args[36]
+            account_info['online_business_image_url'] = args[35]
 
         if not account_info['background_image_url']:
-            account_info['background_image_url'] = args[37]
+            account_info['background_image_url'] = args[36]
 
         # 이미지 url 필수값 3개가 안들어오면 에러 리턴
         if not account_info['profile_image_url']:
