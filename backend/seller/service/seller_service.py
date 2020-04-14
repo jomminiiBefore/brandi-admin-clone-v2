@@ -185,7 +185,7 @@ class SellerService:
         Returns: http 응답코드
             200: SUCCESS 셀러정보 수정(새로운 이력 생성) 완료
             400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
-            400: INVALID_AUTH_TYPE_ID
+            400: INVALID_AUTH_TYPE_ID, NO_CHANGEABLE_STATUS
             403: NO_AUTHORIZATION
             500: INVALID_KEY, DB_CURSOR_ERROR
 

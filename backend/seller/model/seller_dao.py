@@ -629,9 +629,11 @@ class SellerDao:
         """ 계정 셀러정보를 수정(새로운 이력 생성) INSERT INTO DB
 
         계정 셀러정보를 수정합니다.
-        선분이력 관리를 위해 기존 셀러정보 updated_at(수정일시)와 close_time(종료일시)를 업데이트하고,
+        선분이력 관리를 위해 기존 셀러정보 close_time(종료일시)를 업데이트하고,
         새로운 셀러정보 이력을 생성합니다.
         입력한 브랜디 앱 아이디가 존재하는지 확인하는 절차를 가집니다.
+
+        입점대기 상태의 셀러정보는 수정할 수 없습니다.
 
         기존 셀러정보와 새로운 셀러정보, 담당자 정보, 셀러 상태 변경 기록이 모두 정상 저장되어야 프로세스가 완료됩니다.
         기존 셀러정보의 종료일시를 새로운 셀러정보의 시작일시와 맞추기 위해 새로운 셀러정보를 먼저 등록했습니다.
@@ -643,6 +645,7 @@ class SellerDao:
         Returns: http 응답코드
             200: 셀러정보 수정(새로운 이력 생성) 완료
             400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
+                 NO_CHANGEABLE_STATUS (입점 대기 상태일때는 수정 불가)
             403: NO_AUTHORIZATION_FOR_STATUS_CHANGE
             500: DB_CURSOR_ERROR, INVALID_KEY
 
@@ -658,7 +661,10 @@ class SellerDao:
                 수정 전 셀러정보 id 값을 불러오는 방식 변경
                 - 기존 : request.body로 UI에게 받음
                 - 변경 : DB를 조회해서 해당 seller_account_id 의 가장 마지막 셀러정보 id 를 불러옴
-
+            2020-04-14 (leejm3@brandi.co.kr):
+                - 변경하고자 하는 셀러의 아이디 값을 기존에는 parameter 로 받았는데,
+                  parameter_account_no 를 기준으로 DB 에서 꺼내오도록 변경
+                - 입점대기 상태일 때는 수정할 수 없도록 변경
         """
         try:
             with db_connection.cursor() as db_cursor:
@@ -680,6 +686,20 @@ class SellerDao:
 
                 account_info['now'] = now['now()']
 
+                # parameter_account의 셀러 아이디 가져오기
+                select_seller_account_no_statement = """
+                    SELECT seller_account_no
+                    FROM accounts
+                    INNER JOIN
+                    seller_accounts
+                    ON accounts.account_no = seller_accounts.account_id
+                    WHERE accounts.account_no = %(parameter_account_no)s
+                """
+
+                db_cursor.execute(select_seller_account_no_statement, account_info)
+
+                seller_account_id = db_cursor.fetchone()['seller_account_no']
+                account_info['seller_account_id'] = seller_account_id
                 # 이전 셀러정보 아이디 가져오기
                 # seller_infos 테이블 SELECT
                 select_seller_infos_statement = """
@@ -855,6 +875,10 @@ class SellerDao:
                 previous_seller_status_id = db_cursor.fetchone()
 
                 account_info['previous_seller_status_id'] = previous_seller_status_id['seller_status_id']
+
+                # 입점대기 상태일 때는 셀러정보를 수정할 수 없음
+                if account_info['previous_seller_status_id'] == 1:
+                    return jsonify({'message': 'NO_CHANGEABLE_STATUS'}), 400
 
                 # 이전 셀러정보의 셀러 상태값과 새로운 셀러정보의 셀러 상태값이 다르면, 셀러 상태정보이력 테이블 INSERT INTO
                 if account_info['previous_seller_status_id'] != account_info['seller_status_no']:
