@@ -384,20 +384,20 @@ class SellerDao:
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
     # noinspection PyMethodMayBeStatic
-    def get_seller_list(self, request, db_connection):
+    def get_seller_list(self, valid_param, db_connection):
 
         """ GET 셀러 리스트를 표출하고, 검색 키워드가 오면 키워드 별 검색 가능.
-        페이지네이션 기능: offset과 limit값을 받아서 페이지네이션 구현.
-        검색기능: 키워드를 받아서 검색기능 구현. 키워드가 추가 될 때 마다 검색어가 필터에 추가됨.
+        페이지네이션 기능: offset 과 limit 값을 받아서 페이지네이션 구현.
+        검색기능: 키워드를 받아서 검색기능 구현. 키워드가 추가 될 때 마다 검색어가 쿼리문에 추가됨
         엑셀다운로드 기능: excel=1을 쿼리파라미터로 받으면 데이터베이스의 값을
                         엑셀파일로 만들어 s3에 업로드하고 다운로드 링크를 리턴
 
         Args:
             db_connection: 연결된 database connection 객체
-            request: 쿼리파라미터를 가져옴
+            valid_param: view 에서 validation 을 통과한 파라미터들을 가져옴.
 
         Returns: http 응답코드
-            200: 키워드로 excel=1이 들어온 경우 s3에 올라간 엑셀파일 다운로드url
+            200: 키워드로 excel=1이 들어온 경우 s3에 올라간 엑셀파일 다운로드 url
             200: 셀러 리스트 표출(검색기능 포함), 키워드에 맞는 셀러 숫자
             500: SERVER ERROR
 
@@ -407,122 +407,133 @@ class SellerDao:
         History:
             2020-04-03(yoonhc@brandi.co.kr): 초기 생성
             2020-04-07(yoonhc@brandi.co.kr): 엑셀 다운로드 기능 추가
-            2020-04-10(yoonhc@brandi.co.kr): 필터링 키워드가 들어오면 필터된 셀러를 count하고 결과값에 추가하는 기능 작성
+            2020-04-10(yoonhc@brandi.co.kr): 필터링 키워드가 들어오면 필터된 셀러를 count 하고 결과값에 추가하는 기능 작성
+            2020-04-14(yoonhc@brandi.co.kr): 키워드가 들어오면 쿼리문 자체에 string 을 추가하고 db_connection 을 열고 바인딩하는 방식으로 변경.
         """
 
-        # offset 과 limit 에 음수가 들어오면  default 값 지정
-        offset = 0 if int(request.args.get('offset', 0)) < 0 else int(request.args.get('offset', 0))
-        limit = 10 if int(request.args.get('limit', 10)) < 0 else int(request.args.get('limit', 10))
+        # 키워드 검색을 위해서 쿼리문을 미리 정의해줌.
+        select_seller_list_statement = '''
+            SELECT 
+            seller_account_id, 
+            accounts.login_id,
+            name_en,
+            name_kr,
+            brandi_app_user_id,
+            seller_statuses.name as seller_status,
+            seller_status_id,
+            seller_types.name as seller_type_name,
+            site_url,
+            (
+                SELECT COUNT(0) 
+                FROM product_infos 
+                WHERE product_infos.seller_id  = seller_infos.seller_account_id 
+                AND product_infos.close_time = '2037-12-31 23:59:59' 
+            ) as product_count,
+            seller_accounts.created_at,
+            manager_infos.name as manager_name,
+            manager_infos.contact_number as manager_contact_number,
+            manager_infos.email as manager_email,
+            seller_infos.product_sort_id,
+            profile_image_url,
+            accounts.account_no
+            FROM seller_infos
+            right JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
+            LEFT JOIN accounts ON seller_accounts.account_id = accounts.account_no
+            LEFT JOIN seller_statuses ON seller_infos.seller_status_id = seller_statuses.status_no
+            LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
+            LEFT JOIN manager_infos on manager_infos.seller_info_id = seller_infos.seller_info_no 
+            WHERE seller_infos.close_time = '2037-12-31 23:59:59.0'
+            AND accounts.is_deleted = 0
+            AND seller_accounts.is_deleted = 0
+            AND manager_infos.ranking = 1
+        '''
 
-        # sql에서 where 조건문에 들어갈 필터 문자열
-        filter_query = ''
+        # 키워드검색이 들어왔을 때 검색결과의 셀러를 count 하기위해서 count 용 쿼리도 미리 정의해줌.
+        filter_query_values_count_statement = '''
+            SELECT COUNT(0) as filtered_seller_count
+            FROM seller_infos
+            right JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
+            LEFT JOIN accounts ON seller_accounts.account_id = accounts.account_no
+            LEFT JOIN seller_statuses ON seller_infos.seller_status_id = seller_statuses.status_no
+            LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
+            LEFT JOIN manager_infos on manager_infos.seller_info_id = seller_infos.seller_info_no 
+            WHERE seller_infos.close_time = '2037-12-31 23:59:59.0'
+            AND accounts.is_deleted = 0
+            AND seller_accounts.is_deleted = 0 
+            AND manager_infos.ranking = 1
+        '''
 
-        # request안의 유효성검사에 딕셔너리인 valid_param에서 value가 None이 아니면 filter_query에 조건 쿼리문을 추가해줌.
-        seller_account_no = request.valid_param['seller_account_no']
-        if seller_account_no:
-            filter_query += f" AND seller_accounts.seller_account_no = {seller_account_no}"
+        # 쿼리파라미터에 키워드가 들어왔는지 확인하고 위에서 정의해준 명령문에 쿼리를 추가해줌.
+        if valid_param.get('seller_account_no', None):
+            select_seller_list_statement += " AND seller_accounts.seller_account_no = %(seller_account_no)s"
+            filter_query_values_count_statement += " AND seller_accounts.seller_account_no = %(seller_account_no)s"
 
-        login_id = request.valid_param['login_id']
-        if login_id:
-            filter_query += f" AND accounts.login_id = '{login_id}'"
+        if valid_param.get('login_id', None):
+            select_seller_list_statement += " AND accounts.login_id = %(login_id)s"
+            filter_query_values_count_statement += " AND accounts.login_id = %(login_id)s"
 
-        name_kr = request.valid_param['name_kr']
-        if name_kr:
-            # filter_query += f" AND name_kr = '{name_kr}'"
-            filter_query += f" AND name_kr LIKE '%{name_kr}%'"
+        name_kr = valid_param.get('name_kr', None)
+        if valid_param.get('name_kr', None):
+            valid_param['name_kr'] = '%'+name_kr+'%'
+            select_seller_list_statement += " AND name_kr LIKE %(name_kr)s"
+            filter_query_values_count_statement += " AND name_kr LIKE %(name_kr)s"
 
-        name_en = request.valid_param['name_en']
-        if name_en:
-            filter_query += f" AND name_en = '{name_en}'"
+        if valid_param.get('name_en', None):
+            select_seller_list_statement += " AND name_en = %(name_en)s"
+            filter_query_values_count_statement += " AND name_en = %(name_en)s"
 
-        brandi_app_user_id = request.valid_param['brandi_app_user_id']
-        if brandi_app_user_id:
-            filter_query += f" AND brandi_app_user_id = {brandi_app_user_id}"
+        if valid_param.get('brandi_app_user_id', None):
+            select_seller_list_statement += " AND brandi_app_user_id = %(brandi_app_user_id)s"
+            filter_query_values_count_statement += " AND brandi_app_user_id = %(brandi_app_user_id)s"
 
-        manager_name = request.valid_param['manager_name']
-        if manager_name:
-            filter_query += f" AND manager_infos.name = '{manager_name}'"
+        if valid_param.get('manager_name', None):
+            select_seller_list_statement += " AND manager_infos.name = %(manager_name)s"
+            filter_query_values_count_statement += " AND manager_infos.name = %(manager_name)s"
 
-        seller_status = request.valid_param['seller_status']
-        if seller_status:
-            filter_query += f" AND seller_statuses.name = '{seller_status}'"
+        if valid_param.get('seller_status', None):
+            select_seller_list_statement += " AND seller_statuses.name = %(seller_status)s"
+            filter_query_values_count_statement += " AND seller_statuses.name = %(seller_status)s"
 
-        manager_contact_number = request.valid_param['manager_contact_number']
-        if manager_contact_number:
-            filter_query += f" AND manager_infos.contact_number LIKE '%{manager_contact_number}%'"
+        manager_contact_number = valid_param.get('manager_contact_number', None)
+        if valid_param.get('manager_contact_number', None):
+            valid_param['manager_contact_number'] = '%'+manager_contact_number+'%'
+            select_seller_list_statement += " AND manager_infos.contact_number LIKE %(manager_contact_number)s"
+            filter_query_values_count_statement += " AND manager_infos.contact_number LIKE %(manager_contact_number)s"
 
-        manager_email = request.valid_param['manager_email']
-        if manager_email:
-            filter_query += f" AND manager_infos.email = '{manager_email}'"
+        if valid_param.get('manager_email', None):
+            select_seller_list_statement += " AND manager_infos.email = %(manager_email)s"
+            filter_query_values_count_statement += " AND manager_infos.email = %(manager_email)s"
 
-        seller_type_name = request.valid_param['seller_type_name']
-        if seller_type_name:
-            filter_query += f" AND seller_types.name = '{seller_type_name}'"
+        if valid_param.get('seller_type_name', None):
+            select_seller_list_statement += " AND seller_types.name = %(seller_type_name)s"
+            filter_query_values_count_statement += " AND seller_types.name = %(seller_type_name)s"
 
-        start_date = request.valid_param['start_time']
-        end_date = request.valid_param['close_time']
-        if start_date and end_date:
-            start_date = str(request.args.get('start_time', None)) + ' 00:00:00'
-            end_date = str(request.args.get('close_time', None)) + ' 23:59:59'
-            filter_query += f" AND seller_accounts.created_at > '{start_date}' AND seller_accounts.created_at < '{end_date}'"
+        # 데이터베이스에서는 날짜 + 시간까지 같이 검색하기 때문에 날짜에 시간을 더해줌.
+        start_time = valid_param['start_time']
+        close_time = valid_param['close_time']
+        if start_time and close_time:
+            valid_param['start_time'] = start_time + ' 00:00:00'
+            valid_param['close_time'] = close_time + ' 23:59:59'
+            select_seller_list_statement += " AND seller_accounts.created_at > %(start_time)s AND seller_accounts.created_at < %(close_time)s"
+            filter_query_values_count_statement += " AND seller_accounts.created_at > %(start_time)s AND seller_accounts.created_at < %(close_time)s"
+
+        # sql 명령문에 키워드 추가가 완료되면 정렬, limit, offset 쿼리문을 추가해준다.
+        select_seller_list_statement += " ORDER BY seller_account_id ASC LIMIT %(limit)s OFFSET %(offset)s"
 
         try:
             with db_connection as db_cursor:
 
-                # 셀러 리스트를 가져오는 sql 명령문, 쿼리가 들어오면 쿼리문을 포메팅해서 검색 실행
-                select_seller_list_statement = f'''
-                    SELECT 
-                    seller_account_id, 
-                    accounts.login_id,
-                    name_en,
-                    name_kr,
-                    brandi_app_user_id,
-                    seller_statuses.name as seller_status,
-                    seller_status_id,
-                    seller_types.name as seller_type_name,
-                    site_url,
-                    (
-                        SELECT COUNT(0) 
-                        FROM product_infos 
-                        WHERE product_infos.seller_id  = seller_infos.seller_account_id 
-                        AND product_infos.close_time = '2037-12-31 23:59:59' 
-                    ) as product_count,
-                    seller_accounts.created_at,
-                    manager_infos.name as manager_name,
-                    manager_infos.contact_number as manager_contact_number,
-                    manager_infos.email as manager_email,
-                    seller_infos.product_sort_id,
-                    profile_image_url,
-                    accounts.account_no
-                    FROM seller_infos
-                    right JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
-                    LEFT JOIN accounts ON seller_accounts.account_id = accounts.account_no
-                    LEFT JOIN seller_statuses ON seller_infos.seller_status_id = seller_statuses.status_no
-                    LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
-                    LEFT JOIN manager_infos on manager_infos.seller_info_id = seller_infos.seller_info_no 
-                    WHERE seller_infos.close_time = '2037-12-31 23:59:59.0'
-                    AND accounts.is_deleted = 0
-                    AND seller_accounts.is_deleted = 0
-                    AND manager_infos.ranking = 1{filter_query}
-                    ORDER BY seller_account_id ASC
-                    LIMIT %(limit)s OFFSET %(offset)s
-                '''
-                parameter = {
-                    'limit': limit,
-                    'offset': offset,
-                }
-
                 # sql 쿼리와 pagination 데이터 바인딩
-                db_cursor.execute(select_seller_list_statement, parameter)
+                db_cursor.execute(select_seller_list_statement, valid_param)
                 seller_info = db_cursor.fetchall()
 
                 # 쿼리파라미터에 excel 키가 1로 들어오면 엑셀파일을 만듦.
-                if request.valid_param['excel'] == 1:
+                if valid_param['excel'] == 1:
                     s3 = get_s3_connection()
 
                     # 엑셀파일로 만들경우 페이지네이션 적용을 받지않고 검색 적용만 받기 때문에 페이지네이션 부분 쿼리를 제거해준다.
-                    replaced_statement = select_seller_list_statement.replace('LIMIT %(limit)s OFFSET %(offset)s', '')
-                    db_cursor.execute(replaced_statement)
+                    replaced_statement = select_seller_list_statement.replace('ORDER BY seller_account_id ASC LIMIT %(limit)s OFFSET %(offset)s', '')
+                    db_cursor.execute(replaced_statement, valid_param)
                     seller_info = db_cursor.fetchall()
 
                     # pandas 데이터 프레임을 만들기 위한 column 과 value 정리
@@ -552,7 +563,11 @@ class SellerDao:
                     df.to_excel(file, encoding='utf8')
 
                     # 로컬에 저장된 파일을 s3에 업로드
-                    s3.upload_file(file, "brandi-intern", file_name)
+                    try:
+                        s3.upload_file(file, "brandi-intern", file_name)
+                    except Exception as e:
+                        print(f'error: {e}')
+                        return jsonify({'message': 'S3_UPLOAD_FAIL'}), 500
 
                     # s3에 올라간 파일을 다운받는 url
                     file_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{file_name}'
@@ -598,23 +613,10 @@ class SellerDao:
                 db_cursor.execute(seller_count_statement)
                 seller_count = db_cursor.fetchone()
 
-                # 쿼리파라미터가 들어오면 필터된 셀러를 카운트하고 리턴 값에 포함시킴.
-                if len(filter_query) > 0:
-                    filter_query_values_count_statement = f'''
-                        SELECT COUNT(0) as filtered_seller_count
-                        FROM seller_infos
-                        right JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
-                        LEFT JOIN accounts ON seller_accounts.account_id = accounts.account_no
-                        LEFT JOIN seller_statuses ON seller_infos.seller_status_id = seller_statuses.status_no
-                        LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
-                        LEFT JOIN manager_infos on manager_infos.seller_info_id = seller_infos.seller_info_no 
-                        WHERE seller_infos.close_time = '2037-12-31 23:59:59.0' 
-                        AND manager_infos.ranking = 1{filter_query}
-                        LIMIT %(limit)s OFFSET %(offset)s
-                    '''
-                    db_cursor.execute(filter_query_values_count_statement, parameter)
-                    filter_query_values_count = db_cursor.fetchone()
-                    seller_count['filtered_seller_count'] = filter_query_values_count['filtered_seller_count']
+                # 쿼리파라미터가 들어오면 필터된 셀러를 카운트하고 리턴 값에 포함시킨다. 쿼리파라미터가 들어오지않으면 전체 셀러 수를 포함시킴.
+                db_cursor.execute(filter_query_values_count_statement, valid_param)
+                filter_query_values_count = db_cursor.fetchone()
+                seller_count['filtered_seller_count'] = filter_query_values_count['filtered_seller_count']
 
                 return jsonify({'seller_list': seller_info, 'seller_count': seller_count}), 200
 

@@ -231,11 +231,13 @@ class SellerService:
             return jsonify({'message': f'{e}'}), 400
 
     # noinspection PyMethodMayBeStatic
-    def get_seller_list(self, request, user, db_connection):
+    def get_seller_list(self, valid_param, user, db_connection):
 
         """ 가입된 모든 셀러 정보 리스트 표출
+        요청을 보내온 유저의 권한을 확인해서 마스터유저이면 dao 로 arguments 를 넘김.
+
         Args:
-            request: 클라이언트에서 온 요청
+            valid_param: 클라이언트에서 온 요청
             user: 유저 정보
             db_connection: 데이터베이스 커넥션 객체
 
@@ -256,7 +258,7 @@ class SellerService:
 
         # 마스터 유저이면 dao에 db_connection 전달
         if auth_type_id == 1:
-            seller_list_result = seller_dao.get_seller_list(request, db_connection)
+            seller_list_result = seller_dao.get_seller_list(valid_param, db_connection)
             return seller_list_result
 
         return jsonify({'message': 'AUTHORIZATION_REQUIRED'}), 403

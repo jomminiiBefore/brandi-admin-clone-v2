@@ -211,7 +211,9 @@ class SellerView:
         Param('seller_type_name', GET, str, required=False),
         Param('start_time', GET, str, required=False),
         Param('close_time', GET, str, required=False),
-        Param('excel', GET, int, required=False)
+        Param('excel', GET, int, required=False),
+        Param('offset', GET, int, required=False),
+        Param('limit', GET, int, required=False)
     )
     def get_seller_list(*args):
 
@@ -220,13 +222,13 @@ class SellerView:
 
         Args:
             g.account_info: 데코레이터에서 넘겨받은 수정을 수행하는 계정 정보
-                auth_type_id: 계정의 권한정보
-                account_no: 데코레이터에서 확인된 계정번호드
-            args: path parameter를 통해서 들어온 검색 키워
+            g.account_info.seller_account_no: 검색 셀러 번호
+            g.account_info.account_no: 데코레이터에서 확인된 계정번호드
+            args: path parameter 를 통해서 들어온 검색 키워
 
         Returns:
             200: 가입된 모든 셀러 및 셀러 세부 정보 리스트로 표출
-            400: seller_service로 값을 넘겨줄 때 애러가나면 400 리턴
+            400: seller_service 로 값을 넘겨줄 때 애러가나면 400 리턴
             500: database 연결에 실패하면 500리턴
 
         Authors:
@@ -238,23 +240,34 @@ class SellerView:
             2020-04-10 (yoonhc@brandi.co.kr): 애러 처리 추가
         """
 
+        # 유효성 확인 위해 기간 데이터 먼저 정의
+        start_time = args[10]
+        close_time = args[11]
+
+        # 두 값이 모두 들어왔을 때, 시작 기간이 종료 기간보다 늦으면 시작기간 = 종료기간
+        if start_time and close_time:
+            if start_time > close_time:
+                start_time = close_time
+
         # request에 통과한 쿼리파라미터를 담을 리스트를 생성.
-        request.valid_param = {}
+        valid_param = {}
 
         # request안에 valid_param 리스트에 validation을 통과한 query parameter을 넣어줌.
-        request.valid_param['seller_account_no'] = args[0]
-        request.valid_param['login_id'] = args[1]
-        request.valid_param['name_en'] = args[2]
-        request.valid_param['name_kr'] = args[3]
-        request.valid_param['brandi_app_user_id'] = args[4]
-        request.valid_param['manager_name'] = args[5]
-        request.valid_param['manager_email'] = args[6]
-        request.valid_param['seller_status'] = args[7]
-        request.valid_param['manager_contact_number'] = args[8]
-        request.valid_param['seller_type_name'] = args[9]
-        request.valid_param['start_time'] = args[10]
-        request.valid_param['close_time'] = args[11]
-        request.valid_param['excel'] = args[12]
+        valid_param['seller_account_no'] = args[0]
+        valid_param['login_id'] = args[1]
+        valid_param['name_en'] = args[2]
+        valid_param['name_kr'] = args[3]
+        valid_param['brandi_app_user_id'] = args[4]
+        valid_param['manager_name'] = args[5]
+        valid_param['manager_email'] = args[6]
+        valid_param['seller_status'] = args[7]
+        valid_param['manager_contact_number'] = args[8]
+        valid_param['seller_type_name'] = args[9]
+        valid_param['start_time'] = start_time
+        valid_param['close_time'] = close_time
+        valid_param['excel'] = args[12]
+        valid_param['offset'] = args[13] if args[13] else 0
+        valid_param['limit'] = args[14] if args[14] else 10
 
         # 유저 정보를 g에서 읽어와서 service에 전달
         user = g.account_info
@@ -265,7 +278,7 @@ class SellerView:
 
             if db_connection:
                 seller_service = SellerService()
-                seller_list_result = seller_service.get_seller_list(request, user, db_connection)
+                seller_list_result = seller_service.get_seller_list(valid_param, user, db_connection)
                 return seller_list_result
 
             else:
