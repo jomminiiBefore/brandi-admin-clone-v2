@@ -6,72 +6,74 @@ import TableRow from '@material-ui/core/TableRow';
 import TableSortLabel from '@material-ui/core/TableSortLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 
+// "created_at": "2020-04-14 10:32:36",
+//       "discount_price": 15300,
+//       "image_url": "https://brandi-intern.s3.ap-northeast-2.amazonaws.com/8cc83e2a-58d5-44ce-beb4-9f737b5595f7",
+//       "is_available": 1,
+//       "is_discount": 1,
+//       "is_on_display": 1,
+//       "price": 18000,
+//       "product_name": "white_cap",
+//       "product_no": 1,
+//       "seller_name": "수정윤희철러",
+//       "seller_type_name": "쇼핑몰"
 const headCells = [
-  { id: 'index', numeric: true, disablePadding: true, label: '번호' },
-  { id: 'sellerId', numeric: true, disablePadding: true, label: '셀러아이디' },
+  { id: 'created_at', numeric: true, disablePadding: true, label: '등록일' },
   {
-    id: 'englishName',
+    id: 'image_url',
     numeric: true,
     disablePadding: false,
-    label: '영문이름',
-  },
-  { id: 'koreanName', numeric: true, disablePadding: true, label: '한글이름' },
-  { id: 'sellerType', numeric: true, disablePadding: true, label: '셀러구분' },
-  {
-    id: 'memberNumber',
-    numeric: true,
-    disablePadding: true,
-    label: '회원번호',
+    label: '대표이미지',
   },
   {
-    id: 'managerName',
-    numeric: true,
-    disablePadding: true,
-    label: '담당자이름',
+    id: 'product_name',
+    numeric: false,
+    disablePadding: false,
+    label: '상품명',
   },
+  { id: 'product_no', numeric: true, disablePadding: true, label: '상품번호' },
   {
-    id: 'sellerStatus',
-    numeric: true,
-    disablePadding: true,
-    label: '셀러상태',
-  },
-  {
-    id: 'managerContact',
-    numeric: true,
-    disablePadding: true,
-    label: '담당자연락처',
-  },
-  {
-    id: 'managerEmail',
-    numeric: true,
-    disablePadding: true,
-    label: '담당자이메일',
-  },
-  {
-    id: 'sellerProperty',
+    id: 'seller_type_name',
     numeric: true,
     disablePadding: true,
     label: '셀러속성',
   },
   {
+    id: 'seller_name',
+    numeric: true,
+    disablePadding: true,
+    label: '셀러명',
+  },
+  {
+    id: 'sellerStatus',
+    numeric: true,
+    disablePadding: true,
+    label: '판매가',
+  },
+  {
+    id: 'managerContact',
+    numeric: true,
+    disablePadding: true,
+    label: '할인가',
+  },
+  {
+    id: 'managerEmail',
+    numeric: true,
+    disablePadding: true,
+    label: '판매여부',
+  },
+  {
+    id: 'sellerProperty',
+    numeric: true,
+    disablePadding: true,
+    label: '진열여부',
+  },
+  {
     id: 'productCount',
     numeric: true,
     disablePadding: true,
-    label: '상품개수',
+    label: '할인여부',
   },
-  {
-    id: 'siteUrl',
-    numeric: true,
-    disablePadding: true,
-    label: 'URL',
-  },
-  {
-    id: 'RegisterDate',
-    numeric: true,
-    disablePadding: true,
-    label: '등록일시',
-  },
-  { id: 'actions', numeric: true, disablePadding: true, label: 'Actions' },
 ];
 
 EnhancedTableHead.propTypes = {
@@ -114,21 +116,21 @@ export default function EnhancedTableHead(props) {
             key={headCell.id}
             // align={headCell.numeric ? 'right' : 'left'}
             align={'center'}
-            padding={headCell.disablePadding ? 'none' : 'none'}
-            // sortDirection={orderBy === headCell.id ? order : false}
+            padding={headCell.disablePadding ? 'none' : 'default'}
+            sortDirection={orderBy === headCell.id ? order : false}
           >
-            <div
-            // active={orderBy === headCell.id}
-            // direction={orderBy === headCell.id ? order : 'asc'}
-            //   onClick={createSortHandler(headCell.id)}
+            <TableSortLabel
+              active={orderBy === headCell.id}
+              direction={orderBy === headCell.id ? order : 'asc'}
+              //   onClick={createSortHandler(headCell.id)}
             >
               {headCell.label}
-              {/* {orderBy === headCell.id ? (
+              {orderBy === headCell.id ? (
                 <span className={classes.visuallyHidden}>
                   {order === 'desc' ? 'sorted descending' : 'sorted ascending'}
                 </span>
-              ) : null} */}
-            </div>
+              ) : null}
+            </TableSortLabel>
           </TableCell>
         ))}
       </TableRow>

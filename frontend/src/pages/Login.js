@@ -1,50 +1,50 @@
-import React, { useState } from "react";
-import { withRouter } from "react-router-dom";
-import styled from "styled-components";
-import { YJURL } from "src/utils/config";
-import InputContainer from "src/component/common/InputContainer";
-import CustomButton from "src/component/common/CustomButton";
-import Footer from "src/component/common/Footer";
-import styles from "src/utils/styles";
+import React, { useState } from 'react';
+import { withRouter } from 'react-router-dom';
+import styled from 'styled-components';
+import { YJURL } from 'src/utils/config';
+import InputContainer from 'src/component/common/InputContainer';
+import CustomButton from 'src/component/common/CustomButton';
+import Footer from 'src/component/common/Footer';
+import styles from 'src/utils/styles';
 
-const Login = props => {
+const Login = (props) => {
   const [inputs, setInputs] = useState({
-    login_id: "",
-    password: ""
+    login_id: '',
+    password: '',
   });
 
-  const onChange = e => {
+  const onChange = (e) => {
     setInputs({ ...inputs, [e.target.name]: e.target.value });
   };
 
   const goToSignUp = () => {
-    props.history.push("/signup");
+    props.history.push('/signup');
   };
 
   // login fetch 함수
   const handleLogin = () => {
     fetch(`${YJURL}/seller/login`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json"
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         login_id: inputs.login_id,
-        password: inputs.password
-      })
+        password: inputs.password,
+      }),
     })
-      .then(res => res.json())
-      .then(res => {
-        console.log("login-res:: ", res);
+      .then((res) => res.json())
+      .then((res) => {
+        console.log('login-res:: ', res);
         if (res.token) {
-          localStorage.setItem("token", res.token);
-          props.history.push("/loginOk");
+          localStorage.setItem('token', res.token);
+          props.history.push('/loginOk');
         } else {
-          alert("아이디 또는 패스워드를 확인해주세요.");
+          alert('아이디 또는 패스워드를 확인해주세요.');
         }
         return res;
       })
-      .catch(error => console.log("error::: ", error));
+      .catch((error) => console.log('error::: ', error));
   };
 
   return (
@@ -83,10 +83,10 @@ const Login = props => {
           <FindPw>비밀번호 찾기</FindPw>
         </SellerInfoBox>
         <ButtonBox>
-          <CustomButton name={"셀러가입"} onClickEvent={goToSignUp} />
+          <CustomButton name={'셀러가입'} onClickEvent={goToSignUp} />
           <CustomButton
-            name={"로그인"}
-            textColor={"white"}
+            name={'로그인'}
+            textColor={'white'}
             color={styles.color.buttonBlue}
             onClickEvent={handleLogin}
           />
@@ -99,7 +99,7 @@ const Login = props => {
         </HelpiLink>
         <BottomInfoBox>
           <InfoText>
-            입점안내{" "}
+            입점안내{' '}
             <ShowInfo href="http://www.brandiinc.com/brandi/" target="_blank">
               보러가기
             </ShowInfo>
@@ -107,7 +107,7 @@ const Login = props => {
           <ServiceCenterNumber>고객센터</ServiceCenterNumber>
           <RepNumber>| 대표번호 : 1566-1910</RepNumber>
           <Kakaofriend>
-            | 카카오톡 플러스친구 :{" "}
+            | 카카오톡 플러스친구 :{' '}
             <KakaoBrandi href="https://pf.kakao.com/_pSxoZu" target="_blank">
               @브랜디셀러
             </KakaoBrandi>
@@ -138,7 +138,7 @@ const BgImage = styled.div`
   width: 130px;
   height: 52px;
   margin-bottom: 15px;
-  background-image: url("http://sadmin.brandi.co.kr/include/img/logo_seller_admin_1.png");
+  background-image: url('http://sadmin.brandi.co.kr/include/img/logo_seller_admin_1.png');
   background-size: cover;
   background-repeat: no-repeat;
 `;
@@ -215,7 +215,7 @@ const HelpiImg = styled.img`
   height: 120px;
   margin: 15px 0px;
   background-size: cover;
-  background-image: url("http://sadmin.brandi.co.kr/include/img/admin_mainbn_helpi.png");
+  background-image: url('http://sadmin.brandi.co.kr/include/img/admin_mainbn_helpi.png');
 `;
 
 const BottomInfoBox = styled.div`

@@ -48,3 +48,5 @@ export const check_num = /(^02.{0}|^01.{1}|[0-9]{4})-([0-9]+)-([0-9]{4})/;
 
 // URL 주소
 export const check_url = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
+
+export const business_number_case = /^[0-9]{3}-{1}[0-9]{2}-{1}[0-9]{5}$/;
