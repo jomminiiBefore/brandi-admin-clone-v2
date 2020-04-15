@@ -7,6 +7,7 @@ class EventDao:
 
     Authors:
         leejm3@brandi.co.kr (이종민)
+
     History:
         2020-04-07 (leejm3@brandi.co.kr): 초기생성
 
@@ -52,6 +53,7 @@ class EventDao:
                     %(account_no)s
                 )"""
 
+                # 실행
                 db_cursor.execute(insert_events_statement, event_info)
 
                 # 위에서 생성된 기획전의 id 값을 가져옴
@@ -111,8 +113,8 @@ class EventDao:
                 )"""
 
                 db_cursor.execute(insert_event_detail_infos_statement, event_info)
-
                 db_connection.commit()
+
                 return jsonify({"message": "SUCCESS"}), 200
 
         except KeyError as e:
@@ -236,7 +238,7 @@ class EventDao:
             db_connection.rollback()
             return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
-    # 상품(이미지) 기획전 등록
+    # noinspection PyMethodMayBeStatic
     def register_product_image_event(self, event_info, event_product_info, db_connection):
         """ 상품(이미지) 기획전 등록
 
@@ -353,7 +355,7 @@ class EventDao:
             db_connection.rollback()
             return jsonify({'dao_message': 'DB_CURSOR_ERROR'}), 500
 
-    # 상품(텍스트) 기획전 등록
+    # noinspection PyMethodMayBeStatic
     def register_product_text_event(self, event_info, event_product_info, db_connection):
         """ 상품(텍스트) 기획전 등록
 
@@ -470,7 +472,7 @@ class EventDao:
             db_connection.rollback()
             return jsonify({'dao_message': 'DB_CURSOR_ERROR'}), 500
 
-    # 유튜브 이벤트 기획전 등록
+    # noinspection PyMethodMayBeStatic
     def register_youtube_event(self, event_info, event_product_info, db_connection):
         """ 유튜브 기획전 등록
 
@@ -615,10 +617,14 @@ class EventDao:
             with db_connection.cursor() as db_cursor:
                 select_statement = """
                     SELECT 
-                    event_type_no as event_type_id,
-                    name as event_type_name
-                    FROM event_types
-                    ORDER BY event_type_no
+                        event_type_no as event_type_id,
+                        name as event_type_name
+                    
+                    FROM 
+                        event_types
+                    
+                    ORDER BY 
+                        event_type_no
                 """
 
                 db_cursor.execute(select_statement)
@@ -662,11 +668,17 @@ class EventDao:
             with db_connection.cursor() as db_cursor:
                 select_statement = """
                     SELECT 
-                    event_sort_no as event_sort_id,
-                    name as event_sort_name
-                    FROM event_sorts
-                    WHERE event_type_id = %(event_type_id)s
-                    ORDER BY event_sort_no
+                        event_sort_no as event_sort_id,
+                        name as event_sort_name
+                    
+                    FROM 
+                        event_sorts
+                    
+                    WHERE 
+                        event_type_id = %(event_type_id)s
+                    
+                    ORDER BY 
+                        event_sort_no
                 """
 
                 db_cursor.execute(select_statement, event_type_info)
@@ -690,7 +702,7 @@ class EventDao:
         """ 기획전 정보 표출 DAO
 
         기획전 정보를 가져오는 DAO 입니다.
-        이벤트타입이 상품이미지, 상품텍스트, 유튜브인 경우 기획전 상품을 가져와서 기획전 정포에 추가합니다.
+        이벤트타입이 상품이미지, 상품텍스트, 유튜브인 경우 기획전 상품을 가져와서 기획전 정보에 추가합니다.
 
         Args:
             event_no: 기획전 번호
@@ -707,89 +719,129 @@ class EventDao:
 
         History:
             2020-04-10 (leejm3@brandi.co.kr): 초기 생성
-            2020-04-10 (yoonhc@brandi.co.kr): 이벤트 타입이 상품이미지, 상품테스트, 유튜브인 경우 기획전 상품을 가져오는 기능 추가.
+            2020-04-10 (yoonhc@brandi.co.kr): 이벤트 타입이 상품이미지, 상품테스트, 유튜브인 경우 기획전 상품을 가져오는 기능 추가
+            2020-04-15 (leejm3@brandi.co.kr): sql 문 별칭수정
         """
         try:
             with db_connection.cursor() as db_cursor:
                 select_statement = """
-                SELECT
-                a.event_no,
-                b.event_info_no,
-                b.event_type_id,
-                c.name as event_type_name,
-                b.event_sort_id,
-                d.name as event_sort_name,
-                b.is_on_main,
-                b.is_on_event,
-                b.name as event_name,
-                b.event_start_time,
-                b.event_end_time,
-                b.short_description,
-                b.long_description,
-                b.banner_image_url,
-                b.detail_image_url,
-                e.button_name,
-                e.button_link_type_id,
-                f.name as button_link_type_name,
-                b.youtube_url
-                
-                FROM
-                events as a
-                INNER JOIN
-                event_infos as b
-                ON a.event_no = b.event_id
-                INNER JOIN
-                event_types as c
-                ON b.event_type_id = c.event_type_no
-                INNER JOIN
-                event_sorts as d
-                ON b.event_sort_id = d.event_sort_no
-                LEFT JOIN
-                event_detail_infos as e
-                ON b.event_info_no = e.event_info_id
-                LEFT JOIN
-                event_button_link_types as f
-                ON e.button_link_type_id = f.event_button_link_type_no
-                
-                -- 해당 기획전 번호의 가장 최신 이력 정보를 가져옴
-                WHERE a.event_no = %(event_no)s 
-                AND b.close_time = '2037-12-31 23:59:59'
+                    SELECT
+                        EV01.event_no,
+                        EV02.event_info_no,
+                        EV02.event_type_id,
+                        EV03.name as event_type_name,
+                        EV02.event_sort_id,
+                        EV04.name as event_sort_name,
+                        EV02.is_on_main,
+                        EV02.is_on_event,
+                        EV02.name as event_name,
+                        EV02.event_start_time,
+                        EV02.event_end_time,
+                        EV02.short_description,
+                        EV02.long_description,
+                        EV02.banner_image_url,
+                        EV02.detail_image_url,
+                        EV05.button_name,
+                        EV05.button_link_type_id,
+                        EV06.name as button_link_type_name,
+                        EV02.youtube_url
+                    
+                    FROM
+                        events as EV01
+                    
+                    -- 기획전 정보 조인
+                    INNER JOIN
+                    event_infos as EV02
+                    ON EV01.event_no = EV02.event_id
+                    
+                    -- 기획전 타입 조인
+                    INNER JOIN
+                    event_types as EV03
+                    ON EV02.event_type_id = EV03.event_type_no
+                    
+                    -- 기획전 종류 조인
+                    INNER JOIN
+                    event_sorts as EV04
+                    ON EV02.event_sort_id = EV04.event_sort_no
+                    
+                    -- 기획전 상세정보 조인
+                    LEFT JOIN
+                    event_detail_infos as EV05
+                    ON EV02.event_info_no = EV05.event_info_id
+                    
+                    -- 기획전 버튼 링크 타입 조인
+                    LEFT JOIN
+                    event_button_link_types as EV06
+                    ON EV05.button_link_type_id = EV06.event_button_link_type_no
+                    
+                    -- 해당 기획전 번호의 가장 최신 이력 정보를 가져옴
+                    WHERE 
+                        EV01.event_no = %(event_no)s 
+                        AND EV02.close_time = '2037-12-31 23:59:59'
                 """
 
                 db_cursor.execute(select_statement, {'event_no': event_no})
                 info = db_cursor.fetchone()
 
-                # url 파라미터로 들어온 이벤트의 번호가 데이터베이스에 없으면 400 리턴
+                # url 파라미터로 들어온 기획전의 번호가 데이터베이스에 없으면 400 리턴
                 if not info:
                     return jsonify({'message': 'EVENT_NOT_EXIST'}), 400
 
-                # 이벤트타입 아이디가 상품이미지, 상품텍스트, 유튜브에 해당할경우 기획전 상품리스트를 가져옴
+                # 기획전 타입 아이디가 상품이미지, 상품텍스트, 유튜브에 해당할 경우 기획전 상품리스트를 가져옴
                 if info['event_type_id'] in range(3, 6):
 
                     # 위에서 가져온 이벤트 인포 번호를 where 조건문에 foreign key 자리에 일치시켜줌
                     select_product_statement = '''
-                    SELECT 
-                    event_detail_product_infos.product_order,
-                    product_infos.product_id,
-                    product_infos.name,
-                    seller_infos.name_kr,
-                    products.created_at,
-                    product_infos.price,
-                    product_infos.discount_rate,
-                    product_images.image_url 
-                    FROM product_infos
-                    left join event_detail_product_infos ON product_infos.product_id = event_detail_product_infos.product_id 
-                    left join products ON products.product_no = product_infos.product_id 
-                    LEFT JOIN seller_accounts ON product_infos.seller_id = seller_accounts.seller_account_no
-                    left join seller_infos ON seller_accounts.seller_account_no = seller_infos.seller_account_id
-                    left join product_images ON product_images.product_info_id = product_infos.product_info_no 
-                    WHERE product_infos.close_time = '2037-12-31 23:59:59' 
-                    AND seller_infos.close_time = '2037-12-31 23:59:59'
-                    AND product_infos.is_deleted = 0 
-                    AND event_detail_product_infos.event_info_id  = %(event_info_no)s
-                    AND event_detail_product_infos.is_deleted = 0
-                    AND product_images.image_order = 1
-                    AND product_images.image_size_id = 3
+                        SELECT 
+                            PI02.product_order,
+                            PI01.product_id,
+                            PI01.name,
+                            PI05.name_kr,
+                            PI03.created_at,
+                            PI01.price,
+                            PI01.discount_rate,
+                            PI06.image_url 
+                        
+                        FROM 
+                            product_infos as PI01
+                        
+                        # 기획전 상세상품 정보 조인
+                        LEFT JOIN 
+                        event_detail_product_infos as PI02 
+                        ON PI01.product_id = PI02.product_id 
+                        
+                        # 상품 조인
+                        LEFT JOIN products as PI03
+                        ON PI03.product_no = PI01.product_id 
+                        
+                        # 셀러 계정 조인
+                        LEFT JOIN seller_accounts as PI04
+                        ON PI01.seller_id = PI04.seller_account_no
+                        
+                        # 셀러 정보 조인
+                        LEFT JOIN seller_infos as PI05
+                        ON PI04.seller_account_no = PI05.seller_account_id
+                        
+                        # 상품 이미지 조인
+                        LEFT JOIN product_images as PI06
+                        ON PI06.product_info_id = PI01.product_info_no 
+                        
+                        WHERE 
+                            # 삭제되지 않은 상품 최신 정보 
+                            PI01.close_time = '2037-12-31 23:59:59' 
+                            AND PI01.is_deleted = 0
+                            
+                            # 삭제되지 않은 최신 셀러 정보  
+                            AND PI05.close_time = '2037-12-31 23:59:59'
+                            AND PI05.is_deleted = 0
+                            
+                            # 기획전 상세 상품정보
+                            AND PI02.event_info_id  = %(event_info_no)s
+                            AND PI02.is_deleted = 0
+                            
+                            # 이미지 순서 1, 사이즈 3
+                            AND PI06.image_order = 1
+                            AND PI06.image_size_id = 3
                     '''
                     db_cursor.execute(select_product_statement, info)
                     event_product_list = db_cursor.fetchall()
@@ -813,12 +865,13 @@ class EventDao:
     # noinspection PyMethodMayBeStatic
     def change_event(self, event_info, db_connection, event_product_info):
 
-        """ 기획전 정보 테이블에 새로운 이력 생성.
-        새로운 이력을 만들어주기 전 해당 기획전 id값을 가지는 가장 최근의 기획전 정보의 선분을 현시간으로 끊어줌.
+        """ 기획전 정보 테이블에 새로운 이력 생성
+
+        새로운 이력을 만들어주기 전 해당 기획전 id 값을 가지는 가장 최근의 기획전 정보의 선분을 현시간으로 끊어줌
         유효성검사를 통과한 arguments 로 기획전 정보 테이블에 새로운 이력 생성
-        기획전 타입이 이벤트, 쿠폰인 경우 버튼 테이블에 새로생성된 기획전 정보를 foreign key 로 가지는 새로운 row 추가.
-        기획전 타입이 상품이미지, 상품텍스트, 유튜브인 경우 기획전 상품테이블에 새로생성된 기획전 정보를
-        foreign key 로 가지는 새로운 row 추가.(기획전상품 값이 들어온 경우에 한함.)
+        기획전 타입이 이벤트, 쿠폰인 경우 버튼 테이블에 새로 생성된 기획전 정보를 foreign key 로 가지는 새로운 row 추가
+        기획전 타입이 상품이미지, 상품텍스트, 유튜브인 경우 기획전 상품테이블에 새로 생성된 기획전 정보를
+        foreign key 로 가지는 새로운 row 추가.(기획전 상품 값이 들어온 경우에 한함.)
 
         Args:
             event_info: 유효성 검사를 통과한 기획전 수정 정보
@@ -840,7 +893,9 @@ class EventDao:
                 기획전 타입별로 유효성검사가 끝난 데이터를 가지고
                 데이터베이스에 event_info 의 새로운 이력과 기획전 타입별로 생성되어야 하는 테이블을 생성함.
                 기획전타입이 이벤트, 쿠폰인 경우 event_detail_infos 테이블에 row 추가.
-                기획전타입이 상품이미지, 상품텍스트, 유튜브인 경우 event_detail_product_infos 테이블에 row 추가(값이 들어왔다면).
+                기획전타입이 상품이미지, 상품텍스트, 유튜브인 경우 event_detail_product_infos 테이블에 row 추가(값이 들어왔다면)
+            2020-04-15 (leejm3@brandi.co.kr):
+                - 기획전 아이디가 존재하지 않을 경우 처리 추가
         """
         try:
             with db_connection.cursor() as db_cursor:
@@ -849,23 +904,27 @@ class EventDao:
                 # 기획전 정보 SELECT 문
                 select_event_info_statement = """
                     SELECT
-                    event_type_id,
-                    event_sort_id,
-                    event_info_no
+                        event_type_id,
+                        event_sort_id,
+                        event_info_no
+                    
                     FROM
-                    event_infos
+                        event_infos
+                    
                     WHERE
-                    close_time = '2037-12-31 23:59:59'
-                    AND event_id = %(event_no)s
+                        -- 변경 전 최신 이력
+                        close_time = '2037-12-31 23:59:59'
+                        AND event_id = %(event_no)s
                 """
 
                 db_cursor.execute(select_event_info_statement, event_info)
                 previous_info = db_cursor.fetchone()
-                event_info['previous_event_info_no'] = previous_info['event_info_no']
 
                 # 기획전 정보가 존재하지 않을 경우
                 if not previous_info:
                     return jsonify({'message': 'INVALID_EVENT_NO'}), 400
+
+                event_info['previous_event_info_no'] = previous_info['event_info_no']
 
                 # 이전 기획전 정보의 기획전 타입과 종류가 수정하려는 정보와 다르면 에러 반환
                 if event_info['event_type_id'] != previous_info['event_type_id'] \
@@ -875,20 +934,28 @@ class EventDao:
 
                 # 트랜잭션 시작
                 db_cursor.execute("START TRANSACTION")
+
                 # 자동 커밋 비활성화
                 db_cursor.execute("SET AUTOCOMMIT=0")
 
                 # 새로운 선분이력을 만들어줄 때 이전의 이력의 close_time 값을 주기위해 현재 시각을 데이터베이스에서 가져옴.
                 db_cursor.execute('SELECT NOW()')
+
                 current_time = db_cursor.fetchone()['NOW()']
+
                 event_info['current_time'] = current_time
 
                 # 기획전 정보 새로운 이력 생성. view 와 service 에서 유효성검사가 끝났기 때문에 기획전 타입과 무관하게 필요한 필드를 전부 생성
                 # 새로운 이력을 싱성하기 전 선분의 close_time 을 현재시각으로 바꿔줌.
                 db_cursor.execute('''
-                UPDATE event_infos
-                SET close_time = %(current_time)s
-                WHERE event_info_no = %(previous_event_info_no)s
+                    UPDATE 
+                        event_infos
+                    
+                    SET 
+                        close_time = %(current_time)s
+                    
+                    WHERE 
+                        event_info_no = %(previous_event_info_no)s
                 ''', event_info)
 
                 # 새로운 이력의 기획전 정보 INSERT 문
@@ -950,9 +1017,12 @@ class EventDao:
 
                     db_cursor.execute(insert_event_detail_infos_statement, event_info)
 
+                # 기획전 타입이 상품 / 유튜브 일 경우
                 if event_info['event_type_id'] in range(3, 6):
-                    # for 문을 돌면서 들어온 이벤트 상품 정보를 이벤트 상품 테이블에 생성함.
+
+                    # for 문을 돌면서 들어온 이벤트 상품 정보를 이벤트 상품 테이블에 생성함
                     for product in event_product_info:
+
                         # 기획전 타입이 상품이미지, 상품텍스트, 유튜브일 경우 기획전 상품정보 INSERT 문
                         insert_event_product_detail_infos_statement = '''
                             INSERT INTO event_detail_product_infos(
@@ -965,6 +1035,7 @@ class EventDao:
                             %(event_info_id)s
                             )
                         '''
+
                         # 위에서 생성된 새로운 이력의 event_info 의 no 값을 이벤트 상품 정보에 바인딩을 위해 넣어줌.
                         product['event_info_id'] = event_info_no
                         db_cursor.execute(insert_event_product_detail_infos_statement, product)
@@ -1052,13 +1123,16 @@ class EventDao:
                 if event_info.get('event_start_time', None):
                     get_event_stmt += " AND event_start_time > %(event_start_time)s"
                     filter_query_count_stmt += " AND event_start_time > %(event_start_time)s"
+
                 if event_info.get('event_end_time', None):
                     get_event_stmt += " AND event_end_time < %(event_end_time)s"
                     filter_query_count_stmt += " AND event_end_time < %(event_end_time)s"
+
                 if event_info.get('event_name', None):
                     get_event_stmt += " AND name LIKE %(event_name)s"
                     filter_query_count_stmt += " AND name LIKE %(event_name)s"
                     event_info['event_name'] = f"%{event_info['event_name']}%"
+
                 if event_info.get('event_type_id', None):
                     event_info['event_type_id'] = tuple(event_info['event_type_id'])
                     get_event_stmt += "AND (event_type_id IN %(event_type_id)s)"
@@ -1073,6 +1147,7 @@ class EventDao:
                 event_count = event_count['COUNT(0)']
                 if events:
                     return jsonify({'event_count': event_count, 'event_list': events}), 200
+
                 return jsonify({'message': 'EVENT_DOES_NOT_EXIST'}), 404
 
         except KeyError as e:

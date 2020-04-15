@@ -1,15 +1,13 @@
-import re, json
+import json
 from datetime import datetime
 
 from flask import request, Blueprint, jsonify, g
 from flask_request_validator import (
     GET,
     PATH,
-    JSON,
     FORM,
     Param,
     Pattern,
-    MinLength,
     MaxLength,
     validate_params
 )
@@ -177,8 +175,7 @@ class EventView:
               rules=[MaxLength(200)]),
         Param('button_name', FORM, str, required=False,
               rules=[MaxLength(10)]),
-        Param('button_link_type_id', FORM, str, required=False,
-              rules=[Pattern(r"^[1-6]{1}$")]),
+        Param('button_link_type_id', FORM, int, required=False),
         Param('button_link_description', FORM, str, required=False,
               rules=[MaxLength(45)]),
         Param('product', FORM, str, required=False),
@@ -187,7 +184,9 @@ class EventView:
         Param('youtube_url', FORM, str, required=False,
               rules=[MaxLength(200)]),
         Param('event_type_id', FORM, str,
-              rules=[Pattern(r"^[1-5]{1}$")])
+              rules=[Pattern(r"^[1-5]{1}$")]),
+        Param('button_link_type_id', FORM, str, required=False,
+              rules=[Pattern(r"^[1-6]{1}$")])
     )
     def register_event_info(*args):
         """ 기획전 등록 엔드포인트
@@ -248,7 +247,7 @@ class EventView:
         if g.account_info['auth_type_id'] != 1:
             return jsonify({'message': 'NO_AUTHORIZATION'}), 403
 
-        # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url 을 딕셔너리으로 가져옴.
+        # 이미지 업로드 함수를 호출해서 이미지를 업로드하고 url 을 딕셔너리로 가져옴.
         image_upload = ImageUpload()
         event_image = image_upload.upload_images(request)
 
@@ -284,7 +283,7 @@ class EventView:
         if not event_info['detail_image_url']:
             event_info['detail_image_url'] = args[12]
 
-        # 리스트로 들어온 product 정보를 따로 저장 (dao 에서 에러를 막기 위해)
+        # 딕셔너리를 품은 리스트인 product 정보를 따로 저장 (dao 에서 에러를 막기 위해)
         event_product_info = args[16]
 
         # form 데이터로 값을 받으면 str 처리가 되기 때문에 json.loads 로 읽을 수 있게 파싱
@@ -363,10 +362,14 @@ class EventView:
 
         # 입력 인자 관계에 따른 필수값 확인
         if event_info['button_link_type_id']:
+
+            # button_link_type_id 가 있을 때 button_name 은 무조건 있어야 함
             if not event_info['button_name']:
                 return jsonify({'message': 'NO_BUTTON_NAME'}), 400
 
             if event_info['button_link_type_id'] in range(4, 7):
+
+                # button_link_type_id가 4~6이면 description 이 있어야 함
                 if not event_info['button_link_description']:
                     return jsonify({'message': 'NO_BUTTON_LINK_DESCRIPTION'}), 400
 
@@ -377,6 +380,7 @@ class EventView:
                 event_service = EventService()
                 registering_event_result = event_service.register_event(event_info, db_connection, event_product_info)
                 return registering_event_result
+
             else:
                 return jsonify({'view_message': 'NO_DATABASE_CONNECTION'}), 500
 
@@ -386,6 +390,7 @@ class EventView:
         finally:
             try:
                 db_connection.close()
+
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
 
@@ -415,6 +420,7 @@ class EventView:
                 event_service = EventService()
                 types = event_service.get_event_types(db_connection)
                 return types
+
             else:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
@@ -424,6 +430,7 @@ class EventView:
         finally:
             try:
                 db_connection.close()
+
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
 
@@ -467,6 +474,7 @@ class EventView:
                 event_service = EventService()
                 sorts = event_service.get_event_sorts(event_type_info, db_connection)
                 return sorts
+
             else:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
@@ -476,6 +484,7 @@ class EventView:
         finally:
             try:
                 db_connection.close()
+
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
 
@@ -511,8 +520,7 @@ class EventView:
               rules=[MaxLength(200)]),
         Param('button_name', FORM, str, required=False,
               rules=[MaxLength(10)]),
-        Param('button_link_type_id', FORM, str, required=False,
-              rules=[Pattern(r"^[1-6]{1}$")]),
+        Param('button_link_type_id', FORM, int, required=False),
         Param('button_link_description', FORM, str, required=False,
               rules=[MaxLength(45)]),
         Param('product', FORM, str, required=False),
@@ -521,14 +529,16 @@ class EventView:
         Param('youtube_url', FORM, str, required=False,
               rules=[MaxLength(200)]),
         Param('event_type_id', FORM, str,
-              rules=[Pattern(r"^[1-5]{1}$")])
+              rules=[Pattern(r"^[1-5]{1}$")]),
+        Param('button_link_type_id', FORM, str, required=False,
+              rules=[Pattern(r"^[1-6]{1}$")])
     )
     def change_event_infos(*args):
 
         """ 기획전 정보 수정 엔드포인트
 
         기획전 정보 수정 엔드포인트 입니다.
-        form과 url parameter 로 등록 정보를 받고, 유효성을 확인합니다.
+        form 과 url parameter 로 등록 정보를 받고, 유효성을 확인합니다.
         기획전 전 타입 공통 필수 파라미터는 먼저 확인하고,
         각 타입별 필수 파라미터는 function 내에서 확인합니다.
 
@@ -584,6 +594,8 @@ class EventView:
                 - 기획전용 이미지 업로더를 사용하는 것에서 공통 업로더를 사용하도록 변경
                 - 기획전 상품 정보를 json loads로 파싱하는 과정을 try/except 방식에서 if 문 방식으로 변경
                 - 기획전 타입이 상품(텍스트), 유튜브 일 경우 기획전 종류 유효성 확인 추가
+            2020-04-15 (leejm3@brandi.co.kr:
+                - button_link_type_id 를 str 로 받던 것에서 int 로 받기로 변경
         """
 
         # 마스터 권한이 아니면 반려
@@ -627,7 +639,7 @@ class EventView:
         if not event_info['detail_image_url']:
             event_info['detail_image_url'] = args[12]
 
-        # 리스트로 들어온 product 정보를 따로 저장 (dao 에서 에러를 막기 위해)
+        # 딕셔너리를 품은 리스트인 product 정보를 따로 저장 (dao 에서 에러를 막기 위해)
         event_product_info = args[17]
 
         # form 데이터로 값을 받으면 str 처리가 되기 때문에 json.loads 로 읽을 수 있게 파싱
@@ -719,6 +731,7 @@ class EventView:
                 event_service = EventService()
                 info = event_service.change_event_infos(event_info, event_product_info, db_connection)
                 return info
+
             else:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
@@ -728,5 +741,6 @@ class EventView:
         finally:
             try:
                 db_connection.close()
+
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 400
