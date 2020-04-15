@@ -351,6 +351,10 @@ class ProductView:
               rules=[Pattern(r'^([0-9]|[1][0-1])$')]),
         Param('second_category_id', FORM, str,
               rules=[Pattern(r'^([0-9]|[0-9][0-9]|[1][0][0-9]|[1][1][0-4])$')]),
+        Param('max_unit', FORM, str,
+              rules=[Pattern(r'^([1-9]|[1-2][0-9])$')]),
+        Param('min_unit', FORM, str,
+              rules=[Pattern(r'^([1-9]|[1-2][0-9])$')]),
     )
     def insert_new_product(*args):
         """ 상품 등록 엔드포인트
