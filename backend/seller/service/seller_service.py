@@ -121,7 +121,7 @@ class SellerService:
 
         Returns: http 응답코드
             200: SUCCESS 셀러정보
-            400: INVALID_AUTH_TYPE_ID
+            400: INVALID_AUTH_TYPE_ID, INVALID_ACCOUNT_NO
             403: NO_AUTHORIZATION
             500: DB_CURSOR_ERROR, INVALID_KEY
 
@@ -185,7 +185,8 @@ class SellerService:
         Returns: http 응답코드
             200: SUCCESS 셀러정보 수정(새로운 이력 생성) 완료
             400: INVALID_APP_ID (존재하지 않는 브랜디 앱 아이디 입력)
-            400: INVALID_AUTH_TYPE_ID, NO_CHANGEABLE_STATUS
+                 INVALID_AUTH_TYPE_ID, NO_CHANGEABLE_STATUS,
+                 EXISTING_NAME_KR, EXISTING_NAME_EN, INVALID_ACCOUNT_NO
             403: NO_AUTHORIZATION
             500: INVALID_KEY, DB_CURSOR_ERROR
 
@@ -194,6 +195,7 @@ class SellerService:
 
         History:
             2020-04-03 (leejm3@brandi.co.kr) : 초기 생성
+            2020-04-15 (leejm3@brandi.co.kr) : 셀러명 중복체크 추가 / 없는 계정 에러 추가
 
         """
 
@@ -205,15 +207,60 @@ class SellerService:
             # 마스터 권한일 때
             if account_auth_type_id == 1:
 
-                # parameter_account_no 의 셀러정보를 수정함(새로운 이력 생성)
-                changing_seller_info_result = seller_dao.change_seller_info(account_info, db_connection)
-                return changing_seller_info_result
+                # parameter_account_no 의 셀러정보를 가져와서 기존의 셀러명과 다른지 체크
+                getting_seller_info_result = seller_dao.get_seller_info(account_info, db_connection)
+
+                # 위에서 기존 셀러가 있는게 확인되면
+                if getting_seller_info_result:
+                    if getting_seller_info_result['name_kr'] != account_info['name_kr']:
+
+                        # name_kr 중복 체크
+                        check_overlap_name_kr_result = seller_dao. \
+                            check_overlap_name_kr(account_info['name_kr'], db_connection)
+
+                        if check_overlap_name_kr_result:
+                            return jsonify({'message': 'EXISTING_NAME_KR'}), 400
+
+                    if getting_seller_info_result['name_en'] != account_info['name_en']:
+                        # name_en 중복 체크
+                        check_overlap_name_en_result = seller_dao. \
+                            check_overlap_name_en(account_info['name_en'], db_connection)
+
+                        if check_overlap_name_en_result:
+                            return jsonify({'message': 'EXISTING_NAME_EN'}), 400
+
+                    # parameter_account_no 의 셀러정보를 수정함(새로운 이력 생성)
+                    changing_seller_info_result = seller_dao.change_seller_info(account_info, db_connection)
+                    return changing_seller_info_result
+
+                # parameter_account_no 에 해당하는 셀러가 없으면 에러 반환
+                else:
+                    return jsonify({'message': 'INVALID_ACCOUNT_NO'}), 400
 
             # 셀러 권한일 때
             elif account_auth_type_id == 2:
 
                 # decorator_account_no 와 parameter_account_no 가 동일한지 확인
                 if account_info['decorator_account_no'] == account_info['parameter_account_no']:
+
+                    # parameter_account_no 의 셀러정보를 가져옴
+                    getting_seller_info_result = seller_dao.get_seller_info(account_info, db_connection)
+                    if getting_seller_info_result['name_kr'] != account_info['name_kr']:
+
+                        # name_kr 중복 체크
+                        check_overlap_name_kr_result = seller_dao. \
+                            check_overlap_name_kr(account_info['name_kr'], db_connection)
+
+                        if check_overlap_name_kr_result:
+                            return jsonify({'message': 'EXISTING_NAME_KR'}), 400
+
+                    if getting_seller_info_result['name_en'] != account_info['name_en']:
+                        # name_en 중복 체크
+                        check_overlap_name_en_result = seller_dao. \
+                            check_overlap_name_en(account_info['name_en'], db_connection)
+
+                        if check_overlap_name_en_result:
+                            return jsonify({'message': 'EXISTING_NAME_EN'}), 400
 
                     # parameter_account_no 의 셀러정보를 수정함(새로운 이력 생성)
                     changing_seller_info_result = seller_dao.change_seller_info(account_info, db_connection)
@@ -296,38 +343,6 @@ class SellerService:
             target_seller_info['modifier'] = user['account_no']
             seller_list_result = seller_dao.change_seller_status(target_seller_info, db_connection)
             return seller_list_result
-
-        return jsonify({'message': 'AUTHORIZATION_REQUIRED'}), 403
-
-    # noinspection PyMethodMayBeStatic
-    def get_seller_name_list(self, keyword, db_connection):
-
-        """ 마스터 권한으로 상품 등록시 셀러를 검색
-
-        마스터 권한으로 접속하여 상품을 등록할 경우,
-        셀러를 한글 이름으로 검색하여 선택할 수 있음
-
-        Args:
-            keyword(string): 한글 이름 검색어
-            db_connection(DatabaseConnection): 데이터베이스 커넥션 객체
-
-        Returns:
-            200: 검색된 셀러 10개
-            403: 마스터 권한이 없음
-
-         Authors:
-
-            leesh3@brandi.co.kr (이소헌)
-
-        History:
-            2020-04-04 (leesh3@brandi.co.kr): 초기 생성
-
-        """
-        seller_dao = SellerDao()
-
-        if g.account_info['auth_type_id'] == 1:
-            seller_name_list_result = seller_dao.get_seller_name_list(keyword, db_connection)
-            return seller_name_list_result
 
         return jsonify({'message': 'AUTHORIZATION_REQUIRED'}), 403
 
