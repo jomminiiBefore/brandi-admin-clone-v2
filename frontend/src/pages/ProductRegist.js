@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { render } from "react-dom";
 import { withRouter } from "react-router-dom";
 import styled from "styled-components";
-import { SHURL } from "src/utils/config";
+import { SHURL, YJURL } from "src/utils/config";
 import Layout from "src/component/common/Layout";
 import TableBox from "src/component/common/TableBox";
 import TableItem from "src/component/common/TableItem";
@@ -26,6 +26,7 @@ import { WithContext as ReactTags } from "react-tag-input";
 // import { EditorState } from "draft-js";
 // import { Editor } from "react-draft-wysiwyg";
 import Wysiwyg from "src/component/productRegist/Wysiwyg";
+import { setSeconds } from "date-fns";
 // import CKEditor from "@ckeditor/ckeditor5-react";
 // import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 // import Essentials from "@ckeditor/ckeditor5-essentials/src/essentials";
@@ -71,24 +72,30 @@ const ProductRegist = () => {
 
   const [colorData, setColorData] = useState("");
 
+  const productInfoText = e => {
+    setEditorMode(false);
+    setPostData({ ...postData, long_description: e.target.value });
+  };
+
   const [postData, setPostData] = useState({
-    is_available: null,
-    is_on_display: null,
+    is_available: 1,
+    is_on_display: 1,
     first_category_id: null,
     second_category_id: null,
     name: "",
-    color_filter_id: "",
+    color_filter_id: 19,
     style_filter_id: null,
     long_description: null,
-    stock: null,
+    stock: 0,
     price: null,
     discount_rate: null,
     discount_start_time: null,
     discount_end_time: null,
-    min_unit: null,
-    max_unit: null,
+    min_unit: 1,
+    max_unit: 20,
     tags: [null, null],
     short_description: "",
+    selected_account_no: 0,
     youtube_url: null,
     image_file_1: null,
     image_file_2: null,
@@ -96,7 +103,13 @@ const ProductRegist = () => {
     image_file_4: null,
     image_file_5: null
   });
-
+  const [preview, setPreview] = useState({
+    image_file_1: null,
+    image_file_2: null,
+    image_file_3: null,
+    image_file_4: null,
+    image_file_5: null
+  });
   const [stockCount, setStockCount] = useState("");
 
   const [currentPrice, setCurrentPrice] = useState({
@@ -148,9 +161,9 @@ const ProductRegist = () => {
   // };
 
   // 카테고리 1 GET 함수
-  const getCategoryOne = (accountNo, nameKr) => {
-    setSellerName(nameKr);
-    fetch(`${SHURL}/product/category?account_no=${accountNo}`, {
+  const getCategoryOne = seller => {
+    setSellerName(seller.name);
+    fetch(`${YJURL}/product/category?account_no=${seller.id}`, {
       method: "GET",
       headers: {
         Authorization:
@@ -162,11 +175,25 @@ const ProductRegist = () => {
       .catch(e => console.log("카테고리1 에러 이거", e));
   };
 
-  // 카테고리 2 GET 함수
-
-  // 색상필터 색상 데이터
+  // 1차 카테고리가 state에 담기면 2차 카테고리 GET
+  useEffect(() => {
+    if (postData.first_category_id !== null) {
+      console.log("2차");
+      // const token = localStorage.getItem("token");
+      fetch(`${YJURL}/product/category/${postData.first_category_id}`, {
+        method: "GET",
+        headers: {
+          Authorization:
+            "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
+        }
+      })
+        .then(res => res.json())
+        .then(res => setCategoryTwo(res.second_categories));
+    }
+    // .catch(e => console.log("카테고리2 에러 이거", e));}
+  }, [postData.first_category_id]); // 색상필터 색상 데이터
   const getColorData = data => {
-    setPostData({ ...postData, color_filter_id: data.color_filter_no });
+    setPostData({ ...postData, color_filter_id: Number(data.color_filter_no) });
     setColorData(data);
     setColorFilter(false);
   };
@@ -196,51 +223,61 @@ const ProductRegist = () => {
   const showSellerSelect = () => {
     setSellerSelect(!sellerSelect);
   };
-
+  // const selectCategory = e => {
+  //   setPostData({
+  //     ...postData,
+  //     first_category_id: e.target.value
+  //   });
+  // };
   // 색상필터 modal
   const [colors, setColors] = useState([]);
   const showColorFilter = () => {
-    fetch(`${SHURL}/product/color`)
-      .then(res => res.json())
-      .then(res => {
-        if (res) {
-          setColors(res.colors);
-          setColorFilter(!colorFilter);
-        }
-      });
+    if (postData.color_filter_id !== 19) {
+      fetch(`${YJURL}/product/color`)
+        .then(res => res.json())
+        .then(res => {
+          if (res) {
+            setColors(res.colors);
+            setColorFilter(!colorFilter);
+          }
+        });
+    } else {
+      alert("사용함에 체크 해주세요.");
+    }
   };
 
   // 대표 이미지 업로드
-  const handleUploadFirstImages = e => {
+  const handleUploadImage = (e, number) => {
     console.dir(e.target);
     const file = e.target.files[0];
+    console.log(file, "file");
+    setPostData({ ...postData, [`image_file_${number}`]: file });
     const reader = new FileReader();
     reader.readAsDataURL(file);
     console.log(reader);
     reader.onloadend = () => {
-      setImages({ ...images, first: reader.result });
+      setPreview({ ...preview, [`image_file_${number}`]: reader.result });
     };
   };
 
   // 이미지 업로드
-  const handleUploadImages = (e, index) => {
-    console.dir(e.target);
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    console.log(reader);
-    reader.onloadend = () => {
-      let newImages = images;
-      newImages[index] = reader.result;
-      setImages({ ...images, seconds: newImages });
-    };
-  };
+  // const handleUploadImages = (e, index) => {
+  //   console.dir(e.target);
+  //   const file = e.target.files[0];
+  //   const reader = new FileReader();
+  //   reader.readAsDataURL(file);
+  //   console.log(reader);
+  //   reader.onloadend = () => {
+  //     let newImages = images;
+  //     newImages[index] = reader.result;
+  //     setImages({ ...images, seconds: newImages });
+  //   };
+  // };
 
   // 이미지 삭제
-  const deleteImages = index => {
-    let newImages = images;
-    newImages[index] = null;
-    setImages({ ...images, seconds: newImages });
+  const deleteImages = number => {
+    setPostData({ ...postData, [`image_file_${number}`]: "" });
+    setPreview({ ...preview, [`image_file_${number}`]: "" });
   };
 
   // 재고
@@ -249,7 +286,7 @@ const ProductRegist = () => {
       setPostData({ ...postData, stock: -1 });
       setRadioSelect({ ...radioSelect, stock: false });
     } else if (boolean) {
-      setPostData({ ...postData, stock: stockCount });
+      setPostData({ ...postData, stock: Number(stockCount) });
       setRadioSelect({ ...radioSelect, stock: true });
     }
   };
@@ -276,6 +313,27 @@ const ProductRegist = () => {
       setRadioSelect({ ...radioSelect, more: true });
     }
   };
+
+  const SubmitData = () => {
+    // const jsonData = JSON.stringify(postData);
+    // const formData = new FormData();
+    // formData.append("data", jsonData);
+    let formData = new FormData();
+    for (let key in postData) {
+      console.log("data: ", key, postData[key]);
+      formData.append(key, postData[key]);
+    }
+    fetch(`${YJURL}/product`, {
+      method: "POST",
+      headers: {
+        Authorization:
+          "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
+        // "Content-Type": "multipart/form-data"
+      },
+      body: formData
+    });
+  };
+
   useEffect(() => {
     handleMoreQuantity(radioSelect.more);
   }, [moreQuantityCount]);
@@ -293,6 +351,14 @@ const ProductRegist = () => {
   useEffect(() => {
     handleLessQuantity(radioSelect.less);
   }, [lessQuantityCount]);
+
+  useEffect(() => {
+    let newTags = [];
+    tags.forEach(el => {
+      newTags.push(el.text);
+    });
+    setPostData({ ...postData, tags: newTags });
+  }, [tags]);
 
   console.log("포스트데이터 이거!!", postData);
 
@@ -322,7 +388,7 @@ const ProductRegist = () => {
                 <SearchButton onClick={showSellerSelect}>셀러검색</SearchButton>
               </InnerBox>
             </TableItem>
-            <TableItem title={"판매 여부"} isRequired={false}>
+            <TableItem title={"판매 여부"} isRequired={true}>
               <RadioButtonContainer>
                 <InputButtonBox>
                   <input
@@ -363,7 +429,7 @@ const ProductRegist = () => {
                 미판매 선택시 앱에서 Sold Out으로 표시됩니다.
               </InfoText>
             </TableItem>
-            <TableItem title={"진열 여부"} isRequired={false}>
+            <TableItem title={"진열 여부"} isRequired={true}>
               <RadioButtonContainer>
                 <InputButtonBox>
                   <input
@@ -407,33 +473,55 @@ const ProductRegist = () => {
                   </CategoryTableTr>
                   <CategoryTableTr>
                     <CategoryTableTd>
-                      <CategoryTableSelect
+                      <CategorySelect
+                        id="category1"
                         onChange={e =>
                           setPostData({
                             ...postData,
-                            first_category_id: e.target.value
+                            first_category_id: Number(e.target.value)
                           })
                         }
-                        id="category1"
                       >
-                        <option value="1차 카테고리를 선택해주세요.">
-                          1차 카테고리를 선택해주세요.
-                        </option>
-                        {categoryOne.map((el, index) => {
-                          return (
-                            <>
-                              <option value={index}>{el}</option>
-                            </>
-                          );
-                        })}
-                      </CategoryTableSelect>
+                        <option>1차 카테고리를 선택해주세요.</option>
+                        {categoryOne
+                          ? categoryOne.map((el, index) => {
+                              return (
+                                <option
+                                  key={index}
+                                  value={el.first_category_no}
+                                  // onChange={() => getCategoryTwo()}
+                                >
+                                  {el.name}
+                                </option>
+                              );
+                            })
+                          : null}
+                      </CategorySelect>
                     </CategoryTableTd>
                     <CategoryTableTd>
-                      <CategoryTableSelect id="category2">
-                        <option value="1차 카테고리를 먼저 선택해주세요.">
-                          1차 카테고리를 먼저 선택해주세요.
-                        </option>
-                      </CategoryTableSelect>
+                      <CategorySelect
+                        id="category2"
+                        onChange={e =>
+                          setPostData({
+                            ...postData,
+                            second_category_id: Number(e.target.value)
+                          })
+                        }
+                      >
+                        <option>1차 카테고리를 먼저 선택해주세요.</option>
+                        {categoryTwo
+                          ? categoryTwo.map((el, index) => {
+                              return (
+                                <option
+                                  key={index}
+                                  value={el.second_category_no}
+                                >
+                                  {el.name}
+                                </option>
+                              );
+                            })
+                          : null}
+                      </CategorySelect>
                     </CategoryTableTd>
                   </CategoryTableTr>
                 </tbody>
@@ -500,11 +588,9 @@ const ProductRegist = () => {
                     <Oigin>
                       <OiginText>원산지 :</OiginText>
                       <OiginSelect>
+                        <option defaultValue="한국">한국</option>
                         <option value="기타">기타</option>
                         <option value="중국">중국</option>
-                        <option value="한국" selected>
-                          한국
-                        </option>
                         <option value="베트남">베트남</option>
                       </OiginSelect>
                     </Oigin>
@@ -545,18 +631,18 @@ const ProductRegist = () => {
               <InnerBox>
                 <ImgInnerBox>
                   <ImgBox
-                    images={images}
                     style={
-                      images.first
-                        ? { backgroundImage: `url(${images.first})` }
+                      preview.image_file_1
+                        ? { backgroundImage: `url(${preview.image_file_1})` }
                         : null
                     }
                   />
-                  {images.first ? (
+                  {preview.image_file_1 ? (
                     <ButtonWrapper>
                       * 대표 이미지 변경
                       <UploadButton
-                        onChange={handleUploadFirstImages}
+                        accept="image/*"
+                        onChange={e => handleUploadImage(e, 1)}
                         type="file"
                       />
                     </ButtonWrapper>
@@ -564,7 +650,9 @@ const ProductRegist = () => {
                     <ButtonWrapper>
                       * 대표 이미지 선택
                       <UploadButton
-                        onChange={handleUploadFirstImages}
+                        accept="image/*"
+                        style={{ width: "140px" }}
+                        onChange={e => handleUploadImage(e, 1)}
                         type="file"
                       />
                     </ButtonWrapper>
@@ -572,86 +660,20 @@ const ProductRegist = () => {
                 </ImgInnerBox>
                 <ImgInnerBox>
                   <ImgBox
-                    images={images}
                     style={
-                      images.seconds[0]
-                        ? { backgroundImage: `url(${images.seconds[0]})` }
+                      preview.image_file_2
+                        ? { backgroundImage: `url(${preview.image_file_2})` }
                         : null
                     }
                   />
-                  {images.seconds[0] ? (
+                  {preview.image_file_2 ? (
                     <div style={{ display: "flex" }}>
-                      <ButtonWrapper>
+                      <ButtonWrapper style={{ width: "106px" }}>
                         이미지 변경
                         <UploadButton
+                          accept="image/*"
                           style={{ width: "106px" }}
-                          onChange={e => handleUploadImages(e, 0)}
-                          type="file"
-                        />
-                      </ButtonWrapper>
-                      <DeleteButton onClick={() => deleteImages(0)}>
-                        삭제
-                      </DeleteButton>
-                    </div>
-                  ) : (
-                    <ButtonWrapper>
-                      이미지 선택
-                      <UploadButton
-                        onChange={e => handleUploadImages(e, 0)}
-                        type="file"
-                      />
-                    </ButtonWrapper>
-                  )}
-                </ImgInnerBox>
-                <ImgInnerBox>
-                  <ImgBox
-                    images={images}
-                    style={
-                      images.seconds[1]
-                        ? { backgroundImage: `url(${images.seconds[1]})` }
-                        : null
-                    }
-                  />
-                  {images.seconds[1] ? (
-                    <div style={{ display: "flex" }}>
-                      <ButtonWrapper>
-                        이미지 변경
-                        <UploadButton
-                          style={{ width: "106px" }}
-                          onChange={e => handleUploadImages(e, 1)}
-                          type="file"
-                        />
-                      </ButtonWrapper>
-                      <DeleteButton onClick={() => deleteImages(1)}>
-                        삭제
-                      </DeleteButton>
-                    </div>
-                  ) : (
-                    <ButtonWrapper>
-                      이미지 선택
-                      <UploadButton
-                        onChange={e => handleUploadImages(e, 1)}
-                        type="file"
-                      />
-                    </ButtonWrapper>
-                  )}
-                </ImgInnerBox>
-                <ImgInnerBox>
-                  <ImgBox
-                    images={images}
-                    style={
-                      images.seconds[2]
-                        ? { backgroundImage: `url(${images.seconds[2]})` }
-                        : null
-                    }
-                  />
-                  {images.seconds[2] ? (
-                    <div style={{ display: "flex" }}>
-                      <ButtonWrapper>
-                        이미지 변경
-                        <UploadButton
-                          style={{ width: "106px" }}
-                          onChange={e => handleUploadImages(e, 2)}
+                          onChange={e => handleUploadImage(e, 2)}
                           type="file"
                         />
                       </ButtonWrapper>
@@ -663,7 +685,9 @@ const ProductRegist = () => {
                     <ButtonWrapper>
                       이미지 선택
                       <UploadButton
-                        onChange={e => handleUploadImages(e, 2)}
+                        accept="image/*"
+                        style={{ width: "140px" }}
+                        onChange={e => handleUploadImage(e, 2)}
                         type="file"
                       />
                     </ButtonWrapper>
@@ -671,20 +695,20 @@ const ProductRegist = () => {
                 </ImgInnerBox>
                 <ImgInnerBox>
                   <ImgBox
-                    images={images}
                     style={
-                      images.seconds[3]
-                        ? { backgroundImage: `url(${images.seconds[3]})` }
+                      preview.image_file_3
+                        ? { backgroundImage: `url(${preview.image_file_3})` }
                         : null
                     }
                   />
-                  {images.seconds[3] ? (
+                  {preview.image_file_3 ? (
                     <div style={{ display: "flex" }}>
-                      <ButtonWrapper>
+                      <ButtonWrapper style={{ width: "106px" }}>
                         이미지 변경
                         <UploadButton
+                          accept="image/*"
                           style={{ width: "106px" }}
-                          onChange={e => handleUploadImages(e, 3)}
+                          onChange={e => handleUploadImage(e, 3)}
                           type="file"
                         />
                       </ButtonWrapper>
@@ -696,7 +720,79 @@ const ProductRegist = () => {
                     <ButtonWrapper>
                       이미지 선택
                       <UploadButton
-                        onChange={e => handleUploadImages(e, 3)}
+                        accept="image/*"
+                        style={{ width: "140px" }}
+                        onChange={e => handleUploadImage(e, 3)}
+                        type="file"
+                      />
+                    </ButtonWrapper>
+                  )}
+                </ImgInnerBox>
+                <ImgInnerBox>
+                  <ImgBox
+                    style={
+                      preview.image_file_4
+                        ? { backgroundImage: `url(${preview.image_file_4})` }
+                        : null
+                    }
+                  />
+                  {preview.image_file_4 ? (
+                    <div style={{ display: "flex" }}>
+                      <ButtonWrapper style={{ width: "106px" }}>
+                        이미지 변경
+                        <UploadButton
+                          accept="image/*"
+                          style={{ width: "106px" }}
+                          onChange={e => handleUploadImage(e, 4)}
+                          type="file"
+                        />
+                      </ButtonWrapper>
+                      <DeleteButton onClick={() => deleteImages(4)}>
+                        삭제
+                      </DeleteButton>
+                    </div>
+                  ) : (
+                    <ButtonWrapper>
+                      이미지 선택
+                      <UploadButton
+                        accept="image/*"
+                        style={{ width: "140px" }}
+                        onChange={e => handleUploadImage(e, 4)}
+                        type="file"
+                      />
+                    </ButtonWrapper>
+                  )}
+                </ImgInnerBox>
+                <ImgInnerBox>
+                  <ImgBox
+                    style={
+                      preview.image_file_5
+                        ? { backgroundImage: `url(${preview.image_file_5})` }
+                        : null
+                    }
+                  />
+                  {preview.image_file_5 ? (
+                    <div style={{ display: "flex" }}>
+                      <ButtonWrapper style={{ width: "106px" }}>
+                        이미지 변경
+                        <UploadButton
+                          accept="image/*"
+                          style={{ width: "106px" }}
+                          onChange={e => handleUploadImage(e, 5)}
+                          type="file"
+                        />
+                      </ButtonWrapper>
+                      <DeleteButton onClick={() => deleteImages(5)}>
+                        삭제
+                      </DeleteButton>
+                    </div>
+                  ) : (
+                    <ButtonWrapper>
+                      이미지 선택
+                      <UploadButton
+                        accept="image/*"
+                        style={{ width: "140px" }}
+                        onChange={e => handleUploadImage(e, 5)}
                         type="file"
                       />
                     </ButtonWrapper>
@@ -926,17 +1022,18 @@ const ProductRegist = () => {
               </InfoText>
               <Border />
               {editorMode ? (
-                <Wysiwyg />
+                <Wysiwyg setPostData={setPostData} postData={postData} />
               ) : (
                 <EasyUploadBox>
-                  <EasyUploadInnerBox>
+                  {/* <EasyUploadInnerBox>
                     <CustomButton name="사진삽입" />
                     <ImgInfoText>
                       이미지 확장자는 JPG, PNG만 등록 가능합니다.
                     </ImgInfoText>
-                  </EasyUploadInnerBox>
+                  </EasyUploadInnerBox> */}
                   <DetailTextareaBox>
                     <textarea
+                      onChange={e => productInfoText(e)}
                       style={{
                         width: "100%",
                         height: "350px",
@@ -1104,7 +1201,7 @@ const ProductRegist = () => {
                 주세요.
               </InfoText>
             </TableItem>
-            <TableItem title={"할인 정보"} isRequired={false}>
+            <TableItem title={"할인 정보"} isRequired={true}>
               <DiscountTable>
                 <tbody>
                   <DiscountTr>
@@ -1193,11 +1290,11 @@ const ProductRegist = () => {
                                     margin="normal"
                                     id="date-picker-inline"
                                     label="시작"
-                                    value={offDate.start}
+                                    value={postData.discount_start_time}
                                     onChange={date =>
-                                      setOffDate({
-                                        ...offDate,
-                                        start: date
+                                      setPostData({
+                                        ...postData,
+                                        discount_start_time: date
                                       })
                                     }
                                     KeyboardButtonProps={{
@@ -1212,11 +1309,11 @@ const ProductRegist = () => {
                                     margin="normal"
                                     id="date-picker-inline"
                                     label="끝"
-                                    value={offDate.end}
+                                    value={postData.discount_end_time}
                                     onChange={date =>
-                                      setOffDate({
-                                        ...offDate,
-                                        end: date
+                                      setPostData({
+                                        ...postData,
+                                        discount_end_time: date
                                       })
                                     }
                                     KeyboardButtonProps={{
@@ -1257,7 +1354,7 @@ const ProductRegist = () => {
                 할인 판매가는 원화기준 10원 단위로 자동 절사됩니다.
               </InfoText>
             </TableItem>
-            <TableItem title={"최소 판매 수량"} isRequired={false}>
+            <TableItem title={"최소 판매 수량"} isRequired={true}>
               <InnerBox>
                 <RadioButtonContainer>
                   <InputButtonBox>
@@ -1295,7 +1392,7 @@ const ProductRegist = () => {
                 <InfoText>( 20개를 초과하여 설정하실 수 없습니다 )</InfoText>
               </InnerBox>
             </TableItem>
-            <TableItem title={"최대 판매 수량"} isRequired={false}>
+            <TableItem title={"최대 판매 수량"} isRequired={true}>
               <InnerBox>
                 <RadioButtonContainer>
                   <InputButtonBox>
@@ -1405,36 +1502,34 @@ const ProductRegist = () => {
             </TableItem>
             <TableItem title={"상품 태그 관리"} isRequired={true}>
               <div>
-                <NormalInput
-                  width="390"
-                  height="34"
-                  placeholder="해시태그(#) 를 제외한 상품 태그를 입력해주세요."
-                />
-              </div>
-              <div>
-                <ReactTags
+                <HashTags
                   tags={tags}
                   handleDelete={handleDelete}
                   handleAddition={handleAddition}
                   handleDrag={() => {}}
                   delimiters={delimiters}
+                  inputFieldPosition="inline"
+                  placeholder="해시태그(#) 를 제외한 상품 태그를 입력해주세요."
                 />
               </div>
             </TableItem>
           </TableBox>
         </SaleInfoContainer>
-        <BottomButtoBox>
-          <CustomButton
-            name="등록"
-            textColor="white"
-            color={styles.color.buttonGreen}
-          />
-          <CustomButton
-            name="취소"
-            textColor="white"
-            color={styles.color.buttonRed}
-          />
-        </BottomButtoBox>
+        <form encType="multipart/form-data" method="post">
+          <BottomButtoBox>
+            <CustomButton
+              name="등록"
+              textColor="white"
+              color={styles.color.buttonGreen}
+              onClickEvent={SubmitData}
+            />
+            <CustomButton
+              name="취소"
+              textColor="white"
+              color={styles.color.buttonRed}
+            />
+          </BottomButtoBox>
+        </form>
       </Container>
       {colorFilter && (
         <ColorFilter
@@ -1447,6 +1542,8 @@ const ProductRegist = () => {
         <SellerSelect
           showSellerSelect={showSellerSelect}
           getCategoryOne={getCategoryOne}
+          setPostData={setPostData}
+          postData={postData}
         />
       )}
     </Layout>
@@ -1494,17 +1591,17 @@ const DetailTextareaBox = styled.div`
 `;
 
 const TitleBox = styled.div`
-  padding: 25px 20px 20px 20px;
   display: flex;
   align-items: flex-end;
+  padding: 25px 20px 20px 20px;
 `;
 
 const PageBarBox = styled.div`
   width: 100vw-215px;
   height: 34px;
-  padding-left: 20px;
   display: flex;
   align-items: center;
+  padding-left: 20px;
   color: #222222;
   font-size: 13px;
   background-color: #eee;
@@ -1538,7 +1635,7 @@ const ImgBox = styled.img`
   margin: 5px;
   background-size: cover;
   background-repeat: no-repeat;
-  background-image: url(http://sadmin.brandi.co.kr/include/img/no_image.png);
+  background-image: url("http://sadmin.brandi.co.kr/include/img/no_image.png");
 `;
 
 const EasyUploadBox = styled.div``;
@@ -1667,8 +1764,8 @@ const CategoryTableTr = styled.tr`
 `;
 
 const CategoryTableTh = styled.th`
-  padding: 8px;
   border: 1px solid #e5e5e5;
+  padding: 8px;
   text-align: left;
   font-size: ${styles.fontSize.generalFont};
 `;
@@ -1678,8 +1775,8 @@ const CategoryTableTd = styled.td`
   border: 1px solid #e5e5e5;
 `;
 
-const CategoryTableSelect = styled.select`
-  width: 100%;
+const CategorySelect = styled.select`
+  width: 80%;
   height: 34px;
   font-size: 13px;
 `;
@@ -1695,15 +1792,15 @@ const OptionTableTr = styled.tr`
 `;
 
 const OptionTableTh = styled.th`
-  padding: 8px;
   border: 1px solid #e5e5e5;
+  padding: 8px;
   text-align: left;
   font-size: ${styles.fontSize.generalFont};
 `;
 
 const OptionTableTd = styled.td`
-  padding: 8px;
   border: 1px solid #e5e5e5;
+  padding: 8px;
 `;
 
 const DiscountTable = styled.table`
@@ -1717,15 +1814,15 @@ const DiscountTr = styled.tr`
 `;
 
 const DiscountTh = styled.th`
-  padding: 8px;
   border: 1px solid #e5e5e5;
+  padding: 8px;
   text-align: left;
   font-size: ${styles.fontSize.generalFont};
 `;
 
 const DiscountTd = styled.td`
-  padding: 8px;
   border: 1px solid #e5e5e5;
+  padding: 8px;
   font-size: 13px;
 `;
 
@@ -1778,12 +1875,13 @@ const OiginSelect = styled.select`
 
 // 이미지 버튼
 const ButtonWrapper = styled.span`
-  width: 120px;
+  width: 150px;
   position: relative;
   display: inline-block;
-  padding: 5px;
+  margin-left: 5px;
   border: 1px solid #e5e5e5;
   border-radius: 5px;
+  padding: 5px;
   text-align: center;
   font-size: 13px;
   background-color: white;
@@ -1802,6 +1900,8 @@ const UploadButton = styled.input`
 `;
 
 const DeleteButton = styled.div`
+  width: 40px;
+  margin-left: 5px;
   padding: 5px;
   text-align: center;
   color: white;
@@ -1816,9 +1916,9 @@ const DeleteButton = styled.div`
 
 const ClacButton = styled.div`
   width: 110px;
-  padding: 10px;
   border: 1px solid gray;
   border-radius: 5px;
+  padding: 10px;
   color: white;
   background-color: ${styles.color.buttonBlue};
   cursor: pointer;
@@ -1841,8 +1941,8 @@ const ColorName = styled.p`
 
 const ColorButton = styled.button`
   padding: 7px;
-  color: white;
   border-radius: 5px;
+  color: white;
   font-size: 13px;
   background-color: ${styles.color.buttonGreen};
   cursor: pointer;
@@ -1862,3 +1962,5 @@ const ColorSelected = styled.div`
   background-color: #eeeeee;
   cursor: not-allowed;
 `;
+
+const HashTags = styled(ReactTags)``;

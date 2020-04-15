@@ -225,7 +225,10 @@ const Main = styled.div`
   border-bottom: 1px solid gray;
 `;
 
-const ColorBox = styled.div`
+const ColorBox = styled.button`
+  border: none;
+  outline: none;
+
   padding: 5px 0;
   width: 90px;
   height: 95px;
@@ -233,7 +236,7 @@ const ColorBox = styled.div`
   flex-direction: column;
   justify-content: space-around;
   align-items: center;
-  &:hover {
+  &:focus {
     background-color: rgba(0, 0, 0, 0.2);
   }
 `;

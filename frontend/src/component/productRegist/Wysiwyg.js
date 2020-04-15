@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { render } from "react-dom";
-import { EditorState } from "draft-js";
+import { EditorState, convertToRaw } from "draft-js";
 import { Editor } from "react-draft-wysiwyg";
 function uploadImageCallBack(file) {
   return new Promise((resolve, reject) => {
@@ -10,14 +10,14 @@ function uploadImageCallBack(file) {
     const data = new FormData();
     data.append("image", file);
     xhr.send(data);
-    // xhr.addEventListener("load", () => {
-    //   const response = JSON.parse(xhr.responseText);
-    //   resolve(response);
-    // });
-    // xhr.addEventListener("error", () => {
-    //   const error = JSON.parse(xhr.responseText);
-    //   reject(error);
-    // });
+    xhr.addEventListener("load", () => {
+      const response = JSON.parse(xhr.responseText);
+      resolve(response);
+    });
+    xhr.addEventListener("error", () => {
+      const error = JSON.parse(xhr.responseText);
+      reject(error);
+    });
   });
 }
 class EditorContainer extends Component {
@@ -35,7 +35,17 @@ class EditorContainer extends Component {
       editorState
     });
   }
-
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.editorState !== this.state.editorState) {
+      this.props.setPostData({
+        ...this.props.postData,
+        long_description: convertToRaw(
+          this.state.editorState.getCurrentContent()
+        )
+      });
+      console.log(typeof (this.state.editorState, "타입오브!!!"));
+    }
+  }
   render() {
     console.log(this.state.editorState);
     const { editorState } = this.state;
