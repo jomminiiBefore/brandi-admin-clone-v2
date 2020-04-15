@@ -11,6 +11,7 @@ import ProductRegist from 'src/pages/ProductRegist';
 import ColorFilter from 'src/component/productRegist/ColorFilter';
 import SellerSelect from 'src/component/productRegist/SellerSelect';
 import ProductModify from 'src/pages/ProductModify';
+import ProductManagement from 'src/pages/ProductManagement';
 
 const Routes = () => {
   return (

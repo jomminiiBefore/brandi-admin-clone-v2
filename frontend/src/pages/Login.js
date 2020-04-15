@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { withRouter } from 'react-router-dom';
 import styled from 'styled-components';
-import { YJURL } from 'src/utils/config';
+import { YJURL, JMURL } from 'src/utils/config';
 import InputContainer from 'src/component/common/InputContainer';
 import CustomButton from 'src/component/common/CustomButton';
 import Footer from 'src/component/common/Footer';
@@ -14,6 +14,7 @@ const Login = (props) => {
   });
 
   const onChange = (e) => {
+    console.log('e.target.value: ', e.target.value);
     setInputs({ ...inputs, [e.target.name]: e.target.value });
   };
 
@@ -23,7 +24,8 @@ const Login = (props) => {
 
   // login fetch 함수
   const handleLogin = () => {
-    fetch(`${YJURL}/seller/login`, {
+    console.log('password:: ', inputs.password);
+    fetch(`${JMURL}/seller/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -69,12 +71,17 @@ const Login = (props) => {
             {/* <InputContainer
               width="300"
               height="34"
-              placeholder="셀러 비밀번호"
+              placeholder="호"
               name="password"
               setText={onChange}
               setBlur={onChange}
             /> */}
-            <PasswordInput type="password" placeholder="셀러 비밀번호" />
+            <PasswordInput
+              type="password"
+              name="password"
+              placeholder="셀러 비밀번호"
+              onChange={onChange}
+            />
           </Wrapper>
         </InputBox>
         <SellerInfoBox>

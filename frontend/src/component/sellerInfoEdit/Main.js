@@ -385,8 +385,7 @@ const Main = (props) => {
 
     fetch(`${JMURL}/seller/${sellerId}`, {
       headers: {
-        Authorization:
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        Authorization: localStorage.getItem('token'),
       },
     })
       .then((res) => res.json())
@@ -584,9 +583,7 @@ const Main = (props) => {
     fetch(`${JMURL}/seller/${sellerId}`, {
       method: 'PUT',
       headers: {
-        Authorization:
-          // localStorage.getItem("token");
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        Authorization: localStorage.getItem('token'),
         // 'Content-Type': 'multipart/form-data',
         // 'Access-Control-Allow-Origin': '*',
       },

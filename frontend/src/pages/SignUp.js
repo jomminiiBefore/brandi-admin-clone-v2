@@ -159,7 +159,7 @@ const SignUp = props => {
 
   // signUp fetch 함수
   const handleSignUp = () => {
-    fetch(`${YJURL}/seller`, {
+    fetch(`${JMURL}/seller`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

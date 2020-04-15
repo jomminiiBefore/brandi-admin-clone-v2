@@ -228,9 +228,8 @@ function TestingTable(props) {
     fetch(`${JMURL}/seller`, {
       method: 'GET',
       headers: {
-        Authorization:
-          // localStorage.getItem("token");
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        Authorization: localStorage.getItem('token'),
+        // 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
         'Content-Type': 'application/json',
       },
     })
@@ -366,9 +365,8 @@ function TestingTable(props) {
     fetch(`${JMURL}/seller?${queryString}`, {
       method: 'GET',
       headers: {
-        Authorization:
-          // localStorage.getItem("token");
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        Authorization: localStorage.getItem('token'),
+        //   'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
         'Content-Type': 'application/json',
       },
     })
@@ -500,9 +498,8 @@ function TestingTable(props) {
     fetch(`${JMURL}/seller?excel=1&${queryString}`, {
       method: 'GET',
       headers: {
-        Authorization:
-          // localStorage.getItem("token");
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        Authorization: localStorage.getItem('token'),
+        //   'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
         'Content-Type': 'application/json',
       },
     })
@@ -589,9 +586,8 @@ function TestingTable(props) {
     fetch(`${JMURL}/seller/${sellerId}/status`, {
       method: 'PUT',
       headers: {
-        Authorization:
-          // localStorage.getItem("token");
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        Authorization: localStorage.getItem('token'),
+        //   'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
