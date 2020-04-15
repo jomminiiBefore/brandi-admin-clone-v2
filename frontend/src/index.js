@@ -4,6 +4,7 @@ import { createStore } from 'redux';
 import { Provider } from 'react-redux';
 import rootReducer from 'src/store/reducers';
 import Routes from 'src/Routes';
+// index.js import 설정
 
 const wrapper = document.getElementById('container');
 const store = createStore(

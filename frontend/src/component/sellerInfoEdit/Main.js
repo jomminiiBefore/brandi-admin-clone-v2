@@ -11,6 +11,8 @@ import {
   two_length_case,
   four_length_case,
   only_number_case,
+  check_url,
+  business_number_case,
 } from 'src/utils/regexp';
 import TableBox from 'src/component/common/TableBox';
 import TableItem from 'src/component/common/TableItem';
@@ -25,10 +27,10 @@ import InputContainer from 'src/component/common/InputContainer';
 import PasswordModal from 'src/component/sellerInfoEdit/PasswordModal';
 import BusinessHour from './BusinessHour';
 import { makeStyles } from '@material-ui/core/styles';
-import { JMURL } from 'src/utils/config';
+import { JMURL, YJURL } from 'src/utils/config';
 import { withRouter } from 'react-router-dom';
 import style from 'src/utils/styles';
-import styled from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 
 const Main = (props) => {
   // 비밀번호 변경 Modal
@@ -37,6 +39,8 @@ const Main = (props) => {
     setPasswordModal(!passwordModal);
     console.log('showshow');
   };
+
+  const [isLoading, setIsLoading] = React.useState(false);
 
   // 정보 입력 폼
   const [input, setInput] = useState({
@@ -101,10 +105,10 @@ const Main = (props) => {
     telecommunicationsSalesReport,
     telecommunicationsSalesReportFile,
     sellerPageBackgroundImage,
+    sellerPageBackgroundImageFile,
     sellerIntroduction,
     sellerDetailIntroduction,
     siteUrl,
-    // managerInfo,
     instagramId,
     serviceCenterPhoneNumber,
     kakaoId,
@@ -122,6 +126,16 @@ const Main = (props) => {
     accountNumber,
     sellerStatusChangeHistories,
   } = input;
+
+  // 담당자 정보
+  const [managerInfo, setManagerInfo] = useState([
+    {
+      name: '',
+      contact_number: '',
+      email: '',
+      ranking: '',
+    },
+  ]);
 
   // input 안에 값이 한번이라도 들어오면 true로 변경
   const [isTyped, setIsTyped] = useState({
@@ -173,6 +187,22 @@ const Main = (props) => {
     accountNumber: false,
   });
 
+  // isTyped와 isBlurred가 true 이면 정규식 검사 시작
+  // 정보 입력 폼
+  const [isValid, setIsValid] = useState({
+    koreanName: false,
+    englishName: false,
+  });
+
+  const setAppId = (e) => {
+    console.log('app: ', e.target.name);
+    console.log('appvalue: ', e.target.value);
+    const { name, value } = e.target;
+    setInput({ ...input, [name]: value });
+  };
+
+  const checkAppIdOverlap = (e) => {};
+
   // input 값이 바뀌었을 때 호출되는 함수
   const setValue = (e) => {
     const { name, value } = e.target;
@@ -194,7 +224,7 @@ const Main = (props) => {
         setIsValid({ ...isValid, [name]: false });
       }
     } else if (name === 'businessNumber') {
-      if (ten_number_case.test(value)) {
+      if (business_number_case.test(value)) {
         setIsValid({ ...isValid, [name]: true });
       } else {
         setIsValid({ ...isValid, [name]: false });
@@ -233,21 +263,18 @@ const Main = (props) => {
       } else {
         setIsValid({ ...isValid, [name]: false });
       }
+    } else if (name === 'siteUrl') {
+      if (check_url.test(value)) {
+        setIsValid({ ...isValid, [name]: true });
+      } else {
+        setIsValid({ ...isValid, [name]: false });
+      }
     }
   };
 
   const setBlur = (e) => {
     setIsBlurred({ ...isBlurred, [e.target.name]: true });
   };
-
-  // 담당자 state
-  const [managerInfo, setManagerInfo] = useState([
-    {
-      managerName: '',
-      managerPhone: '',
-      managerEmail: '',
-    },
-  ]);
 
   const setManagerValue = (e) => {
     console.log(e.target.name);
@@ -266,9 +293,10 @@ const Main = (props) => {
     setManagerInfo((state) => [
       ...state,
       {
-        managerName: '',
-        managerPhone: '',
-        managerEmail: '',
+        name: '',
+        contact_number: '',
+        email: '',
+        ranking: managerInfo.length + 1,
       },
     ]);
   };
@@ -281,16 +309,36 @@ const Main = (props) => {
     setManagerInfo(newlist);
   };
 
-  // isTyped와 isBlurred가 true 이면 정규식 검사 시작
-  // 정보 입력 폼
-  const [isValid, setIsValid] = useState({
-    koreanName: false,
-    englishName: false,
-  });
-
   const setImg = (name, imageResult) => {
     console.log('imageResult::', name, imageResult);
-    setInput({ ...input, [name]: imageResult });
+    // imageResult가 null일 경우 이미지 삭제
+    if (name === 'profileImage' && imageResult === null) {
+      setInput({ ...input, [name]: null, profileImageFile: null });
+    } else if (name === 'businessRegistrationFile' && imageResult === null) {
+      setInput({
+        ...input,
+        [name]: null,
+        businessRegistrationFile: null,
+      });
+    } else if (
+      name === 'telecommunicationsSalesReport' &&
+      imageResult === null
+    ) {
+      setInput({
+        ...input,
+        [name]: null,
+        telecommunicationsSalesReportFile: null,
+      });
+    } else if (name === 'sellerPageBackgroundImage' && imageResult === null) {
+      setInput({
+        ...input,
+        [name]: null,
+        sellerPageBackgroundImageFile: null,
+      });
+    } else {
+      // 이미지 삭제가 아닐 경우
+      setInput({ ...input, [name]: imageResult });
+    }
   };
 
   // 주소 찾기
@@ -312,11 +360,8 @@ const Main = (props) => {
   // 주말 시간표 체크박스 클릭
   const onCheckWeekend = () => {
     // 체크박스 누를때 주말 시간표 초기화
-    setInput({
-      ...input,
-      openingWeekendTime: null,
-      closingWeekendTime: null,
-    });
+
+    setInput({ ...input, openingWeekendTime: null, closingWeekendTime: null });
 
     if (weekend) {
       setWeekend(false);
@@ -338,7 +383,7 @@ const Main = (props) => {
     const sellerId = query[0].split('=')[1];
     console.log('useEffect() type: ', sellerId);
 
-    fetch(`http://localhost:5000/seller/${sellerId}`, {
+    fetch(`${JMURL}/seller/${sellerId}`, {
       headers: {
         Authorization:
           'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
@@ -347,6 +392,28 @@ const Main = (props) => {
       .then((res) => res.json())
       .then((res) => {
         console.log('res: ', res);
+        if (res.weekday_start_time.split(':')[0].length === 1) {
+          // openingWeekdayTime = '0' + openingWeekdayTime;
+          res.weekday_start_time = '0'.concat(res.weekday_start_time);
+        }
+        if (res.weekday_end_time.split(':')[0].length === 1) {
+          // openingWeekdayTime = '0' + openingWeekdayTime;
+          res.weekday_end_time = '0'.concat(res.weekday_end_time);
+        }
+        if (
+          res.weekend_start_time &&
+          res.weekend_start_time.split(':')[0].length === 1
+        ) {
+          // openingWeekdayTime = '0' + openingWeekdayTime;
+          res.weekend_start_time = '0'.concat(res.weekend_start_time);
+        }
+        if (
+          res.weekend_end_time &&
+          res.weekend_end_time.split(':')[0].length === 1
+        ) {
+          // openingWeekdayTime = '0' + openingWeekdayTime;
+          res.weekend_end_time = '0'.concat(res.weekend_end_time);
+        }
         setInput({
           ...input,
           profileImage: res.profile_image_url,
@@ -422,11 +489,165 @@ const Main = (props) => {
     setInput({ ...input, [e.target.id]: e.target.value });
   };
 
+  const onClickUpdate = (e) => {
+    onSubmitInfo();
+  };
+
+  const onSubmitInfo = () => {
+    setIsLoading(true);
+    const query = props.location.search.split('&');
+    const sellerId = query[0].split('=')[1];
+
+    const objParam = {
+      profile_image_url: profileImage,
+      seller_profile_image: profileImageFile,
+      seller_status_no: status,
+      seller_type_no: parseInt(property),
+      name_kr: koreanName,
+      name_en: englishName,
+      account_no: sellerAccount,
+      brandi_app_user_app_id: brandiAppId,
+      ceo_name: ceoName,
+      company_name: businessName,
+      business_number: businessNumber,
+      online_business_number: telecommunicationsSalesNumber,
+      certificate_image_url: businessRegistration,
+      certificate_image: businessRegistrationFile,
+      online_business_image_url: telecommunicationsSalesReport,
+      online_business_image: telecommunicationsSalesReportFile,
+      background_image_url: sellerPageBackgroundImage,
+      background_image: sellerPageBackgroundImageFile,
+      short_description: sellerIntroduction,
+      long_description: sellerDetailIntroduction,
+      site_url: siteUrl,
+      manager_infos: managerInfo,
+      insta_id: instagramId,
+      center_number: serviceCenterPhoneNumber,
+      kakao_id: kakaoId,
+      yellow_id: yellowId,
+      zip_code: postNumber,
+      address: parcelAddress,
+      detail_address: parcelDetailAddress,
+      weekday_start_time: openingWeekdayTime,
+      weekday_end_time: closingWeekdayTime,
+      weekend_start_time: openingWeekendTime,
+      weekend_end_time: closingWeekendTime,
+      bank_name: bankName,
+      bank_holder_name: accountHolder,
+      account_number: accountNumber,
+    };
+
+    let formData = new FormData();
+    for (let key in objParam) {
+      if (key === 'manager_infos') {
+        let managerInfos = JSON.stringify(objParam[key]);
+        formData.append(key, managerInfos);
+        console.log('manager_infos:: ', managerInfos);
+      } else if (key === 'profile_image_url') {
+        if (profileImage !== null) {
+          formData.append(key, objParam[key]);
+          console.log('data: ', key, objParam[key]);
+        }
+      } else if (key === 'certificate_image_url') {
+        if (businessRegistration !== null) {
+          formData.append(key, objParam[key]);
+          console.log('data: ', key, objParam[key]);
+        }
+      } else if (key === 'online_business_image_url') {
+        if (telecommunicationsSalesReport !== null) {
+          formData.append(key, objParam[key]);
+          console.log('data: ', key, objParam[key]);
+        }
+      } else if (key === 'background_image_url') {
+        if (sellerPageBackgroundImage !== null) {
+          // let backgroundUrl = JSON.stringify(objParam[key]);
+          formData.append(key, objParam[key]);
+          console.log('data: ', key, objParam[key]);
+        }
+      } else if (key === 'weekend_start_time') {
+        if (openingWeekendTime !== null) {
+          formData.append(key, objParam[key]);
+          console.log('openingWeekendTime: ', key, objParam[key]);
+        }
+      } else if (key === 'weekend_end_time') {
+        if (closingWeekendTime !== null) {
+          formData.append(key, objParam[key]);
+          console.log('closingWeekendTime: ', key, objParam[key]);
+        }
+      } else {
+        formData.append(key, objParam[key]);
+        console.log('data: ', key, objParam[key]);
+      }
+    }
+    console.log('type:::', parseInt(sellerId));
+
+    fetch(`${JMURL}/seller/${sellerId}`, {
+      method: 'PUT',
+      headers: {
+        Authorization:
+          // localStorage.getItem("token");
+          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        // 'Content-Type': 'multipart/form-data',
+        // 'Access-Control-Allow-Origin': '*',
+      },
+      body: formData,
+    })
+      .then((res) => {
+        console.log('put res: ', res);
+        return res.json();
+        // if (res.ok) {
+        //   return res.json();
+        // } else {
+        //   alert('네트워크 에러');
+        // }
+      })
+      .then((res) => {
+        console.log('onActionClick() res:', res);
+        setIsLoading(false);
+        if (res.message === 'SUCCESS') {
+          alert('정상 처리 되었습니다.');
+
+          props.history.push(`/seller`);
+        } else {
+          let errorMessage;
+          for (let key in res) {
+            console.log(res[key]);
+            errorMessage = errorMessage + res[key];
+          }
+          alert(errorMessage);
+        }
+      })
+      .catch((err) => console.log('catch():', err));
+  };
+
   console.log('managerInfo: ', managerInfo);
   console.log('input: ', input);
+
+  console.log('openingWeekdayTime:', openingWeekdayTime);
+  console.log('closingWeekdayTime:', closingWeekdayTime);
+  console.log('openingWeekendTime:', openingWeekendTime);
+  console.log('closingWeekendTime:', closingWeekendTime);
+  // 시:분:초 형태에서 시간이 한자리일 경우 맨앞에 0이 붙지 않기 때문에 0을 붙여주기 위한 코드
+  if (openingWeekdayTime) {
+  }
+  if (closingWeekdayTime) {
+  }
+  if (openingWeekendTime) {
+  }
+  if (closingWeekendTime) {
+  }
   return (
     <>
       <Container>
+        {isLoading && (
+          <>
+            <Heart>
+              <HeartDiv></HeartDiv>
+            </Heart>
+            <LoadingPage />
+          </>
+        )}
+
         {/* 기본 정보 */}
         <TableBox title="기본 정보">
           <TableItem title="셀러 프로필" isRequired={true}>
@@ -489,17 +710,25 @@ const Main = (props) => {
               onClickEvent={showPasswordModal}
             />
           </TableItem>
-          <TableItem title="브랜디 어플 아이디" isRequired={true}>
-            <Input
-              name="brandiAppId"
-              width={345}
-              height={34}
-              placeholder="브랜디 어플 아이디"
-              name="brandiAppId"
-              setText={setValue}
-            />
-            <InfoText content="'브랜디' 어플을 설치하여 회원가입하고, 브랜디 어플 아이디를 입력해 주세요. 어플 아이디는 어플 > MY > 설정 > 프로필 편집에서 확인 가능합니다." />
-          </TableItem>
+          {!brandiAppId && (
+            <TableItem title="브랜디 어플 아이디" isRequired={true}>
+              <InputContainer
+                width={345}
+                height={34}
+                placeholder="브랜디 어플 아이디"
+                name="brandiAppId"
+                setText={setValue}
+                setBlur={setBlur}
+                typed={isTyped.ceoName}
+                blurred={isBlurred.ceoName}
+                valid={isValid.ceoName}
+                validationText="존재하지 않는 어플 아이디입니다."
+                inputText={brandiAppId}
+                isRequired={true}
+              />
+              <InfoText content="'브랜디' 어플을 설치하여 회원가입하고, 브랜디 어플 아이디를 입력해 주세요. 어플 아이디는 어플 > MY > 설정 > 프로필 편집에서 확인 가능합니다." />
+            </TableItem>
+          )}
         </TableBox>
 
         {/* 사업자 정보 */}
@@ -640,7 +869,7 @@ const Main = (props) => {
               typed={isTyped.siteUrl}
               blurred={isBlurred.siteUrl}
               valid={isValid.siteUrl}
-              validationText="none"
+              validationText="올바른 주소를 입력해주세요. (ex. http://www.brandi.co.kr)"
               inputText={siteUrl}
               isRequired={true}
             />
@@ -655,7 +884,7 @@ const Main = (props) => {
                     width={287}
                     height={34}
                     placeholder="담당자명"
-                    name={`managerName.${key}`}
+                    name={`name.${key}`}
                     setText={setManagerValue}
                     setBlur={setBlur}
                     // typed={isTyped.koreanName}
@@ -670,7 +899,7 @@ const Main = (props) => {
                       width={287}
                       height={34}
                       placeholder="담당자 핸드폰번호"
-                      name={`managerPhone.${key}`}
+                      name={`contact_number.${key}`}
                       setText={setManagerValue}
                       setBlur={setBlur}
                       // typed={isTyped.koreanName}
@@ -686,7 +915,7 @@ const Main = (props) => {
                       width={287}
                       height={34}
                       placeholder="담당자 이메일"
-                      name={`managerEmail.${key}`}
+                      name={`email.${key}`}
                       setText={setManagerValue}
                       setBlur={setBlur}
                       // typed={isTyped.koreanName}
@@ -960,7 +1189,7 @@ const Main = (props) => {
             name="수정"
             color="#5cb85b"
             textColor="#fff"
-            // onClickEvent={onClick}
+            onClickEvent={onSubmitInfo}
           />
           <CustomButton
             name="취소"
@@ -1041,4 +1270,80 @@ const SellerStateChangeUser = styled.div`
 const ButtonsContainer = styled.div`
   display: flex;
   justify-content: center;
+`;
+
+// 로딩
+const LoadingPage = styled.div`
+  position: absolute; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  top: 80;
+  width: 2000xp; /* Full width */
+  height: 4000xp; /* Full height */
+  background-color: #000;
+  opacity: 0.5;
+`;
+
+const Heart = styled.div`
+  display: inline-block;
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: rotate(45deg);
+  transform-origin: 40px 40px;
+`;
+
+const HeartDiv = styled.div`
+  & {
+    top: 112px;
+    left: 500px;
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    background: #fe34c3;
+
+    ${(props) => {
+      return css`
+        animation: ${HeartKeyFrames} 1.2s infinite
+          cubic-bezier(0.215, 0.61, 0.355, 1);
+      `;
+    }}
+  }
+  &:after,
+  &:before {
+    content: ' ';
+    position: absolute;
+    display: block;
+    width: 32px;
+    height: 32px;
+    background: #fe34c3;
+  }
+  &:before {
+    left: -24px;
+    border-radius: 50% 0 0 50%;
+  }
+  &:after {
+    top: -24px;
+    border-radius: 50% 50% 0 0;
+  }
+`;
+
+const HeartKeyFrames = keyframes`
+   0% {
+    transform: scale(0.95);
+  }
+  5% {
+    transform: scale(1.1);
+  }
+  39% {
+    transform: scale(0.85);
+  }
+  45% {
+    transform: scale(1);
+  }
+  60% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(0.9);
+  }
 `;

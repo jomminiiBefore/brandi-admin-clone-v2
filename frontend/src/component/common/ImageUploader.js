@@ -23,6 +23,7 @@ const ImageUploader = ({ name, setImg, img, fileName }) => {
       // 프리뷰 이미지 변경
       setImagePreviewUrl(reader.result);
       // 이미지 파일
+      console.log('typeof image file: ', typeof reader.result);
       setImg(fileName, file);
     };
 

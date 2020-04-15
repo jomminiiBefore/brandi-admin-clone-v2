@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { withRouter } from 'react-router-dom';
-import { YJURL } from 'src/utils/config';
+import { JMURL } from 'src/utils/config';
 import PropTypes from 'prop-types';
 import EnhancedTableHead from 'src/component/sellerAccountManagement/EnhancedTableHead';
 import CustomButton from 'src/component/common/CustomButton';
@@ -143,19 +143,19 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(2),
   },
   table: {
-    minWidth: 3500,
+    minWidth: 2500,
   },
-  visuallyHidden: {
-    border: 0,
-    clip: 'rect(0 0 0 0)',
-    height: 1,
-    margin: -1,
-    overflow: 'hidden',
-    padding: 0,
-    position: 'absolute',
-    top: 20,
-    width: 1,
-  },
+  // visuallyHidden: {
+  //   border: 0,
+  //   clip: 'rect(0 0 0 0)',
+  //   height: 1,
+  //   margin: -1,
+  //   overflow: 'hidden',
+  //   padding: 0,
+  //   position: 'absolute',
+  //   top: 20,
+  //   width: 1,
+  // },
   formControl: {
     margin: theme.spacing(1),
     minWidth: 120,
@@ -225,7 +225,7 @@ function TestingTable(props) {
   }, []);
 
   const getSellerList = () => {
-    fetch(`${YJURL}/seller`, {
+    fetch(`${JMURL}/seller`, {
       method: 'GET',
       headers: {
         Authorization:
@@ -243,7 +243,8 @@ function TestingTable(props) {
         }
       })
       .then((res) => {
-        console.log('get::', res);
+        console.log('seller list::', res);
+        // input: 검색 필터가 담겨있는지 유무
         if (input) {
           setSellerList({
             ...sellerList,
@@ -258,9 +259,8 @@ function TestingTable(props) {
           });
         }
       })
-      // 두번째 then에서 지정한 함수의 실행 시에 어떤 문제가 발생하면 catch함수 호출
       .catch((err) => {
-        console.log('catch error: ', err);
+        console.log('getSellerList() catch error: ', err);
       });
   };
 
@@ -341,7 +341,9 @@ function TestingTable(props) {
     let queryString = new URLSearchParams();
     for (let key in input) {
       //   if (!input.hasOwnProperty()) continue;
-      queryString.append(key, input[key]);
+      if (input[key] !== '') {
+        queryString.append(key, input[key]);
+      }
     }
     if (offset) {
       console.log('offset: ', offset * limit);
@@ -361,7 +363,7 @@ function TestingTable(props) {
     }
 
     console.log('queryString: ', queryString);
-    fetch(`${YJURL}/seller?${queryString}`, {
+    fetch(`${JMURL}/seller?${queryString}`, {
       method: 'GET',
       headers: {
         Authorization:
@@ -448,6 +450,13 @@ function TestingTable(props) {
     }
   };
 
+  const onEnterSearch = (e) => {
+    if (e.key === 'Enter') {
+      setIsLoading(true);
+      onSearch();
+    }
+  };
+
   // 총 페이지 수
   let totalPage = sellerList.count / limit;
   totalPage = parseInt(totalPage);
@@ -483,12 +492,12 @@ function TestingTable(props) {
 
   const moveToSellerLink = (id) => {
     console.log('moveToSellerLink() id: ', id);
-    props.history.push(`/sellerInfoEdit?id=${id + 1}`);
+    props.history.push(`/sellerInfoEdit?id=${id}`);
   };
 
   const getExcelFile = (queryString) => {
     console.log('query: ', queryString);
-    fetch(`${YJURL}/seller?excel=1&${queryString}`, {
+    fetch(`${JMURL}/seller?excel=1&${queryString}`, {
       method: 'GET',
       headers: {
         Authorization:
@@ -499,31 +508,15 @@ function TestingTable(props) {
     })
       .then((res) => res.json())
       .then((res) => {
+        // 파일 다운로드
         window.location.assign(res.file_url);
       })
       .catch((res) => console.log(res));
   };
 
   const onActionClick = (statusName, statusId, sellerId) => {
-    console.log(statusName);
-    console.log(statusId);
-
-    // if (item.name === '휴점 신청') {
-    //   color = '#f0ac4e';
-    // } else if (
-    //   item.name === '퇴점 신청 처리' ||
-    //   item.name === '입점 거절' ||
-    //   item.name === '퇴점 확정 처리'
-    // ) {
-    //   color = '#d9534f';
-    // } else if (
-    //   item.name === '휴점 해제' ||
-    //   item.name === '퇴점 철회 처리'
-    // ) {
-    //   color = '#5cb85b';
-    // } else if (item.name === '입점 승인') {
-    //   color = '#5bc0d3';
-    // }
+    console.log('액션 이름: ', statusName);
+    console.log('액션 상태 번호:', statusId);
 
     switch (statusName) {
       case '휴점 신청':
@@ -592,7 +585,8 @@ function TestingTable(props) {
   };
 
   const onChangeStatus = (statusName, statusId, sellerId) => {
-    fetch(`${YJURL}/seller/${sellerId}/status`, {
+    console.log('onChangeStatus(): ', statusId, sellerId);
+    fetch(`${JMURL}/seller/${sellerId}/status`, {
       method: 'PUT',
       headers: {
         Authorization:
@@ -605,6 +599,7 @@ function TestingTable(props) {
       }),
     })
       .then((res) => {
+        console.log('??res: ', res);
         if (res.ok) {
           return res.json();
         } else {
@@ -636,7 +631,6 @@ function TestingTable(props) {
           <EnhancedTableToolbar numSelected={selected.length} />
           <TableContainer>
             {isLoading && <LoadingPage />}
-
             <Table
               className={classes.table}
               aria-labelledby="tableTitle"
@@ -651,6 +645,7 @@ function TestingTable(props) {
                 onSelectAllClick={handleSelectAllClick}
                 //   onRequestSort={handleRequestSort}
                 rowCount={itemRows.length}
+                size={dense ? 'small' : 'small'}
               />
               <TableBody>
                 <TableRow>
@@ -662,11 +657,12 @@ function TestingTable(props) {
                     scope="row"
                     padding="none"
                     align="center"
+                    width="10"
                   >
                     <InputForm
                       name="seller_account_no"
                       onChange={(e) => onChangeInput(e)}
-                      onKeyPress={onSearch}
+                      onKeyPress={onEnterSearch}
                     />
                   </TableCell>
                   {/* 셀러 아이디 */}
@@ -674,7 +670,7 @@ function TestingTable(props) {
                     <InputForm
                       name="login_id"
                       onChange={(e) => onChangeInput(e)}
-                      onKeyPress={onSearch}
+                      onKeyPress={onEnterSearch}
                     />
                   </TableCell>
                   {/* 영문 이름 */}
@@ -682,7 +678,7 @@ function TestingTable(props) {
                     <InputForm
                       name="name_en"
                       onChange={(e) => onChangeInput(e)}
-                      onKeyPress={onSearch}
+                      onKeyPress={onEnterSearch}
                     />
                   </TableCell>
                   {/* 한글 이름 */}
@@ -690,7 +686,7 @@ function TestingTable(props) {
                     <InputForm
                       name="name_kr"
                       onChange={(e) => onChangeInput(e)}
-                      onKeyPress={onSearch}
+                      onKeyPress={onEnterSearch}
                     />
                   </TableCell>
                   {/* 셀러 구분 */}
@@ -700,7 +696,7 @@ function TestingTable(props) {
                     <InputForm
                       name="brandi_app_user_id"
                       onChange={(e) => onChangeInput(e)}
-                      onKeyPress={onSearch}
+                      onKeyPress={onEnterSearch}
                     />
                   </TableCell>
                   {/* 담당자 이름 */}
@@ -708,7 +704,7 @@ function TestingTable(props) {
                     <InputForm
                       name="manager_name"
                       onChange={(e) => onChangeInput(e)}
-                      onKeyPress={onSearch}
+                      onKeyPress={onEnterSearch}
                     />
                   </TableCell>
                   {/* 셀러 상태 */}
@@ -740,7 +736,7 @@ function TestingTable(props) {
                     <InputForm
                       name="manager_contact_number"
                       onChange={(e) => onChangeInput(e)}
-                      onKeyPress={onSearch}
+                      onKeyPress={onEnterSearch}
                     />
                   </TableCell>
                   {/* 담당자 이메일 */}
@@ -748,7 +744,7 @@ function TestingTable(props) {
                     <InputForm
                       name="manager_email"
                       onChange={(e) => onChangeInput(e)}
-                      onKeyPress={onSearch}
+                      onKeyPress={onEnterSearch}
                     />
                   </TableCell>
                   {/* 셀러 속성 */}
@@ -816,7 +812,6 @@ function TestingTable(props) {
                     />
                   </TableCell>
                 </TableRow>
-
                 {
                   // stableSort(itemRows, getComparator(order, orderBy))
                   //   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -855,9 +850,7 @@ function TestingTable(props) {
                         </TableCell>
                         <TableCell align="right">
                           <SellerLoginIdLink
-                            onClick={() =>
-                              moveToSellerLink(row.seller_account_id)
-                            }
+                            onClick={() => moveToSellerLink(row.account_no)}
                           >
                             {row.login_id}
                           </SellerLoginIdLink>
@@ -886,7 +879,6 @@ function TestingTable(props) {
                           {/* {console.log('row:: ', row.action)} */}
                           {row.action &&
                             row.action.map((item, key) => {
-                              // 휴점신청 #F0AC4E 퇴점신청처리 #D9534F 휴점해제 #5CB85B 입점승인 #5BC0DE
                               let color;
                               if (item.name === '휴점 신청') {
                                 color = '#f0ac4e';
@@ -906,14 +898,8 @@ function TestingTable(props) {
                               }
 
                               return (
-                                // <SmallButton
-                                //   key={key}
-                                //   name={item.name}
-                                //   color={color}
-                                //   textColor="#fff"
-                                //   onClickEvent={onActionClick}
-                                // />
                                 <ActionButton
+                                  key={key}
                                   name={item.name}
                                   color={color}
                                   onClick={() =>
@@ -1025,7 +1011,7 @@ const Container = styled.div`
 
 const InputForm = styled.input`
   height: 30px;
-  width: 100%;
+  /* width: 100%; */
   border: 1px solid #bdbdbd;
 `;
 
@@ -1062,8 +1048,8 @@ const LoadingPage = styled.div`
   position: absolute; /* Stay in place */
   z-index: 1; /* Sit on top */
   top: 80;
-  width: 100%; /* Full width */
-  height: 93%; /* Full height */
+  width: 100vw; /* Full width */
+  height: 100vh; /* Full height */
   background-color: #000;
   opacity: 0.5;
 `;

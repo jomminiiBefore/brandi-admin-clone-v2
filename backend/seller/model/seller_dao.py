@@ -533,6 +533,52 @@ class SellerDao:
         try:
             with db_connection as db_cursor:
 
+<<<<<<< HEAD
+=======
+                # 셀러 리스트를 가져오는 sql 명령문, 쿼리가 들어오면 쿼리문을 포메팅해서 검색 실행
+                select_seller_list_statement = f'''
+                    SELECT 
+                    seller_account_id, 
+                    accounts.login_id,
+                    name_en,
+                    name_kr,
+                    brandi_app_user_id,
+                    seller_statuses.name as seller_status,
+                    seller_status_id,
+                    seller_types.name as seller_type_name,
+                    site_url,
+                    (
+                        SELECT COUNT(0) 
+                        FROM product_infos 
+                        WHERE product_infos.seller_id  = seller_infos.seller_account_id 
+                        AND product_infos.close_time = '2037-12-31 23:59:59' 
+                    ) as product_count,
+                    seller_accounts.created_at,
+                    manager_infos.name as manager_name,
+                    manager_infos.contact_number as manager_contact_number,
+                    manager_infos.email as manager_email,
+                    seller_infos.product_sort_id,
+                    profile_image_url,
+                    accounts.account_no
+                    FROM seller_infos
+                    right JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
+                    LEFT JOIN accounts ON seller_accounts.account_id = accounts.account_no
+                    LEFT JOIN seller_statuses ON seller_infos.seller_status_id = seller_statuses.status_no
+                    LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
+                    LEFT JOIN manager_infos on manager_infos.seller_info_id = seller_infos.seller_info_no 
+                    WHERE seller_infos.close_time = '2037-12-31 23:59:59.0'
+                    AND accounts.is_deleted = 0
+                    AND seller_accounts.is_deleted = 0
+                    AND manager_infos.ranking = 1{filter_query}
+                    ORDER BY seller_account_id ASC
+                    LIMIT %(limit)s OFFSET %(offset)s    
+                '''
+                parameter = {
+                    'limit': limit,
+                    'offset': offset,
+                }
+
+>>>>>>> e340da4... wip
                 # sql 쿼리와 pagination 데이터 바인딩
                 db_cursor.execute(select_seller_list_statement, valid_param)
                 seller_info = db_cursor.fetchall()
