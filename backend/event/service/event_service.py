@@ -353,8 +353,13 @@ class EventService:
         History:
             2020-04-12 (leesh3@brandi.co.kr): 초기 생성
         """
-        if event_info['auth_type_id'] == 1:
-            event_dao = EventDao()
-            events = event_dao.get_all_events(event_info, db_connection)
-            return events
-        return jsonify({'message': 'NO_AUTHORIZATION'}), 403
+        try:
+            if event_info['auth_type_id'] == 1:
+                event_dao = EventDao()
+                events = event_dao.get_all_events(event_info, db_connection)
+                return events
+
+            return jsonify({'message': 'NO_AUTHORIZATION'}), 403
+
+        except Exception as e:
+            return jsonify({'message': f'{e}'}), 400

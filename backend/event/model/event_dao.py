@@ -985,7 +985,6 @@ class EventDao:
 
     # noinspection PyMethodMayBeStatic
     def get_all_events(self, event_info, db_connection):
-        print(event_info)
 
         """ 등록된 모든 이벤트 목록 표출
 
@@ -1004,11 +1003,12 @@ class EventDao:
             404: not found error
             500: 데이터베이스 에러
 
-        Authors:
+        Authors:가
             leesh3@brandi.co.kr (이소헌)
 
         History:
             2020-04-12 (leesh3@brandi.co.kr): 초기 생성
+            2020-04-15 (leesh3@brandi.co.kr): offset, limit, 포함된 상품 추
         """
         try:
             with db_connection.cursor() as db_cursor:
@@ -1029,27 +1029,50 @@ class EventDao:
                         long_description,
                         name,
                         short_description,
-                        youtube_url
+                        youtube_url,
+                        (
+                            SELECT COUNT(0) FROM event_detail_product_infos
+                            WHERE event_detail_product_infos.event_info_id = event_infos.event_info_no
+                            AND event_infos.close_time = '2037-12-31 23:59:59.0'
+                        ) as product_count                    
                     FROM
                         event_infos
                     WHERE
                         1=1 
                     """
+                filter_query_count_stmt = """
+                    SELECT
+                        COUNT(0)
+                    FROM
+                        event_infos
+                    WHERE
+                        1=1
+                """
+
                 if event_info.get('event_start_time', None):
                     get_event_stmt += " AND event_start_time > %(event_start_time)s"
+                    filter_query_count_stmt += " AND event_start_time > %(event_start_time)s"
                 if event_info.get('event_end_time', None):
                     get_event_stmt += " AND event_end_time < %(event_end_time)s"
+                    filter_query_count_stmt += " AND event_end_time < %(event_end_time)s"
                 if event_info.get('event_name', None):
                     get_event_stmt += " AND name LIKE %(event_name)s"
+                    filter_query_count_stmt += " AND name LIKE %(event_name)s"
                     event_info['event_name'] = f"%{event_info['event_name']}%"
                 if event_info.get('event_type_id', None):
                     event_info['event_type_id'] = tuple(event_info['event_type_id'])
-                    get_event_stmt += """AND (event_type_id IN %(event_type_id)s)"""
+                    get_event_stmt += "AND (event_type_id IN %(event_type_id)s)"
+                    filter_query_count_stmt += "AND (event_type_id IN %(event_type_id)s)"
 
+                get_event_stmt += " ORDER BY event_info_no ASC LIMIT %(limit)s OFFSET %(offset)s"
                 db_cursor.execute(get_event_stmt, event_info)
                 events = db_cursor.fetchall()
+
+                db_cursor.execute(filter_query_count_stmt, event_info)
+                event_count = db_cursor.fetchone()
+                event_count = event_count['COUNT(0)']
                 if events:
-                    return jsonify({'events': events}), 200
+                    return jsonify({'event_count': event_count, 'event_list': events}), 200
                 return jsonify({'message': 'EVENT_DOES_NOT_EXIST'}), 404
 
         except KeyError as e:
