@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, time
 from decimal import Decimal
 
 from flask import Flask
@@ -91,7 +91,7 @@ def create_app():
     app = Flask(__name__)
     app.json_encoder = CustomJSONEncoder
     make_config(app)
-    CORS(app)
+    CORS(app, resources={r"/*/*": {"origins": "*"}})
     app.register_blueprint(SellerView.seller_app)
     app.register_blueprint(ProductView.product_app)
     app.register_blueprint(ImageView.image_app)

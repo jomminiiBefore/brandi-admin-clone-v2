@@ -224,16 +224,16 @@ class ImageUpload:
 
             # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
             if not ('image' in image_file_form):
-                return jsonify({'message': 'INVALID_FILE'}), 400
+                return jsonify({'message': 'INVALID_FILE_FORM'}), 400
 
-            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
-            if image_file_size > 10485760:
-                return jsonify({'message': 'INVALID_IMAGE1'}), 400
+            # 들어온 이미지 크기가 10MB 보다 크면 request 를 받지 않음.
+            if image_file_size > 1000000:
+                return jsonify({'message': 'INVALID_IMAGE_SIZE'}), 400
 
             # big_size 업로드
             big_size_buffer = self.resize_to_big(image_file_1)
             if not big_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE33"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -254,7 +254,7 @@ class ImageUpload:
             # medium_size 업로드
             medium_size_buffer = self.resize_to_medium(image_file_1)
             if not medium_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -275,7 +275,7 @@ class ImageUpload:
             # small_size 업로드
             small_size_buffer = self.resize_to_small(image_file_1)
             if not small_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -301,16 +301,16 @@ class ImageUpload:
 
             # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
             if not ('image' in image_file_form):
-                return jsonify({'message': 'INVALID_FILE'})
+                return jsonify({'message': 'INVALID_FILE_FORM'})
 
             # 들어온 이미지 크기가 10MB 보다 크면 request 를 받지 않음.
             if image_file_size > 10485760:
-                return jsonify({'message': 'INVALID_IMAGE1'})
+                return jsonify({'message': 'INVALID_IMAGE_SIZE'})
 
             # big_size 업로드
             big_size_buffer = self.resize_to_big(image_file_2)
             if not big_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -331,7 +331,7 @@ class ImageUpload:
             # medium_size 업로드
             medium_size_buffer = self.resize_to_medium(image_file_2)
             if not medium_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -352,7 +352,7 @@ class ImageUpload:
             # small_size 업로드
             small_size_buffer = self.resize_to_small(image_file_2)
             if not small_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -378,16 +378,16 @@ class ImageUpload:
 
             # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
             if not ('image' in image_file_form):
-                return jsonify({'message': 'INVALID_FILE'})
+                return jsonify({'message': 'INVALID_FILE_FORM'})
 
             # 들어온 이미지 크기가 10MB 보다 크면 request 를 받지 않음.
             if image_file_size > 10485760:
-                return jsonify({'message': 'INVALID_IMAGE1'})
+                return jsonify({'message': 'INVALID_IMAGE_SIZE'})
 
             # big_size 업로드
             big_size_buffer = self.resize_to_big(image_file_3)
             if not big_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -408,7 +408,7 @@ class ImageUpload:
             # medium_size 업로드
             medium_size_buffer = self.resize_to_medium(image_file_3)
             if not medium_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -429,7 +429,7 @@ class ImageUpload:
             # small_size 업로드
             small_size_buffer = self.resize_to_small(image_file_3)
             if not small_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -455,16 +455,16 @@ class ImageUpload:
 
             # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
             if not ('image' in image_file_form):
-                return jsonify({'message': 'INVALID_FIL4'}), 400
+                return jsonify({'message': 'INVALID_FILE_FORM'}), 400
 
             # 들어온 이미지 크기가 10MB 보다 크면 request 를 받지 않음.
             if image_file_size > 10485760:
-                return jsonify({'message': 'INVALID_IMAGE4'}), 400
+                return jsonify({'message': 'INVALID_IMAGE_SIZE'}), 400
 
             # big_size 업로드
             big_size_buffer = self.resize_to_big(image_file_4)
             if not big_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE4"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -485,7 +485,7 @@ class ImageUpload:
             # medium_size 업로드
             medium_size_buffer = self.resize_to_medium(image_file_4)
             if not medium_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -506,7 +506,7 @@ class ImageUpload:
             # small_size 업로드
             small_size_buffer = self.resize_to_small(image_file_4)
             if not small_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -532,16 +532,16 @@ class ImageUpload:
 
             # 이미지 파일이 아닌 다른형식의 파일이 들어오는 것을 차단.
             if not ('image' in image_file_form):
-                return jsonify({'message': 'INVALID_FILE'})
+                return jsonify({'message': 'INVALID_FILE_FORM'})
 
             # 들어온 이미지 크기가 10MB 보다 크면 request 를 받지 않음.
             if image_file_size > 10485760:
-                return jsonify({'message': 'INVALID_IMAGE1'})
+                return jsonify({'message': 'INVALID_IMAGE_SIZE'})
 
             # big_size 업로드
             big_size_buffer = self.resize_to_big(image_file_5)
             if not big_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -562,7 +562,7 @@ class ImageUpload:
             # medium_size 업로드
             medium_size_buffer = self.resize_to_medium(image_file_5)
             if not medium_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -583,7 +583,7 @@ class ImageUpload:
             # small_size 업로드
             small_size_buffer = self.resize_to_small(image_file_5)
             if not small_size_buffer:
-                return jsonify({"message": "INVALID_IMAGE"}), 400
+                return jsonify({"message": "RESIZE_FAIL"}), 400
 
             try:
                 s3.put_object(
@@ -796,7 +796,6 @@ class ImageUpload:
 
         banner_image = request.files.get('banner_image', None)
         detail_image = request.files.get('detail_image', None)
-        print(list(request.files.items()))
         # 필수로 들어와야 하는 파일의 존재여부 확인.
         if banner_image:
 
