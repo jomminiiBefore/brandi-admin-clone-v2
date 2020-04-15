@@ -329,7 +329,7 @@ class ProductView:
         Param('discount_end_time', FORM, str, required=False),
         Param('min_unit', FORM, int),
         Param('max_unit', FORM, int),
-        Param('tags', FORM, str, required=False),
+        Param('tags', FORM, list, required=False),
         Param('selected_account_no', FORM, int, required=False),
 
         # integer parameter 범위 지정을 위한 검증
@@ -404,7 +404,7 @@ class ProductView:
             'discount_end_time': args[14],
             'min_unit': args[15],
             'max_unit': args[16],
-            'tags': json.loads(args[17]),
+            'tags': args[17],
             'selected_account_no': args[18],
             'images': uploaded_images,
         }
