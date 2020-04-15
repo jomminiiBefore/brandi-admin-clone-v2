@@ -212,9 +212,8 @@ function Main(props) {
     fetch(`${JMURL}/product?offset=0&limit=1000`, {
       method: 'GET',
       headers: {
-        Authorization:
-          // localStorage.getItem("token");
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        Authorization: localStorage.getItem('token'),
+        // 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
         'Content-Type': 'application/json',
       },
     })
@@ -681,7 +680,7 @@ const LoadingPage = styled.div`
   z-index: 1; /* Sit on top */
   top: 80;
   width: 100%; /* Full width */
-  height: 93%; /* Full height */
+  height: 100%; /* Full height */
   background-color: #000;
   opacity: 0.5;
 `;

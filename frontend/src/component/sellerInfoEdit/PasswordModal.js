@@ -29,8 +29,7 @@ const PasswordModal = ({ showPasswordModal }) => {
     fetch(`${JMURL}/seller/5/password`, {
       method: 'PUT',
       headers: {
-        Authorization:
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+        Authorization: localStorage.getItem('token'),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
