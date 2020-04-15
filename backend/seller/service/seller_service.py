@@ -363,7 +363,7 @@ class SellerService:
         Returns:
             200: SUCCESS 로그인 성공
             400: INVALID_LOGIN_ID
-            401: INVALID_PASSWORD
+            401: INVALID_PASSWORD, STATUS_1_CANT_LOGIN
 
         Authors:
             choiyj@brandi.co.kr (최예지)
@@ -382,21 +382,26 @@ class SellerService:
             # 만약 DB 에 login_id 가 존재하면
             if account_info_result:
 
-                # bcrypt.checkpw 를 통해 암호화 된 password 와 인자로 받아 온 password 를 비교
-                if bcrypt.checkpw(account_info['password'].encode('utf-8'),
-                                  account_info_result['password'].encode('utf-8')):
+                if account_info_result['seller_status_id'] != 1:
 
-                    # 두 password 가 일치하면 token 을 발급하는데 현재시간 + 3일 만큼 유효하도록 지정해 줌
-                    token = jwt.encode({'account_no': account_info_result['account_no'],
-                                        'exp': datetime.utcnow() + timedelta(days=3)},
-                                       SECRET['secret_key'], algorithm=SECRET['algorithm'])
+                    # bcrypt.checkpw 를 통해 암호화 된 password 와 인자로 받아 온 password 를 비교
+                    if bcrypt.checkpw(account_info['password'].encode('utf-8'),
+                                      account_info_result['password'].encode('utf-8')):
 
-                    # 발급 된 token 을 return
-                    return jsonify({'token': token}), 200
+                        # 두 password 가 일치하면 token 을 발급하는데 현재시간 + 3일 만큼 유효하도록 지정해 줌
+                        token = jwt.encode({'account_no': account_info_result['account_no'],
+                                            'exp': datetime.utcnow() + timedelta(days=3)},
+                                           SECRET['secret_key'], algorithm=SECRET['algorithm'])
+
+                        # 발급 된 token 을 return
+                        return jsonify({'token': token}), 200
+
+                    else:
+                        # 만약 두 password 가 불일치하면 에러 메세지 return
+                        return jsonify({'message': 'INVALID_PASSWORD'}), 401
 
                 else:
-                    # 만약 두 password 가 불일치하면 에러 메세지 return
-                    return jsonify({'message': 'INVALID_PASSWORD'}), 401
+                    return jsonify({'message': 'STATUS_1_CANT_LOGIN'}), 401
 
             else:
                 # DB에 login_id 가 존재하지 않으면 에러 메세지 return
