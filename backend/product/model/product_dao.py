@@ -813,6 +813,8 @@ class ProductDao:
                 - f-string 으로 필터링 조건 추가했던 것을 파라미터 바인딩 형태로 변경
                 - JOIN 문에서 약어 추가
                 - 주석 추가
+            2020-04-16 (leejm3@brandi.co.kr):
+                - 등록순 정렬 추가
         """
 
         try:
@@ -909,6 +911,9 @@ class ProductDao:
 
                     else:
                         select_product_list_statement += " AND PL02.discount_rate = 0"
+
+                # 등록순 정렬
+                select_product_list_statement += " ORDER BY PL01.created_at"
 
                 # 페이징 마지막
                 if filter_info.get('limit', None):

@@ -1,9 +1,8 @@
 import pandas as pd, uuid, os
 from flask import jsonify
-from datetime import datetime
 from mysql.connector.errors import Error
 
-from connection import DatabaseConnection, get_s3_connection
+from connection import get_s3_connection
 
 
 class SellerDao:
@@ -15,15 +14,16 @@ class SellerDao:
         2020-03-25 (leesh3@brandi.co.kr): 초기 생성
 
     """
+    # noinspection PyMethodMayBeStatic
     def gen_random_name(self):
 
         """ 랜덤한 이름 생성
 
         Args:
-            self: 클래스에서 전역으로 쓰임.
+            self: 클래스에서 전역으로 쓰임
 
         Returns: http 응답코드
-            random_name: 랜덤한 이름 리
+            random_name: 랜덤한 이름
 
         Authors:
             yoonhc@brandi.co.kr (윤희철)
@@ -177,6 +177,7 @@ class SellerDao:
             2020-04-02 (leejm3@brandi.co.kr): 외래키 관련 정보 표출
             2020-04-03 (leejm3@brandi.co.kr): 표출 정보에 외래키 id 값 추가
             2020-04-15 (leejm3@brandi.co.kr): 해당 계정이 없으면 에러 리턴 추가
+            2020-04-16 (leejm3@brandi.co.kr): SQL 문 별칭 적용
 
         """
         try:
@@ -191,71 +192,75 @@ class SellerDao:
                 # seller_info 테이블 SELECT (get 기본 정보)
                 select_seller_info_statement = """
                     SELECT 
-                    seller_info_no,
-                    seller_account_id,
-                    profile_image_url,
-                    c.status_no as seller_status_no,
-                    c.name as seller_status_name,
-                    d.seller_type_no as seller_type_no,
-                    d.name as seller_type_name,
-                    e.account_no as account_no,
-                    e.login_id as account_login_id,
-                    f.app_user_no as brandi_app_user_no,
-                    f.app_id as brandi_app_user_app_id,
-                    name_kr,
-                    name_en,
-                    brandi_app_user_id,
-                    ceo_name,
-                    company_name,
-                    business_number,
-                    certificate_image_url,
-                    online_business_number,
-                    online_business_image_url,
-                    background_image_url,
-                    short_description,
-                    long_description,
-                    site_url,
-                    insta_id,
-                    center_number,
-                    kakao_id,
-                    yellow_id,
-                    zip_code,
-                    address,
-                    detail_address,
-                    weekday_start_time,
-                    weekday_end_time,
-                    weekend_start_time,
-                    weekend_end_time,
-                    bank_name,
-                    bank_holder_name,
-                    account_number
+                        seller_info_no,
+                        seller_account_id,
+                        profile_image_url,
+                        CS03.status_no as seller_status_no,
+                        CS03.name as seller_status_name,
+                        CS04.seller_type_no as seller_type_no,
+                        CS04.name as seller_type_name,
+                        CS05.account_no as account_no,
+                        CS05.login_id as account_login_id,
+                        CS06.app_user_no as brandi_app_user_no,
+                        CS06.app_id as brandi_app_user_app_id,
+                        name_kr,
+                        name_en,
+                        brandi_app_user_id,
+                        ceo_name,
+                        company_name,
+                        business_number,
+                        certificate_image_url,
+                        online_business_number,
+                        online_business_image_url,
+                        background_image_url,
+                        short_description,
+                        long_description,
+                        site_url,
+                        insta_id,
+                        center_number,
+                        kakao_id,
+                        yellow_id,
+                        zip_code,
+                        address,
+                        detail_address,
+                        weekday_start_time,
+                        weekday_end_time,
+                        weekend_start_time,
+                        weekend_end_time,
+                        bank_name,
+                        bank_holder_name,
+                        account_number
                     
-                    FROM seller_accounts AS a
+                    FROM seller_accounts AS CS01
                     
                     -- seller_info 기본 정보
-                    INNER JOIN seller_infos AS b
-                    ON a.seller_account_no = b.seller_account_id
+                    INNER JOIN seller_infos AS CS02
+                    ON CS01.seller_account_no = CS02.seller_account_id
                     
                     -- 셀러 상태명
-                    INNER JOIN seller_statuses as c
-                    ON b.seller_status_id = c.status_no
+                    INNER JOIN seller_statuses as CS03
+                    ON CS02.seller_status_id = CS03.status_no
 
                     -- 셀러 속성명
-                    INNER JOIN seller_types as d
-                    ON b.seller_type_id = d.seller_type_no
+                    INNER JOIN seller_types as CS04
+                    ON CS02.seller_type_id = CS04.seller_type_no
 
                     -- 셀러계정 로그인 아이디
-                    LEFT JOIN accounts as e
-                    ON e.account_no = a.account_id
-                    AND e.is_deleted =0
+                    LEFT JOIN accounts as CS05
+                    ON CS05.account_no = CS01.account_id
+                    AND CS05.is_deleted =0
 
                     -- 브랜디 앱 아이디
-                    LEFT JOIN brandi_app_users as f
-                    ON b.brandi_app_user_id = f.app_user_no
-                    AND f.is_deleted = 0
-                    WHERE a.account_id = %(account_no)s
-                    AND a.is_deleted = 0
-                    AND b.close_time = '2037-12-31 23:59:59'
+                    LEFT JOIN brandi_app_users as CS06
+                    ON CS02.brandi_app_user_id = CS06.app_user_no
+                    
+                    WHERE 
+                        -- 삭제되지 않은 계정의 최신 셀러정보 리스트, 삭제되지 않은 브랜디앱 아이디
+                        CS01.account_id = %(account_no)s
+                        AND CS01.is_deleted = 0
+                        AND CS02.close_time = '2037-12-31 23:59:59'
+                        AND CS06.is_deleted = 0
+                    
                 """
 
                 # SELECT 문 실행
@@ -276,15 +281,22 @@ class SellerDao:
                 # manager_infos 테이블 SELECT(get *)
                 select_manager_infos_statement = """
                                 SELECT
-                                b.name,
-                                b.contact_number,
-                                b.email,
-                                b.ranking
-                                FROM seller_infos AS a
-                                INNER JOIN manager_infos AS b
-                                ON a.seller_info_no = b.seller_info_id
-                                WHERE seller_info_no = %(seller_info_no)s
-                                AND b.is_deleted = 0
+                                    MI02.name,
+                                    MI02.contact_number,
+                                    MI02.email,
+                                    MI02.ranking
+                                    
+                                FROM 
+                                    seller_infos AS MI01
+                                
+                                INNER JOIN 
+                                    manager_infos AS MI02
+                                    ON MI01.seller_info_no = MI02.seller_info_id
+                                
+                                WHERE 
+                                    seller_info_no = %(seller_info_no)s
+                                    AND MI02.is_deleted = 0
+                                
                                 LIMIT 3
                             """
 
@@ -306,29 +318,32 @@ class SellerDao:
                 # seller_status_change_histories 테이블 SELECT
                 select_status_history_statement = """
                                 SELECT
-                                changed_time,
-                                c.name as seller_status_name,
-                                d.login_id as modifier
+                                    changed_time,
+                                    SH03.name as seller_status_name,
+                                    SH04.login_id as modifier
+                                
                                 FROM
-                                seller_accounts as a
+                                    seller_accounts as SH01
 
                                 -- 셀러상태이력 기본정보
                                 INNER JOIN
-                                seller_status_change_histories as b
-                                ON a.seller_account_no = b.seller_account_id
+                                    seller_status_change_histories as SH02
+                                    ON SH01.seller_account_no = SH02.seller_account_id
 
                                 -- 셀러 상태명
                                 INNER JOIN
-                                seller_statuses as c
-                                ON b.seller_status_id = c.status_no
+                                    seller_statuses as SH03
+                                    ON SH02.seller_status_id = SH03.status_no
 
                                 -- 수정자 로그인아이디
                                 LEFT JOIN
-                                accounts as d
-                                ON d.account_no = a.account_id
+                                    accounts as SH04
+                                    ON SH04.account_no = SH01.account_id
 
-                                WHERE a.seller_account_no = %(seller_account_id)s
-                                AND d.is_deleted = 0
+                                WHERE 
+                                    SH01.seller_account_no = %(seller_account_id)s
+                                    AND SH04.is_deleted = 0
+                                
                                 ORDER BY changed_time
                             """
 
@@ -350,22 +365,24 @@ class SellerDao:
                 # seller_types 테이블 SELECT
                 select_seller_types_statement = """
                                 SELECT
-                                c.seller_type_no as seller_type_no,
-                                c.name as seller_type_name
+                                    ST03.seller_type_no as seller_type_no,
+                                    ST03.name as seller_type_name
+                                
                                 FROM 
-                                product_sorts as a
+                                product_sorts as ST01
                                 
                                 -- 셀러정보
                                 INNER JOIN
-                                seller_infos as b
-                                ON a.product_sort_no = b.product_sort_id
+                                    seller_infos as ST02
+                                    ON ST01.product_sort_no = ST02.product_sort_id
                                
                                 -- 상품속성
                                 INNER JOIN
-                                seller_types as c
-                                ON a.product_sort_no = c.product_sort_id
+                                    seller_types as ST03
+                                    ON ST01.product_sort_no = ST03.product_sort_id
 
-                                WHERE b.seller_info_no = %(seller_info_no)s
+                                WHERE 
+                                ST02.seller_info_no = %(seller_info_no)s
                             """
 
                 # SELECT 문 실행
@@ -533,52 +550,6 @@ class SellerDao:
         try:
             with db_connection as db_cursor:
 
-<<<<<<< HEAD
-=======
-                # 셀러 리스트를 가져오는 sql 명령문, 쿼리가 들어오면 쿼리문을 포메팅해서 검색 실행
-                select_seller_list_statement = f'''
-                    SELECT 
-                    seller_account_id, 
-                    accounts.login_id,
-                    name_en,
-                    name_kr,
-                    brandi_app_user_id,
-                    seller_statuses.name as seller_status,
-                    seller_status_id,
-                    seller_types.name as seller_type_name,
-                    site_url,
-                    (
-                        SELECT COUNT(0) 
-                        FROM product_infos 
-                        WHERE product_infos.seller_id  = seller_infos.seller_account_id 
-                        AND product_infos.close_time = '2037-12-31 23:59:59' 
-                    ) as product_count,
-                    seller_accounts.created_at,
-                    manager_infos.name as manager_name,
-                    manager_infos.contact_number as manager_contact_number,
-                    manager_infos.email as manager_email,
-                    seller_infos.product_sort_id,
-                    profile_image_url,
-                    accounts.account_no
-                    FROM seller_infos
-                    right JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
-                    LEFT JOIN accounts ON seller_accounts.account_id = accounts.account_no
-                    LEFT JOIN seller_statuses ON seller_infos.seller_status_id = seller_statuses.status_no
-                    LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
-                    LEFT JOIN manager_infos on manager_infos.seller_info_id = seller_infos.seller_info_no 
-                    WHERE seller_infos.close_time = '2037-12-31 23:59:59.0'
-                    AND accounts.is_deleted = 0
-                    AND seller_accounts.is_deleted = 0
-                    AND manager_infos.ranking = 1{filter_query}
-                    ORDER BY seller_account_id ASC
-                    LIMIT %(limit)s OFFSET %(offset)s    
-                '''
-                parameter = {
-                    'limit': limit,
-                    'offset': offset,
-                }
-
->>>>>>> e340da4... wip
                 # sql 쿼리와 pagination 데이터 바인딩
                 db_cursor.execute(select_seller_list_statement, valid_param)
                 seller_info = db_cursor.fetchall()
@@ -1025,11 +996,16 @@ class SellerDao:
 
                 # 새로운 이력 생성 이전의 셀러 정보를 가져옴
                 db_cursor.execute('''
-                SELECT seller_info_no, seller_status_id
-                FROM seller_infos
-                WHERE seller_account_id = %(seller_account_id)s
-                AND close_time = '2037-12-31 23:59:59'
-                AND is_deleted = 0
+                SELECT 
+                    seller_info_no, seller_status_id
+                
+                FROM 
+                    seller_infos
+                                
+                WHERE 
+                    seller_account_id = %(seller_account_id)s
+                    AND close_time = '2037-12-31 23:59:59'
+                    AND is_deleted = 0
                 ''', target_seller_info)
 
                 # 가져온 셀러정보를 타겟셀러 정보를 변수화
@@ -1114,9 +1090,12 @@ class SellerDao:
                         bank_holder_name,
                         account_number,
                         %(modifier)s
-                    FROM seller_infos                    
+                    
+                    FROM 
+                        seller_infos                    
+                    
                     WHERE
-                    seller_account_id = %(seller_account_id)s AND close_time = '2037-12-31 23:59:59'
+                        seller_account_id = %(seller_account_id)s AND close_time = '2037-12-31 23:59:59'
                 """
 
                 # seller_infos: 데이터 sql 명령문과 셀러 데이터 바인딩 후 새로운 셀러 정보 이력의 primary key 딕셔너리에 담음
@@ -1166,15 +1145,15 @@ class SellerDao:
                 # 셀러 변경 이력 테이블에 새로운 row 추가
                 db_cursor.execute('''
                 INSERT INTO seller_status_change_histories(
-                    seller_account_id,
-                    changed_time,
-                    seller_status_id,
-                    modifier
+                        seller_account_id,
+                        changed_time,
+                        seller_status_id,
+                        modifier
                 ) VALUES (
-                    %(seller_account_id)s,
-                    %(close_time)s,
-                    %(seller_status_id)s,
-                    %(modifier)s
+                        %(seller_account_id)s,
+                        %(close_time)s,
+                        %(seller_status_id)s,
+                        %(modifier)s
                 )
                 ''', target_seller_info)
 
@@ -1208,10 +1187,12 @@ class SellerDao:
 
         Authors:
             choiyj@brandi.co.kr (최예지)
+            leejm3@brandi.co.kr (이종민)
 
         History:
             2020-04-05 (choiyj@brandi.co.kr): 초기 생성
             2020-04-05 (choiyj@brandi.co.kr): SQL 문을 통해 DB 에서 원하는 정보를 가지고 와서 return 하는 함수 구현
+            2020-04-16 (leejm3@brandi.co.kr): 로그인 시 입점대기 여부를 확인하기 위해 상태 정보 셀렉트 추가
         """
 
         try:
@@ -1221,12 +1202,25 @@ class SellerDao:
                 # sql 문 작성 (원하는 정보를 가져오거나 집어넣거나)
                 select_account_info_statement = """
                     SELECT
-                    account_no,
-                    password
+                        AC01.account_no,
+                        AC01.password,
+                        AC03.seller_status_id
                     
-                    FROM accounts
+                    FROM 
+                        accounts as AC01
                     
-                    where login_id = %(login_id)s AND is_deleted = 0
+                    LEFT JOIN
+                        seller_accounts as AC02
+                        ON AC01.account_no = AC02.account_id
+                        
+                    LEFT JOIN
+                        seller_infos as AC03
+                        ON AC02.seller_account_no = AC03.seller_account_id
+                                        
+                    WHERE 
+                        AC01.login_id = %(login_id)s 
+                        AND AC01.is_deleted = 0
+                        AND AC03.close_time = '2037-12-31 23:59:59'
                 """
 
                 # SELECT 문 실행
@@ -1276,11 +1270,13 @@ class SellerDao:
                 # 계정 SELECT 문
                 select_account_statement = """
                     SELECT
-                    account_no
+                        account_no
+                    
                     FROM
-                    accounts
+                        accounts
+                    
                     WHERE
-                    login_id = %(login_id)s
+                        login_id = %(login_id)s
                 """
 
                 # service 에서 넘어온 셀러 데이터
@@ -1329,12 +1325,14 @@ class SellerDao:
                 # 셀러정보 SELECT 문
                 select_seller_info_statement = """
                     SELECT
-                    seller_info_no
+                        seller_info_no
+                    
                     FROM
-                    seller_infos
+                        seller_infos
+                    
                     WHERE
-                    name_kr = %(name_kr)s
-                    AND is_deleted = 0
+                        name_kr = %(name_kr)s
+                        AND is_deleted = 0
                 """
 
                 # service 에서 넘어온 셀러 데이터
@@ -1387,12 +1385,14 @@ class SellerDao:
                 # 셀러정보 SELECT 문
                 select_seller_info_statement = """
                     SELECT
-                    seller_info_no
+                        seller_info_no
+                    
                     FROM
-                    seller_infos
+                        seller_infos
+                    
                     WHERE
-                    name_en = %(name_en)s
-                    AND is_deleted = 0
+                        name_en = %(name_en)s
+                        AND is_deleted = 0
                 """
 
                 # service 에서 넘어온 셀러 데이터
@@ -1460,13 +1460,13 @@ class SellerDao:
                 # 계정 INSERT 문
                 insert_accounts_statement = """
                     INSERT INTO accounts(
-                    auth_type_id,
-                    login_id,
-                    password
+                        auth_type_id,
+                        login_id,
+                        password
                 ) VALUES (
-                    2,
-                    %(login_id)s,
-                    %(password)s
+                        2,
+                        %(login_id)s,
+                        %(password)s
                 )"""
 
                 # 데이터 sql 명령문과 셀러 데이터 바인딩
@@ -1495,29 +1495,29 @@ class SellerDao:
                 # 셀러정보 INSERT 문
                 insert_seller_infos_statement = """
                     INSERT INTO seller_infos(
-                    seller_account_id,
-                    seller_type_id,
-                    seller_status_id,
-                    product_sort_id,
-                    name_kr,
-                    name_en,
-                    center_number,
-                    site_url,
-                    kakao_id,
-                    insta_id,
-                    modifier
+                        seller_account_id,
+                        seller_type_id,
+                        seller_status_id,
+                        product_sort_id,
+                        name_kr,
+                        name_en,
+                        center_number,
+                        site_url,
+                        kakao_id,
+                        insta_id,
+                        modifier
                 ) VALUES (
-                    %(seller_account_id)s,
-                    %(seller_type_id)s,
-                    1,
-                    (SELECT product_sort_id FROM seller_types WHERE seller_type_no = %(seller_type_id)s),
-                    %(name_kr)s,
-                    %(name_en)s,
-                    %(center_number)s,
-                    %(site_url)s,
-                    %(kakao_id)s,
-                    %(insta_id)s,
-                    %(account_no)s
+                        %(seller_account_id)s,
+                        %(seller_type_id)s,
+                        1,
+                        (SELECT product_sort_id FROM seller_types WHERE seller_type_no = %(seller_type_id)s),
+                        %(name_kr)s,
+                        %(name_en)s,
+                        %(center_number)s,
+                        %(site_url)s,
+                        %(kakao_id)s,
+                        %(insta_id)s,
+                        %(account_no)s
                 )"""
 
                 # 데이터 sql 명령문과 셀러 데이터 바인딩
@@ -1531,11 +1531,11 @@ class SellerDao:
                 # 담당자정보 INSERT 문
                 insert_manager_infos_statement = """
                     INSERT INTO manager_infos(
-                    contact_number,
-                    seller_info_id
+                        contact_number,
+                        seller_info_id
                 ) VALUES (
-                    %(contact_number)s,
-                    %(seller_info_no)s
+                        %(contact_number)s,
+                        %(seller_info_no)s
                 )"""
 
                 # 데이터 sql 명령문과 셀러 데이터 바인딩
@@ -1545,13 +1545,13 @@ class SellerDao:
                 # 셀러 상태변경 이력 INSERT 문
                 insert_status_histories_statement = """
                     INSERT INTO seller_status_change_histories(
-                    seller_account_id,
-                    seller_status_id,
-                    modifier                    
+                        seller_account_id,
+                        seller_status_id,
+                        modifier                    
                 ) VALUES (
-                    %(seller_account_id)s,
-                    1,
-                    %(account_no)s
+                        %(seller_account_id)s,
+                        1,
+                        %(account_no)s
                 )"""
 
                 # 데이터 sql 명령문과 셀러 데이터 바인딩

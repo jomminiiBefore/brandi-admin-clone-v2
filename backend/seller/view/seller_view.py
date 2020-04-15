@@ -152,6 +152,7 @@ class SellerView:
 
         Returns:
             200: SUCCESS 로그인 성공
+            401: INVALID_PASSWORD, STATUS_1_CANT_LOGIN
             500: NO_DATABASE_CONNECTION
 
         Authors:
@@ -172,13 +173,15 @@ class SellerView:
             # DB에 연결
             db_connection = get_db_connection()
             if db_connection:
-                # service 에 있는 SellerService 를 가져와서 seller_service 라는 인스턴스를 만듬
+
+                # service 에 있는 SellerService 를 가져와서 seller_service 라는 인스턴스를 만듦
                 seller_service = SellerService()
 
                 # 로그인 함수를 실행한 결과값을 login_result 에 저장
                 login_result = seller_service.login(account_info, db_connection)
                 return login_result
-                # DB가 열리지 않았을 경우
+
+            # DB가 열리지 않았을 경우
             else:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
