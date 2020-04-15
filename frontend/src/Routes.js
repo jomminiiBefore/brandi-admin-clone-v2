@@ -11,6 +11,7 @@ import TestingTable from "./component/sellerAccountManagement/TestingTable";
 import ProductRegist from "src/pages/ProductRegist";
 import ColorFilter from "src/component/productRegist/ColorFilter";
 import SellerSelect from "src/component/productRegist/SellerSelect";
+import ProductModify from "src/pages/ProductModify";
 
 const Routes = () => {
   return (
@@ -27,6 +28,7 @@ const Routes = () => {
         <Route exact path="/productRegist" component={ProductRegist} />
         <Route exact path="/colorFilter" component={ColorFilter} />
         <Route exact path="/sellerSelect" component={SellerSelect} />
+        <Route exact path="/productModify" component={ProductModify} />
       </Switch>
     </Router>
   );
