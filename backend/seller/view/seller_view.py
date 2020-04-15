@@ -227,7 +227,7 @@ class SellerView:
             args: path parameter 를 통해서 들어온 검색 키워
 
         Returns:
-            200: 가입된 모든 셀러 및 셀러 세부 정보 리스트로 표출
+            seller_list_result: 가입된 모든 셀러 및 셀러 세부 정보 리스트로 표출(seller_service 에서 받은 리턴 값.)
             400: seller_service 로 값을 넘겨줄 때 애러가나면 400 리턴
             500: database 연결에 실패하면 500리턴
 
@@ -238,6 +238,7 @@ class SellerView:
             2020-04-03 (yoonhc@brandi.co.kr): 초기 생성
             2020-04-07 (yoonhc@brandi.co.kr): 파라미터 유효성검사 추가
             2020-04-10 (yoonhc@brandi.co.kr): 애러 처리 추가
+            2020-04-14 (yoonhc@brandi.co.kr): offset 과 limit 도 유효성검사 실시
         """
 
         # 유효성 확인 위해 기간 데이터 먼저 정의
@@ -249,10 +250,10 @@ class SellerView:
             if start_time > close_time:
                 start_time = close_time
 
-        # request에 통과한 쿼리파라미터를 담을 리스트를 생성.
+        # validation 을 통과한 값을 담을 딕셔너리를 만들어줌.
         valid_param = {}
 
-        # request안에 valid_param 리스트에 validation을 통과한 query parameter을 넣어줌.
+        # valid_param 딕셔너리에 validation 을 통과한 query parameter 을 넣어줌.
         valid_param['seller_account_no'] = args[0]
         valid_param['login_id'] = args[1]
         valid_param['name_en'] = args[2]
@@ -269,18 +270,16 @@ class SellerView:
         valid_param['offset'] = args[13] if args[13] else 0
         valid_param['limit'] = args[14] if args[14] else 10
 
-        # 유저 정보를 g에서 읽어와서 service에 전달
+        # 유저 정보를 g에서 읽어와서 service 에 전달
         user = g.account_info
 
         # 데이터베이스 커넥션을 열어줌.
         try:
             db_connection = DatabaseConnection()
-
             if db_connection:
                 seller_service = SellerService()
                 seller_list_result = seller_service.get_seller_list(valid_param, user, db_connection)
                 return seller_list_result
-
             else:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
@@ -689,15 +688,16 @@ class SellerView:
     def change_seller_status(*args):
         """ 셀러 상태 변경
         마스터 권한을 가진 어카운트가 셀러의 상태를 변경 하는 기능.
+        path parameter 로 셀러 계정 번호를 받고 body 로 변경하고자 하는 셀러 상태 번호를 받는다.
 
         Args:
             args: 유효성 검사를 통과한 파라미터 리스트
-                seller_account_id: path parameter를 통해서 들어온 셀러 계정 아이디
-                seller_status_id: request body를 통해서 들어온
+                seller_account_id: path parameter 를 통해서 들어온 셀러 계정 번호
+                seller_status_id: request body 를 통해서 들어온
 
         Returns:
-            200: 셀러 상태 변경 성공 메세지
-            400: seller_service의 클래스 호출 실패 또는 parameter를 제대로 넘겨지주 못했을 경우
+            status_change_result: seller_service 에서 넘겨받은 결과 값.
+            400: seller_service 의 클래스 호출 실패 또는 parameter 를 제대로 넘겨지주 못했을 경우
             500: 데이터베이스 연결 실패
 
         Authors:
@@ -711,7 +711,7 @@ class SellerView:
         # 유저정보를 가져와 서비스로 넘김
         user = g.account_info
 
-        # 유효성검사를 통과한 parameter를 딕셔너리 담는다.
+        # 유효성검사를 통과한 parameter 를 딕셔너리 담는다.
         target_seller_info = {
             'seller_account_id': args[0],
             'seller_status_id': args[1]

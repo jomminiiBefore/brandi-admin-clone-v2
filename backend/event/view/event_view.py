@@ -529,7 +529,7 @@ class EventView:
         event_image = image_upload.upload_images(request)
 
         # 함수의 실행결과에 400이 포함된 경우 애러메세지를 그대로 리턴함.
-        if (400 or 500) in event_image:
+        if (400 in event_image) or (500 in event_image):
             return event_image
 
         # validation(형식) 확인된 데이터 저장

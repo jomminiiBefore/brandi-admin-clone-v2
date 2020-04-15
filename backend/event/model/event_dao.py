@@ -241,10 +241,12 @@ class EventDao:
         """ 상품(이미지) 기획전 등록
 
         기획전 타입이 상품(이미지)인 기획전을 등록함.
+        제일처음에 기획전 테이블을 생성하고, 기획전의 이력테이블인 기획전 정보 테이블을 생성한다.
+        그리고 기획전 상품테이블을 생성한다.
 
         Args:
-            event_info: parameter validation을 통과한 values.
-            event_product_info: 기획전용 상품. 값이 없으면 None이 들어옴.
+            event_info: parameter validation 을 통과한 values.
+            event_product_info: 기획전용 상품. 값이 없으면 None 이 들어옴.
             db_connection: 데이터베이스 커넥션 객체
 
         Returns:
@@ -256,6 +258,7 @@ class EventDao:
 
         History:
             2020-04-10 (yoonhc@brandi.co.kr): 초기 생성
+            2020-04-15 (yoonhc@brandi.co.kr): 기획전 상품이 들어오지 않은 경우 에러 리턴 추가.
 
         """
         try:
@@ -275,7 +278,7 @@ class EventDao:
                     )
                 '''
 
-                # 생성된 row의 아이디를 가져와서 event_info 사전에 저장.
+                # 생성된 row 의 아이디를 가져와서 event_info 사전에 저장.
                 db_cursor.execute(insert_event_statement, event_info)
                 event_no = db_cursor.lastrowid
                 event_info['event_no'] = event_no
@@ -309,13 +312,13 @@ class EventDao:
                 )'''
 
                 db_cursor.execute(insert_event_infos_statement, event_info)
-                # excute문 시행 후 방금 만들어진 이벤트인포 번호를 event_info 사전에 저장시킴
+                # execute 문 시행 후 방금 만들어진 이벤트인포 번호를 event_info 사전에 저장시킴
                 new_event_info_id = db_cursor.lastrowid
 
-                # 상품리스트가 있으면 이벤트용 상품 테이블에 row를 생성해줌.
+                # 상품리스트가 있으면 이벤트용 상품 테이블에 row 를 생성해줌.
                 if event_product_info:
 
-                    # for문을 돌면서 이벤트용 상품 리스트를 해당 테이블의 row로 생성함.
+                    # for 문을 돌면서 이벤트용 상품 리스트를 해당 테이블의 row 로 생성함.
                     for product in event_product_info:
                         # 바인딩을 위해서 한개의 상품정보에 새로 생성된 이벤트인포 아이디를 넣어줌
                         product['new_event_info_id'] = new_event_info_id
@@ -332,8 +335,12 @@ class EventDao:
                         )
                         '''
                         db_cursor.execute(insert_event_detail_product_infos, product)
-
-                        db_connection.commit()
+                # 기획전 상품이 하나이상 들어와야 하기 때문에 값이 들어오지 않으면 에러리턴.
+                else:
+                    return jsonify({'message': 'MISSING_EVENT_PRODUCT'}), 400
+                
+                # 모든 row 생성이 완료되면 commit 을 해준다.        
+                db_connection.commit()
                 return jsonify({'message': 'SUCCESS'}), 200
 
         except KeyError as e:
@@ -351,10 +358,12 @@ class EventDao:
         """ 상품(텍스트) 기획전 등록
 
         기획전 타입이 상품(텍스트)인 기획전을 등록함.
+        제일처음에 기획전 테이블을 생성하고, 기획전의 이력테이블인 기획전 정보 테이블을 생성한다.
+        그리고 기획전 상품테이블을 생성한다.
 
         Args:
-            event_info: parameter validation을 통과한 values.
-            event_product_info: 기획전용 상품. 값이 없으면 None이 들어옴.
+            event_info: parameter validation 을 통과한 values.
+            event_product_info: 기획전용 상품. 값이 없으면 None 이 들어옴.
             db_connection: 데이터베이스 커넥션 객체
 
         Returns:
@@ -366,6 +375,7 @@ class EventDao:
 
         History:
             2020-04-10 (yoonhc@brandi.co.kr): 초기 생성
+            2020-04-15 (yoonhc@brandi.co.kr): 기획전 상품이 들어오지 않은 경우 에러 리턴 추가.
 
         """
         try:
@@ -385,7 +395,7 @@ class EventDao:
                     )
                 '''
 
-                # 생성된 row의 아이디를 가져와서 event_info 사전에 저장.
+                # 생성된 row 의 아이디를 가져와서 event_info 사전에 저장.
                 db_cursor.execute(insert_event_statement, event_info)
                 event_no = db_cursor.lastrowid
                 event_info['event_no'] = event_no
@@ -419,13 +429,13 @@ class EventDao:
                 )'''
 
                 db_cursor.execute(insert_event_infos_statement, event_info)
-                # excute문 시행 후 방금 만들어진 이벤트인포 번호를 event_info 사전에 저장시킴
+                # execute 문 시행 후 방금 만들어진 이벤트인포 번호를 event_info 사전에 저장시킴
                 new_event_info_id = db_cursor.lastrowid
 
-                # 상품리스트가 있으면 이벤트용 상품 테이블에 row를 생성해줌.
+                # 상품리스트가 있으면 이벤트용 상품 테이블에 row 를 생성해줌.
                 if event_product_info:
 
-                    # for문을 돌면서 이벤트용 상품 리스트를 해당 테이블의 row로 생성함.
+                    # for 문을 돌면서 이벤트용 상품 리스트를 해당 테이블의 row 로 생성함.
                     for product in event_product_info:
                         # 바인딩을 위해서 한개의 상품정보에 새로 생성된 이벤트인포 아이디를 넣어줌
                         product['new_event_info_id'] = new_event_info_id
@@ -442,8 +452,12 @@ class EventDao:
                         )
                         '''
                         db_cursor.execute(insert_event_detail_product_infos, product)
+                # 기획전 상품이 하나이상 들어와야 하기 때문에 값이 들어오지 않으면 에러리턴.
+                else:
+                    return jsonify({'message': 'MISSING_EVENT_PRODUCT'}), 400
 
-                        db_connection.commit()
+                # 모든 row 생성이 완료되면 commit 을 해준다.
+                db_connection.commit()
                 return jsonify({'message': 'SUCCESS'}), 200
 
         except KeyError as e:
@@ -461,10 +475,12 @@ class EventDao:
         """ 유튜브 기획전 등록
 
         기획전 타입이 유튜브인 기획전을 등록함.
+        제일처음에 기획전 테이블을 생성하고, 기획전의 이력테이블인 기획전 정보 테이블을 생성한다.
+        그리고 기획전 상품테이블을 생성한다.
 
         Args:
-            event_info: parameter validation을 통과한 values.
-            event_product_info: 기획전용 상품. 값이 없으면 None이 들어옴.
+            event_info: parameter validation 을 통과한 values.
+            event_product_info: 기획전용 상품. 값이 없으면 None 이 들어옴.
             db_connection: 데이터베이스 커넥션 객체
 
         Returns:
@@ -476,6 +492,7 @@ class EventDao:
 
         History:
             2020-04-10 (yoonhc@brandi.co.kr): 초기 생성
+            2020-04-15 (yoonhc@brandi.co.kr): 기획전 상품이 들어오지 않은 경우 에러 리턴 추가.
 
         """
         try:
@@ -495,7 +512,7 @@ class EventDao:
                     )
                 '''
 
-                # 생성된 row의 아이디를 가져와서 event_info 사전에 저장.
+                # 생성된 row 의 아이디를 가져와서 event_info 사전에 저장.
                 db_cursor.execute(insert_event_statement, event_info)
                 event_no = db_cursor.lastrowid
                 event_info['event_no'] = event_no
@@ -533,13 +550,12 @@ class EventDao:
                     )'''
 
                 db_cursor.execute(insert_event_infos_statement, event_info)
-                # excute문 시행 후 방금 만들어진 이벤트인포 번호를 event_info 사전에 저장시킴
+                # execute 문 시행 후 방금 만들어진 이벤트인포 번호를 event_info 사전에 저장시킴
                 new_event_info_id = db_cursor.lastrowid
 
-                # 상품리스트가 있으면 이벤트용 상품 테이블에 row를 생성해줌.
+                # 상품리스트가 있으면 이벤트용 상품 테이블에 row 를 생성해줌.
                 if event_product_info:
-
-                    # for문을 돌면서 이벤트용 상품 리스트를 해당 테이블의 row로 생성함.
+                    # for 문을 돌면서 이벤트용 상품 리스트를 해당 테이블의 row 로 생성함.
                     for product in event_product_info:
                         # 바인딩을 위해서 한개의 상품정보에 새로 생성된 이벤트인포 아이디를 넣어줌
                         product['new_event_info_id'] = new_event_info_id
@@ -556,8 +572,12 @@ class EventDao:
                         )
                         '''
                         db_cursor.execute(insert_event_detail_product_infos, product)
-                        db_connection.commit()
+                # 기획전 상품이 하나이상 들어와야 하기 때문에 값이 들어오지 않으면 에러리턴.
+                else:
+                    return jsonify({'message': 'MISSING_EVENT_PRODUCT'}), 400
 
+                # 모든 row 생성이 완료되면 commit 을 해준다.
+                db_connection.commit()
                 return jsonify({'message': 'SUCCESS'}), 200
 
         except KeyError as e:
@@ -818,9 +838,9 @@ class EventDao:
             2020-04-10 (leejm3@brandi.co.kr): 초기생성
             2020-04-11 (yoonhc@brandi.co.kr): 들어온 기획전 id에 해당하는 가장 최근 이력의 선분을 끊어줌.
                 기획전 타입별로 유효성검사가 끝난 데이터를 가지고
-                데이터베이스에 event_info의 새로운 이력과 기획전 타입별로 생성되어야 하는 테이블을 생성함.
-                기획전타입이 이벤트, 쿠폰인 경우 event_detail_infos 테이블에 row추가.
-                기획전타입이 상품이미지, 상품텍스트, 유튜브인 경우 event_detail_product_infos테이블에 row추가(값이 들어왔다면).
+                데이터베이스에 event_info 의 새로운 이력과 기획전 타입별로 생성되어야 하는 테이블을 생성함.
+                기획전타입이 이벤트, 쿠폰인 경우 event_detail_infos 테이블에 row 추가.
+                기획전타입이 상품이미지, 상품텍스트, 유튜브인 경우 event_detail_product_infos 테이블에 row 추가(값이 들어왔다면).
         """
         try:
             with db_connection.cursor() as db_cursor:
@@ -949,6 +969,7 @@ class EventDao:
                         product['event_info_id'] = event_info_no
                         db_cursor.execute(insert_event_product_detail_infos_statement, product)
 
+                # 데이터베이스에 모든 작업을 끝냈으면 commit 을 통해서 샐재 결과를 데이터베이스에 반영해줌.
                 db_connection.commit()
                 return jsonify({"message": "SUCCESS"}), 200
 

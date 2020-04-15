@@ -22,11 +22,13 @@ class EventService:
         """ 기획전 등록 로직
 
         event_info 에 담긴 기획전 타입을 확인하고,
+        타입별 들어오지 말아야 할 키들을 유효성검사 해줌.
         각 기획전에 맞는 필드를 등록하는 dao 를 실행함
 
         Args:
             event_info: 유효성 검사를 통과한 기획전 등록 정보
             db_connection: 연결된 database connection 객체
+            event_product_info: 기획전타입이 3, 4, 5인 경우 기획전상품값이 들어옴..
 
         Returns: http 응답코드
             200: SUCCESS 기획전 신규 등록 완료
@@ -39,32 +41,76 @@ class EventService:
             2020-04-07 (leejm3@brandi.co.kr): 초기생성
             2020-04-10 (yoonhc@brandi.co.kr): 상품(이미지), 상품(텍스트), 유튜브 기획전 작성
             2020-04-12 (leejm3@brandi.co.kr): event_type_id 를 str 로 확인하던 것에서 int 로 확인하도록 변경
+            2020-04-15 (yoonhc@brandi.co.kr): 기획전 타입 별 들어오지 말아야할 키 유효성검사 추가.
         """
 
         event_dao = EventDao()
         try:
             # 기획전 타입이 이벤트일 경우
             if event_info['event_type_id'] == 1:
+                # 기획전 이벤트에 들어오면 안되는 필드를 걸러줌.
+                if event_info['long_description']:
+                    return jsonify({'message': 'INVALID_FIELD_LONG_DESCRIPTION'}), 400
+                if event_info['youtube_url']:
+                    return jsonify({'message': 'INVALID_FIELD_YOUTUBE_URL'}), 400
+                if event_product_info:
+                    return jsonify({'message': 'INVALID_FILED_EVENT_PRODUCT'}), 400
+
                 registering_event_result = event_dao.register_event_event(event_info, db_connection)
                 return registering_event_result
 
             # 기획전 타입이 쿠폰일 경우
             if event_info['event_type_id'] == 2:
+                if event_info['banner_image_url']:
+                    return jsonify({'message': 'INVALID_FIELD_BANNER_IMAGE_URL'}), 400
+                if event_info['detail_image_url']:
+                    return jsonify({'message': 'INVALID_FIELD_DETAIL_IMAGE_URL'}), 400
+                if event_info['youtube_url']:
+                    return jsonify({'message': 'INVALID_FIELD_YOUTUBE_URL'}), 400
+                if event_product_info:
+                    return jsonify({'message': 'INVALID_FILED_EVENT_PRODUCT'}), 400
+
                 registering_event_result = event_dao.register_coupon_event(event_info, db_connection)
                 return registering_event_result
 
             # 기획전 타입이 상품(이미지)일 경우
             if event_info['event_type_id'] == 3:
+                # 기획전 값이 상품이미지 일 경우 들어오지 말아야 할 키값을 걸러줌.
+                if event_info['long_description']:
+                    return jsonify({'message': 'INVALID_FIELD_LONG_DESCRIPTION'}), 400
+                if event_info['short_description']:
+                    return jsonify({'message': 'INVALID_FIELD_SHORT_DESCRIPTION'}), 400
+                if event_info['youtube_url']:
+                    return jsonify({'message': 'INVALID_FIELD_YOUTUBE_URL'}), 400
+                if event_info['button_name'] or event_info['button_link_type_id'] or event_info['button_link_description']:
+                    return jsonify({'message': 'INVALID_FIELD_BUTTON'}), 400
+
                 registering_event_result = event_dao.register_product_image_event(event_info, event_product_info, db_connection)
                 return registering_event_result
 
             # 기획전 타입이 상품(텍스트)일 경우
             if event_info['event_type_id'] == 4:
+                # 기획전 타입이 상품텍스트 일 때 들어오지 말아야 할 키값을 걸러줌.
+                if event_info['youtube_url']:
+                    return jsonify({'message': 'INVALID_FIELD_YOUTUBE_URL'}), 400
+                if event_info['button_name'] or event_info['button_link_type_id'] or event_info['button_link_description']:
+                    return jsonify({'message': 'INVALID_FIELD_BUTTON'}), 400
+                if event_info['detail_image_url']:
+                    return jsonify({'message': 'INVALID_FIELD_DETAIL_IMAGE_URL'}), 400
+                if event_info['long_description']:
+                    return jsonify({'message': 'INVALID_FIELD_LONG_DESCRIPTION'}), 400
+
                 registering_event_result = event_dao.register_product_text_event(event_info, event_product_info, db_connection)
                 return registering_event_result
 
             # 기획전 타입이 유튜브일 경우
             if event_info['event_type_id'] == 5:
+                # 기획전 타입이 유튜브일 때 들어오지 말아야 할 키값들을 걸러줌.
+                if event_info['button_name'] or event_info['button_link_type_id'] or event_info['button_link_description']:
+                    return jsonify({'message': 'INVALID_FIELD_BUTTON'}), 400
+                if event_info['long_description']:
+                    return jsonify({'message': 'INVALID_FIELD_LONG_DESCRIPTION'}), 400
+
                 registering_event_result = event_dao.register_youtube_event(event_info,event_product_info, db_connection)
                 return registering_event_result
 
@@ -214,7 +260,7 @@ class EventService:
                 if event_product_info:
                     return jsonify({'message': 'INVALID_FILED_EVENT_PRODUCT'}), 400
 
-                # 통과되면(기획전 타입이 이벤트로 판명되면) dao로 arguments를 넘겨줌.
+                # 통과되면(기획전 타입이 이벤트로 판명되면) dao 로 arguments 를 넘겨줌.
                 changing_event_result = event_dao.change_event(event_info, db_connection, event_product_info)
                 return changing_event_result
 
@@ -229,7 +275,7 @@ class EventService:
                 if event_product_info:
                     return jsonify({'message': 'INVALID_FILED_EVENT_PRODUCT'}), 400
 
-                # 통과되면(기획전타입이 쿠폰으로 판명되면) dao로 arguments를 넘겨줌
+                # 통과되면(기획전타입이 쿠폰으로 판명되면) dao 로 arguments 를 넘겨줌
                 changing_event_result = event_dao.change_event(event_info, db_connection, event_product_info)
                 return changing_event_result
 
@@ -246,7 +292,7 @@ class EventService:
                 if event_info['button_name'] or event_info['button_link_type_id'] or event_info['button_link_description']:
                     return jsonify({'message': 'INVALID_FIELD_BUTTON'}), 400
 
-                # 통과되면(기획전 타입이 상품이미지로 판명되면) dao로 arguments를 넘겨줌.
+                # 통과되면(기획전 타입이 상품이미지로 판명되면) dao 로 arguments 를 넘겨줌.
                 changing_event_result = event_dao.change_event(event_info, db_connection, event_product_info)
                 return changing_event_result
 
@@ -263,7 +309,7 @@ class EventService:
                 if event_info['long_description']:
                     return jsonify({'message': 'INVALID_FIELD_LONG_DESCRIPTION'}), 400
 
-                # 통과되면(기획전 타입이 상품텍스트로 판명되면) dao로 arguments를 넘겨줌.
+                # 통과되면(기획전 타입이 상품텍스트로 판명되면) dao 로 arguments 를 넘겨줌.
                 changing_event_result = event_dao.change_event(event_info, db_connection, event_product_info)
                 return changing_event_result
 
@@ -276,7 +322,7 @@ class EventService:
                 if event_info['long_description']:
                     return jsonify({'message': 'INVALID_FIELD_LONG_DESCRIPTION'}), 400
 
-                # 통과되면(기획전 타입이 유튜브로 판명되면) dao로 arguments를 넘겨줌.
+                # 통과되면(기획전 타입이 유튜브로 판명되면) dao 로 arguments 를 넘겨줌.
                 changing_event_result = event_dao.change_event(event_info, db_connection, event_product_info)
                 return changing_event_result
 
