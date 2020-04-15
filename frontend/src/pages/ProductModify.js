@@ -371,29 +371,18 @@ const ProductRegist = () => {
     <Layout>
       <Container>
         <TitleBox>
-          <MainTitle>상품 등록</MainTitle>
-          <SubTitle>상품 정보 등록</SubTitle>
+          <MainTitle>상품 수정</MainTitle>
+          <SubTitle>상품 정보 수정</SubTitle>
         </TitleBox>
         <PageBarBox>
           <HomeIcon>
             <Home />
           </HomeIcon>
-          상품 관리 > 상품 관리 > 상품 등록
+          상품 관리 > 상품 관리 > 상품 수정
         </PageBarBox>
         <BasicInfoContainer>
           <TableBox title={"기본 정보"}>
-            <TableItem title={"셀러 선택"} isRequired={true}>
-              <InnerBox>
-                <JustBox
-                  width="390px"
-                  height="34px"
-                  placeholder={sellerName ? sellerName : "셀러검색을 해주세요."}
-                  disabled
-                />
-                <SearchButton onClick={showSellerSelect}>셀러검색</SearchButton>
-              </InnerBox>
-            </TableItem>
-            <TableItem title={"판매 여부"} isRequired={true}>
+            <TableItem title={"판매 여부"} isRequired={false}>
               <RadioButtonContainer>
                 <InputButtonBox>
                   <input
@@ -434,7 +423,7 @@ const ProductRegist = () => {
                 미판매 선택시 앱에서 Sold Out으로 표시됩니다.
               </InfoText>
             </TableItem>
-            <TableItem title={"진열 여부"} isRequired={true}>
+            <TableItem title={"진열 여부"} isRequired={false}>
               <RadioButtonContainer>
                 <InputButtonBox>
                   <input
@@ -532,7 +521,7 @@ const ProductRegist = () => {
                 </tbody>
               </CategoryTable>
             </TableItem>
-            <TableItem title={"상품 정보 고시"} isRequired={false}>
+            <TableItem title={"상품 정보 고시"} isRequired={true}>
               <div>
                 <RadioButtonContainer>
                   <InputButtonBox>
@@ -967,7 +956,7 @@ const ProductRegist = () => {
                 상품의 경우 선택하실 수 없습니다.
               </InfoText>
             </TableItem>
-            <TableItem title={"연령 필터"} isRequired={false}>
+            <TableItem title={"연령 필터"} isRequired={true}>
               <CustomButton />
               <InfoText>
                 <WarningIcon>
@@ -1078,7 +1067,7 @@ const ProductRegist = () => {
                 /> */}
               </WysiwygEditorBox>
             </TableItem>
-            <TableItem title={"유튜브 영상 URL"} isRequired={true}>
+            <TableItem title={"유튜브 영상 URL"} isRequired={false}>
               <InnerBox>
                 <NormalInput
                   onChange={e => {
@@ -1114,6 +1103,7 @@ const ProductRegist = () => {
                     name="option"
                     value="noOption"
                     defaultChecked="checked"
+                    disabled
                   />
                   <label>옵션없음</label>
                 </InputButtonBox>
@@ -1187,7 +1177,7 @@ const ProductRegist = () => {
         </OptionInfoContainer>
         <SaleInfoContainer>
           <TableBox title={"판매 정보"}>
-            <TableItem title={"도매 원가"} isRequired={false}>
+            <TableItem title={"도매 원가"} isRequired={true}>
               <NormalInput width="200" height="34" />
             </TableItem>
             <TableItem title={"판매가"} isRequired={true}>
@@ -1206,7 +1196,7 @@ const ProductRegist = () => {
                 주세요.
               </InfoText>
             </TableItem>
-            <TableItem title={"할인 정보"} isRequired={true}>
+            <TableItem title={"할인 정보"} isRequired={false}>
               <DiscountTable>
                 <tbody>
                   <DiscountTr>
@@ -1359,7 +1349,7 @@ const ProductRegist = () => {
                 할인 판매가는 원화기준 10원 단위로 자동 절사됩니다.
               </InfoText>
             </TableItem>
-            <TableItem title={"최소 판매 수량"} isRequired={true}>
+            <TableItem title={"최소 판매 수량"} isRequired={false}>
               <InnerBox>
                 <RadioButtonContainer>
                   <InputButtonBox>
@@ -1397,7 +1387,7 @@ const ProductRegist = () => {
                 <InfoText>( 20개를 초과하여 설정하실 수 없습니다 )</InfoText>
               </InnerBox>
             </TableItem>
-            <TableItem title={"최대 판매 수량"} isRequired={true}>
+            <TableItem title={"최대 판매 수량"} isRequired={false}>
               <InnerBox>
                 <RadioButtonContainer>
                   <InputButtonBox>
@@ -1523,7 +1513,7 @@ const ProductRegist = () => {
         <form encType="multipart/form-data" method="post">
           <BottomButtoBox>
             <CustomButton
-              name="등록"
+              name="수정"
               textColor="white"
               color={styles.color.buttonGreen}
               onClickEvent={SubmitData}

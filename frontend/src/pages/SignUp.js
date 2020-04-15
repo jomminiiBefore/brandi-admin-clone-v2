@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { withRouter } from "react-router-dom";
 import styled from "styled-components";
-import { JMURL } from "src/utils/config";
+import { JMURL, YJURL } from "src/utils/config";
 import InputContainer from "src/component/common/InputContainer";
 import CustomButton from "src/component/common/CustomButton";
+import PwdInputContainer from "src/component/signUp/PwdInputContainer";
 import Footer from "src/component/common/Footer";
 import {
   id_start,
@@ -158,7 +159,7 @@ const SignUp = props => {
 
   // signUp fetch 함수
   const handleSignUp = () => {
-    fetch(`${JMURL}/seller`, {
+    fetch(`${YJURL}/seller`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -218,11 +219,12 @@ const SignUp = props => {
             />
           </Wrapper>
           <Wrapper>
-            <InputContainer
+            <PwdInputContainer
               width="410"
               height="34"
               placeholder="비밀번호"
               name="password"
+              type="password"
               isRequired={true}
               setText={setValue}
               setBlur={setBlur}
@@ -234,11 +236,12 @@ const SignUp = props => {
             />
           </Wrapper>
           <Wrapper>
-            <InputContainer
+            <PwdInputContainer
               width="410"
               height="34"
               placeholder="비밀번호 재입력"
               name="rePassword"
+              type="password"
               isRequired={false}
               setText={setValue}
               setBlur={setBlur}

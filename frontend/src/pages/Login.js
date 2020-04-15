@@ -66,14 +66,15 @@ const Login = props => {
             />
           </Wrapper>
           <Wrapper>
-            <InputContainer
+            {/* <InputContainer
               width="300"
               height="34"
               placeholder="셀러 비밀번호"
               name="password"
               setText={onChange}
               setBlur={onChange}
-            />
+            /> */}
+            <PasswordInput type="password" placeholder="셀러 비밀번호" />
           </Wrapper>
         </InputBox>
         <SellerInfoBox>
@@ -160,6 +161,19 @@ const MainTitle = styled.div`
 
 const Wrapper = styled.div`
   margin-top: 10px;
+`;
+
+const PasswordInput = styled.input`
+  width: 300px;
+  height: 34px;
+  padding: 10px;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  color: #333333;
+  font-size: ${styles.fontSize.generalFont};
+  &:focus {
+    border: 1px solid #e5e5e5;
+  }
 `;
 
 const InputBox = styled.div`
