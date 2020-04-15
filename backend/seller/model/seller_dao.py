@@ -165,6 +165,7 @@ class SellerDao:
 
         Returns:
             200: 요청된 계정의 셀러정보
+            400: INVALID_ACCOUNT_NO
             500: DB_CURSOR_ERROR, INVALID_KEY
 
         Authors:
@@ -175,6 +176,8 @@ class SellerDao:
             2020-04-01 (leejm3@brandi.co.kr): seller_info 기본 정보 표출
             2020-04-02 (leejm3@brandi.co.kr): 외래키 관련 정보 표출
             2020-04-03 (leejm3@brandi.co.kr): 표출 정보에 외래키 id 값 추가
+            2020-04-15 (leejm3@brandi.co.kr): 해당 계정이 없으면 에러 리턴 추가
+
         """
         try:
             with db_connection.cursor() as db_cursor:
@@ -260,6 +263,10 @@ class SellerDao:
 
                 # seller_info_result 에 쿼리 결과 저장
                 seller_info_result = db_cursor.fetchone()
+
+                # 해당 번호의 셀러가 없으면 에러 리턴
+                if seller_info_result is None:
+                    return seller_info_result
 
                 # 담당자 정보
                 # SELECT 문 조건 데이터
@@ -556,6 +563,8 @@ class SellerDao:
 
                     # 데이터베이스의 데이터를 기반으로 한 딕셔너리를 판다스 데이터 프레임으로 만들어줌.
                     df = pd.DataFrame(data=seller_list_dict)
+                    df.index.name = '번호'
+                    df.index += 1
 
                     # 파일이름과 파일경로를 정의해줌.
                     file_name = f'{self.gen_random_name()}.xlsx'
@@ -701,9 +710,11 @@ class SellerDao:
                 """
 
                 db_cursor.execute(select_seller_account_no_statement, account_info)
+                seller_account_result = db_cursor.fetchone()
 
-                seller_account_id = db_cursor.fetchone()['seller_account_no']
-                account_info['seller_account_id'] = seller_account_id
+                # 셀러계정 아이디 저장
+                account_info['seller_account_id'] = seller_account_result['seller_account_no']
+
                 # 이전 셀러정보 아이디 가져오기
                 # seller_infos 테이블 SELECT
                 select_seller_infos_statement = """
@@ -922,54 +933,6 @@ class SellerDao:
         except KeyError as e:
             print(f'KEY_ERROR WITH {e}')
             return jsonify({'message': 'INVALID_KEY'}), 500
-
-        except Error as e:
-            print(f'DATABASE_CURSOR_ERROR_WITH {e}')
-            db_connection.rollback()
-            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
-
-    # noinspection PyMethodMayBeStatic
-    def get_seller_name_list(self, keyword, db_connection):
-
-        """
-
-        Args:
-            keyword(string):
-            db_connection(DatabaseConnection):
-
-        Returns:
-            200: 검색된 셀러 10개
-            400: key error
-            500: server error
-
-        Authors:
-
-            leesh3@brandi.co.kr (이소헌)
-
-        History:
-            2020-04-05 (leesh3@brandi.co.kr): 초기 생성
-        """
-        try:
-            with db_connection.cursor() as db_cursor:
-                get_stmt = """
-                    SELECT seller_account_id, profile_image_url, name_kr, account_id, product_sort_id
-                    FROM seller_infos 
-                    INNER JOIN seller_accounts ON seller_accounts.seller_account_no = seller_infos.seller_account_id
-                    WHERE seller_infos.name_kr 
-                    LIKE '%"""+keyword+"""%' AND close_time='2037-12-31 23:59:59.0'
-                """
-                db_cursor.execute(get_stmt)
-
-                names = db_cursor.fetchmany(10)
-
-                if names:
-                    return jsonify({'search_results': names}), 200
-                return jsonify({'message': 'SELLER_DOES_NOT_EXISTS'}), 404
-
-        except KeyError as e:
-            print(f'KEY_ERROR_WITH {e}')
-            db_connection.rollback()
-            return jsonify({'message': 'INVALID_KEY'}), 400
 
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')

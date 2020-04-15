@@ -44,7 +44,6 @@ class ProductDao:
 
                 db_cursor.execute(get_stmt, {'account_no': account_no})
                 first_categories = db_cursor.fetchall()
-                first_categories.insert(0, {'first_category_no': 0, 'name': '1차 카테고리를 선택해주세요.'})
 
                 return jsonify(first_categories), 200
 
