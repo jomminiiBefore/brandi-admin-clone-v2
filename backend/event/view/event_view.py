@@ -38,7 +38,9 @@ class EventView:
         Param('event_type_id', GET, list, required=False),
         Param('event_name', GET, str, required=False),
         Param('event_start_time', GET, str, required=False),
-        Param('event_end_time', GET, str, required=False)
+        Param('event_end_time', GET, str, required=False),
+        Param('offset', GET, int, required=False),
+        Param('limit', GET, int, required=False)
     )
     def get_all_events(*args):
 
@@ -67,7 +69,9 @@ class EventView:
             'event_type_id': args[0],
             'event_name': args[1],
             'event_start_time': args[2],
-            'event_end_time': args[3]
+            'event_end_time': args[3],
+            'offset': args[4] if args[4] else 0,
+            'limit': args[5] if args[5] else 10
         }
         if event_info['event_start_time'] and event_info['event_end_time']:
             if (datetime.strptime(event_info['event_start_time'], "%Y-%m-%d") \

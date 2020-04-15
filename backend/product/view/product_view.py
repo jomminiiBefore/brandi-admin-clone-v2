@@ -359,7 +359,7 @@ class ProductView:
 
         Returns: Http 응답코드
             200: 신규 상품 등록 성공
-            500: 데이터베이스 에
+            500: 데이터베이스 에러
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
@@ -367,6 +367,7 @@ class ProductView:
         History:
             2020-04-06 (leesh3@brandi.co.kr): 초기 생성
             2020-04-14 (leesh3@brandi.co.kr): 이미지 순서 문제 캐치
+            2020-04-15 (leesh3@barndi.co.kr): form data 형태로 받을 수 있도록 tags 자료형 변경 (str -> list)
         """
         image_uploader = ImageUpload()
         uploaded_images = image_uploader.upload_product_image(request)
@@ -435,8 +436,7 @@ class ProductView:
         Param('product_sort_id', FORM, int),
         Param('first_category_id', FORM, int),
         Param('second_category_id', FORM, int),
-        Param('name', FORM, str,
-              rules=[Pattern(r"^((?!(?=.*\")(?=.*\')).)*$")]),
+        Param('name', FORM, str),
         Param('short_description', FORM, str, required=False),
         Param('color_filter_id', FORM, int),
         Param('style_filter_id', FORM, int),
