@@ -58,8 +58,9 @@ class ProductDao:
 
                 db_cursor.execute(get_stmt, {'account_no': account_no})
                 first_categories = db_cursor.fetchall()
-
-                return jsonify(first_categories), 200
+                if first_categories:
+                    return jsonify(first_categories), 200
+                return jsonify({'message': 'CATEGORY_DOES_NOT_EXIST'}), 404
 
         except KeyError as e:
             print(f'KEY_ERROR_WITH {e}')
