@@ -743,136 +743,212 @@ class ProductDao:
             leejm3@brandi.co.kr (이종민)
 
         History:
-            2020-04-09(kimsj5@brandi.co.kr): 초기 생성
+            2020-04-09 (kimsj5@brandi.co.kr): 초기 생성
             2020-04-13 (leejm3@brandi.co.kr):
                - offset / limit 유효성 view 에서 확인하도록 이동
                - 조회기간 필터 추가
                - 필터링 부분 일부 리팩토링
+            2020-04-15 (leejm3@brandi.co.kr):
+                - f-string 으로 필터링 조건 추가했던 것을 파라미터 바인딩 형태로 변경
+                - JOIN 문에서 약어 추가
+                - 주석 추가
         """
-
-        # sql 에서 where 조건문에 들어갈 필터 문자열
-        filter_query = ''
-
-        # 조회기간 필터링
-        filter_query += f" AND products.created_at > '{filter_info['period_start']}' \
-                        AND products.created_at < '{filter_info['period_end']}'"
-
-        seller_name = filter_info['seller_name']
-        if seller_name:
-            filter_query += f" AND seller_infos.name_kr = '{seller_name}'"
-
-        product_name = filter_info['product_name']
-        if product_name:
-            filter_query += f" AND product_infos.name = '{product_name}'"
-
-        product_number = filter_info['product_number']
-        if product_number:
-            filter_query += f" AND product_no = {product_number}"
-
-        seller_types = filter_info['seller_type_id']
-        if seller_types:
-            if len(seller_types) == 1:
-                filter_query += f" AND seller_types.seller_type_no = {seller_types[0]}"
-
-            else:
-                filter_query += f" AND seller_types.seller_type_no in {tuple(seller_types)}"
-
-        is_available = filter_info['is_available']
-        if is_available is not None:
-            filter_query += f" AND product_infos.is_available = {is_available}"
-
-        is_on_display = filter_info['is_on_display']
-        if is_on_display is not None:
-            filter_query += f" AND product_infos.is_on_display = {is_on_display}"
-
-        is_on_discount = filter_info['is_on_discount']
-        if is_on_discount is not None:
-            if is_on_discount == 1:
-                filter_query += f" AND product_infos.discount_rate > 0"
-
-            else:
-                filter_query += f" AND product_infos.discount_rate = 0"
 
         try:
             with db_connection as db_cursor:
 
-                # 상품 리스트를 가져오는 sql 명령문, 쿼리가 들어오면 쿼리문을 포메팅해서 검색 실행
-                select_product_list_statement = f'''
+                # 상품 리스트를 가져오는 sql 명령문, 쿼리가 들어오면 쿼리문을 바인딩해서 검색 실행
+                select_product_list_statement = '''
                     SELECT 
-                        products.created_at, 
-                        product_images.image_url, 
-                        product_infos.name as product_name,
-                        products.product_no, 
-                        seller_types.name as seller_type_name,
-                        seller_infos.name_kr as seller_name,
-                        product_infos.price,
-                        FLOOR(product_infos.price*(1-product_infos.discount_rate)) as discount_price,
-                        product_infos.is_available,
-                        product_infos.is_on_display,
-                        (CASE WHEN product_infos.discount_rate > 0 THEN 1 ELSE 0 END) AS is_discount
+                        PL01.created_at, 
+                        PL03.image_url, 
+                        PL02.name as product_name,
+                        PL01.product_no, 
+                        PL05.name as seller_type_name,
+                        PL04.name_kr as seller_name,
+                        PL02.price,
+                        FLOOR(PL02.price*(1-PL02.discount_rate)) as discount_price,
+                        PL02.is_available,
+                        PL02.is_on_display,
+                        (CASE WHEN PL02.discount_rate > 0 THEN 1 ELSE 0 END) AS is_discount
 
-                    FROM products
-                    LEFT JOIN product_infos ON products.product_no = product_infos.product_id
-                    LEFT JOIN product_images ON product_infos.product_info_no = product_images.product_info_id 
-                    LEFT JOIN seller_infos ON seller_infos.seller_account_id = product_infos.seller_id
-                    LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
-                    LEFT JOIN seller_accounts ON seller_infos.seller_account_id = seller_accounts.seller_account_no
+                    FROM products as PL01
+                    
+                    # 상품 정보 조인
+                    LEFT JOIN product_infos as PL02
+                    ON PL01.product_no = PL02.product_id
+                    
+                    # 상품 이미지 조인
+                    LEFT JOIN product_images as PL03 
+                    ON PL02.product_info_no = PL03.product_info_id
+                     
+                     # 셀러 정보 조인
+                    LEFT JOIN seller_infos as PL04 
+                    ON PL04.seller_account_id = PL02.seller_id
+                    
+                    # 셀러 속성 조인
+                    LEFT JOIN seller_types as PL05
+                    ON PL04.seller_type_id = PL05.seller_type_no
+                    
+                    # 셀러 계정 조인
+                    LEFT JOIN seller_accounts as PL06 
+                    ON PL04.seller_account_id = PL06.seller_account_no
 
                     WHERE
                     -- 셀러 계정과 상품 삭제여부
-                    seller_accounts.is_deleted = 0
-                    AND products.is_deleted = 0
+                    PL06.is_deleted = 0
+                    AND PL01.is_deleted = 0
                     
                     -- 상품 이미지 제한
-                    AND product_images.image_order = 1
-                    AND product_images.image_size_id = 1
+                    AND PL03.image_order = 1
+                    AND PL03.image_size_id = 1
                     
                     -- 상품, 셀러 정보 최신 이력 제한
-                    AND product_infos.close_time ='2037-12-31 23:59:59'
-                    AND seller_infos.close_time = '2037-12-31 23:59:59'
+                    AND PL02.close_time ='2037-12-31 23:59:59'
+                    AND PL04.close_time = '2037-12-31 23:59:59'
+                    '''
+                # 검색 조건
+                # 등록 기간 시작
+                if filter_info.get('period_start', None):
+                    select_product_list_statement += " AND PL01.created_at > %(period_start)s"
 
-                    -- 쿼리 적용
-                    {filter_query}
-                    LIMIT %(limit)s OFFSET %(offset)s      
-                   '''
+                # 등록기간 종료
+                if filter_info.get('period_end', None):
+                    select_product_list_statement += " AND PL01.created_at < %(period_end)s"
 
-                # 바인딩하기 전에 리스트 형태인 seller_type_id 를 filter_info 에서 제거
-                del filter_info['seller_type_id']
+                # 셀러명
+                if filter_info.get('seller_name', None):
+                    select_product_list_statement += " AND PL04.name_kr = %(seller_name)s"
+
+                # 상품명
+                if filter_info.get('product_name', None):
+                    select_product_list_statement += " AND PL02.name = %(product_name)s"
+
+                # 상품번호
+                if filter_info.get('product_number', None):
+                    select_product_list_statement += " AND PL01.product_no = %(product_number)s"
+
+                # 셀러 속성
+                if filter_info.get('seller_type_id', None):
+                    filter_info['seller_type_id'] = tuple(filter_info['seller_type_id'])
+                    select_product_list_statement += " AND PL05.seller_type_no in %(seller_type_id)s"
+
+                # 판매여부
+                if filter_info.get('is_available', None) is not None:
+                    select_product_list_statement += " AND PL02.is_available = %(is_available)s"
+
+                # 진열여부
+                if filter_info.get('is_on_display', None) is not None:
+                    select_product_list_statement += " AND PL02.is_on_display = %(is_on_display)s"
+
+                # 할인여부
+                if filter_info.get('is_on_discount', None) is not None:
+                    if filter_info['is_on_discount'] == 1:
+                        select_product_list_statement += " AND PL02.discount_rate > 0"
+
+                    else:
+                        select_product_list_statement += " AND PL02.discount_rate = 0"
+
+                # 페이징 마지막
+                if filter_info.get('limit', None):
+                    select_product_list_statement += " LIMIT %(limit)s"
+
+                # 페이징 시작
+                if filter_info.get('offset', None):
+                    select_product_list_statement += " OFFSET %(offset)s"
 
                 # sql 쿼리와 pagination 데이터 바인딩
                 db_cursor.execute(select_product_list_statement, filter_info)
                 product_info = db_cursor.fetchall()
 
-                # pagination 을 위해서 상품 몇개인지 product_info 에 넣어줌
-                product_count_statement = f'''
-                    SELECT
+                # pagination 을 위해서 상품 몇개인지 카운트
+                product_count_statement = '''
+                    SELECT 
                       COUNT(0) as filtered_product_count
-                    FROM products
-                    LEFT JOIN product_infos ON products.product_no = product_infos.product_id
-                    LEFT JOIN product_images ON product_infos.product_info_no = product_images.product_info_id 
-                    LEFT JOIN seller_infos ON seller_infos.seller_account_id = product_infos.seller_id
-                    LEFT JOIN seller_types ON seller_infos.seller_type_id = seller_types.seller_type_no
-                    LEFT JOIN seller_accounts ON seller_infos.seller_account_id = seller_accounts.seller_account_no
+
+                    FROM products as PL01
+                    
+                    # 상품 정보 조인
+                    LEFT JOIN product_infos as PL02
+                    ON PL01.product_no = PL02.product_id
+                    
+                    # 상품 이미지 조인
+                    LEFT JOIN product_images as PL03 
+                    ON PL02.product_info_no = PL03.product_info_id
+                     
+                     # 셀러 정보 조인
+                    LEFT JOIN seller_infos as PL04 
+                    ON PL04.seller_account_id = PL02.seller_id
+                    
+                    # 셀러 속성 조인
+                    LEFT JOIN seller_types as PL05
+                    ON PL04.seller_type_id = PL05.seller_type_no
+                    
+                    # 셀러 계정 조인
+                    LEFT JOIN seller_accounts as PL06 
+                    ON PL04.seller_account_id = PL06.seller_account_no
 
                     WHERE
                     -- 셀러 계정과 상품 삭제여부
-                    seller_accounts.is_deleted = 0
-                    AND products.is_deleted = 0
+                    PL06.is_deleted = 0
+                    AND PL01.is_deleted = 0
                     
                     -- 상품 이미지 제한
-                    AND product_images.image_order = 1
-                    AND product_images.image_size_id = 1
+                    AND PL03.image_order = 1
+                    AND PL03.image_size_id = 1
                     
                     -- 상품, 셀러 정보 최신 이력 제한
-                    AND product_infos.close_time ='2037-12-31 23:59:59'
-                    AND seller_infos.close_time = '2037-12-31 23:59:59'
+                    AND PL02.close_time ='2037-12-31 23:59:59'
+                    AND PL04.close_time = '2037-12-31 23:59:59'
 
-                    -- 쿼리 적용
-                    {filter_query}
                    '''
-                db_cursor.execute(product_count_statement)
+                # 검색 조건
+                # 등록 기간 시작
+                if filter_info.get('period_start', None):
+                    product_count_statement += " AND PL01.created_at > %(period_start)s"
+
+                # 등록기간 종료
+                if filter_info.get('period_end', None):
+                    product_count_statement += " AND PL01.created_at < %(period_end)s"
+
+                # 셀러명
+                if filter_info.get('seller_name', None):
+                    product_count_statement += " AND PL04.name_kr = %(seller_name)s"
+
+                # 상품명
+                if filter_info.get('product_name', None):
+                    product_count_statement += " AND PL02.name = %(product_name)s"
+
+                # 상품번호
+                if filter_info.get('product_number', None):
+                    product_count_statement += " AND PL01.product_no = %(product_number)s"
+
+                # 셀러 속성
+                if filter_info.get('seller_type_id', None):
+                    filter_info['seller_type_id'] = tuple(filter_info['seller_type_id'])
+                    product_count_statement += " AND PL05.seller_type_no in %(seller_type_id)s"
+
+                # 판매 여부
+                if filter_info.get('is_available', None) is not None:
+                    product_count_statement += " AND PL02.is_available = %(is_available)s"
+
+                # 진열여부
+                if filter_info.get('is_on_display', None) is not None:
+                    product_count_statement += " AND PL02.is_on_display = %(is_on_display)s"
+
+                # 할인여부
+                if filter_info.get('is_on_discount', None) is not None:
+                    if filter_info['is_on_discount'] == 1:
+                        product_count_statement += " AND PL02.discount_rate > 0"
+
+                    else:
+                        product_count_statement += " AND PL02.discount_rate = 0"
+
+                # 실행
+                db_cursor.execute(product_count_statement, filter_info)
                 product_count = db_cursor.fetchone()
 
+                # 상품 리스트와 검색된 상품 수 리턴
                 return jsonify({'product_list': product_info,
                                 'product_count': product_count['filtered_product_count']
                                 }), 200

@@ -487,6 +487,11 @@ class ProductView:
         if not period_end:
             period_end = '2037-12-31'
 
+        # seller_type_id 보정
+        seller_type_id = args[5]
+        if seller_type_id:
+            seller_type_id.append(0)
+
         # 유효성 검사를 통과한 쿼리 값을 filter_info 에저장
         filter_info = {
             # '2020-04-14' 형식으로 들어오는 기간 데이터 변환
@@ -495,7 +500,7 @@ class ProductView:
             'seller_name': args[2],
             'product_name': args[3],
             'product_number': args[4],
-            'seller_type_id': args[5],
+            'seller_type_id': seller_type_id,
             'is_available': args[6],
             'is_on_display': args[7],
             'is_on_discount': args[8],
