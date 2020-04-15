@@ -101,7 +101,7 @@ class SellerService:
                 return jsonify({'message': 'INVALID_AUTH_TYPE_ID'}), 400
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
     # noinspection PyMethodMayBeStatic
     def get_seller_info(self, account_info, db_connection):
@@ -164,7 +164,7 @@ class SellerService:
                 return jsonify({'message': 'INVALID_AUTH_TYPE_ID'}), 400
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
     # noinspection PyMethodMayBeStatic
     def change_seller_info(self, account_info, db_connection):
@@ -275,7 +275,7 @@ class SellerService:
                 return jsonify({'message': 'INVALID_AUTH_TYPE_ID'}), 400
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
     # noinspection PyMethodMayBeStatic
     def get_seller_list(self, valid_param, user, db_connection):
@@ -404,7 +404,7 @@ class SellerService:
 
         # 명시하지 않은 모든 에러를 잡아서 return
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
     # noinspection PyMethodMayBeStatic
     def sign_up(self, account_info, db_connection):
@@ -476,7 +476,7 @@ class SellerService:
             return sign_up_result
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
     # noinspection PyMethodMayBeStatic
     def get_my_page(self, account_info, db_connection):
@@ -507,4 +507,4 @@ class SellerService:
             return getting_seller_info_result
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500

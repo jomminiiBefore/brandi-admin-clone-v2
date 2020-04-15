@@ -72,6 +72,7 @@ class ProductView:
                 - 셀러속성 쿼리 값을 리스트 형태로 받도록 변경
         """
 
+        # 마스터 권한이 아니면 에러 반환
         if g.account_info['auth_type_id'] != 1:
             return jsonify({'message': 'NO_AUTHORIZATION'}), 403
 
@@ -90,12 +91,12 @@ class ProductView:
         if not period_end:
             period_end = '2037-12-31'
 
-        # seller_type_id 보정
+        # seller_type_id 보정(아이디가 하나만 들어올 경우 튜플로 만들 때 오류가 생겨서 보정)
         seller_type_id = args[5]
         if seller_type_id:
             seller_type_id.append(0)
 
-        # 유효성 검사를 통과한 쿼리 값을 filter_info 에저장
+        # 유효성 검사를 통과한 쿼리 값을 filter_info 에 저장
         filter_info = {
             # '2020-04-14' 형식으로 들어오는 기간 데이터 변환
             'period_start': period_start + ' 00:00:00',
@@ -124,21 +125,22 @@ class ProductView:
                 product_service = ProductService()
                 product_list_result = product_service.get_product_list(filter_info, db_connection)
                 return product_list_result
+
             else:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
+
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @product_app.route("/<int:product_no>", methods=["GET"], endpoint='get_product_detail')
     @login_required
-    @validate_params(Param('product_no', PATH, int))
     def get_product_detail(product_no):
 
         """ 상품 등록/수정시 나타나는 개별 상품의 기존 정보 표출 엔드포인트
@@ -158,6 +160,7 @@ class ProductView:
         History:
             2020-04-03 (leesh3@brandi.co.kr): 초기 생성
             2020-04-07 (leesh3@brandi.co.kr): 파라미터 변수를 product_info_no -> product_no로 변경
+            2020-04-16 (leejm3@brandi.co.kr): 사용하지 않는 parameter validator 삭제
         """
 
         try:
@@ -166,6 +169,7 @@ class ProductView:
                 product_service = ProductService()
                 product_infos = product_service.get_product_detail(product_no, db_connection)
                 return product_infos
+
             else:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
@@ -175,6 +179,7 @@ class ProductView:
         finally:
             try:
                 db_connection.close()
+
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 500
 
@@ -209,18 +214,19 @@ class ProductView:
                 product_service = ProductService()
                 categories = product_service.get_first_categories(account_info, db_connection)
                 return categories
+
             else:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
-            except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
 
+            except Exception as e:
+                return jsonify({'message': f'{e}'}), 500
 
     @product_app.route(
         "/category/<int:first_category_no>",
@@ -256,24 +262,26 @@ class ProductView:
             2020-04-07 (leesh3@brandi.co.kr): URL 구조 변경
         """
         first_category_no = args[0]
-        db_connection = get_db_connection()
 
         try:
+            db_connection = get_db_connection()
             if db_connection:
                 product_service = ProductService()
                 categories = product_service.get_second_categories(db_connection, first_category_no)
                 return categories
+
             else:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 400
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
+
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @product_app.route("/color", methods=["GET"])
     def get_color_filters():
@@ -296,6 +304,7 @@ class ProductView:
                 product_service = ProductService()
                 get_color_result = product_service.get_color_filters(db_connection)
                 return get_color_result
+
             else:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
@@ -305,6 +314,7 @@ class ProductView:
         finally:
             try:
                 db_connection.close()
+
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 500
 
@@ -347,8 +357,8 @@ class ProductView:
 
         새로운 상품을 등록하는 엔드포인트.
         등록하려는 셀러의 정보에 따라 내부 내용이 달라지므로, 데코레이터에서 셀러 정보를 먼저 읽어옴.
-        등록 상세 정보는 request.body 내부에 존재함.
-        유효성 검사를 위한 조건 통과 후 product_info 변수에 내용을 담아 product_service로 전달.
+        등록 상세 정보는 form 에 존재함.
+        유효성 검사를 위한 조건 통과 후 product_info 변수에 내용을 담아 product_service 로 전달.
 
         Args:
             *args: 등록할 제품의 상세 정보
@@ -377,6 +387,7 @@ class ProductView:
         # 상품 등록시 대표 사진인 1번 사진부터 들어와야함
         if not uploaded_images['image_file_1']:
             return jsonify({'message': 'REPRESENTATIVE_IMAGE_DOES_NOT_EXIST'}), 400
+
         # 1번 사진부터 순서대로 들어와야함
         for i in range(2, 6):
             if uploaded_images[f'image_file_{i}']:
@@ -416,6 +427,7 @@ class ProductView:
                 product_service = ProductService()
                 product_insert_result = product_service.insert_new_product(product_info, db_connection)
                 return product_insert_result
+
             else:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
@@ -425,6 +437,7 @@ class ProductView:
         finally:
             try:
                 db_connection.close()
+
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 500
 
@@ -459,7 +472,7 @@ class ProductView:
 
         상품의 정보를 수정하는 엔드포인트.
         등록하려는 셀러의 정보에 따라 내부 내용이 달라지므로, 데코레이터에서 셀러 정보를 먼저 읽어옴.
-        수정 상세 정보는 request.body 내부에 존재함.
+        수정 상세 정보는 form 에 존재함.
         유효성 검사를 위한 조건 통과 후 product_info 변수에 내용을 담아 product_service로 전달.
 
         Args:
@@ -483,7 +496,7 @@ class ProductView:
         image_uploader = ImageUpload()
         uploaded_images = image_uploader.upload_product_image(request)
 
-        # 이미지 업로더를 호출한 결과값에 애러코드 400이 포함되어있으면 utils.py에서 발생한 러메세지를 그대로 리턴
+        # 이미지 업로더를 호출한 결과값에 애러코드 400이 포함되어있으면 utils.py 에서 발생한 에러메세지를 그대로 리턴
         if (400 in uploaded_images) or (500 in uploaded_images):
             return uploaded_images
 
@@ -521,6 +534,7 @@ class ProductView:
                 product_service = ProductService()
                 product_update_result = product_service.update_product_info(product_info, db_connection)
                 return product_update_result
+
             else:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
@@ -530,5 +544,6 @@ class ProductView:
         finally:
             try:
                 db_connection.close()
+
             except Exception as e:
                 return jsonify({'message': f'{e}'}), 500

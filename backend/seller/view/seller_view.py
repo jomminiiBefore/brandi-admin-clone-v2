@@ -124,13 +124,13 @@ class SellerView:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @seller_app.route('/login', methods=['POST'])
     @validate_params(
@@ -184,14 +184,14 @@ class SellerView:
 
         # 정의하지 않은 모든 error 를 잡아줌
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         # try 랑 except 에 상관없이 무조건 실행
         finally:
             try:
                 db_connection.close()
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @seller_app.route('', methods=['GET'], endpoint='get_all_sellers')
     @login_required
@@ -281,13 +281,13 @@ class SellerView:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @seller_app.route('/<int:parameter_account_no>', methods=['GET'], endpoint='get_seller_info')
     @login_required
@@ -329,7 +329,7 @@ class SellerView:
         History:
             2020-04-01 (leejm3@brandi.co.kr): 초기 생성
             2020-04-02 (leejm3@brandi.co.kr): 파라미터 validation 추가, 데코레이터 적용
-            2020-04-03 (leejm3@brandil.co.kr): 주석 수정(메인문구, urlparameter 수정)
+            2020-04-03 (leejm3@brandil.co.kr): 주석 수정(메인문구, url parameter 수정)
             2020-04-06 (leejm3@brandi.co.kr):
                 url path 변경('/<int:parameter_account_no>/info' -> '/<int:parameter_account_no>')
 
@@ -354,13 +354,13 @@ class SellerView:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @seller_app.route('/mypage', methods=['GET'], endpoint='get_my_page')
     @login_required
@@ -409,13 +409,14 @@ class SellerView:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
+
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @seller_app.route('/<int:parameter_account_no>', methods=['PUT'], endpoint='change_seller_info')
     @login_required
@@ -698,13 +699,13 @@ class SellerView:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @seller_app.route('/<int:parameter_account_no>/password', methods=['PUT'], endpoint='change_password')
     @login_required
@@ -786,13 +787,13 @@ class SellerView:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @seller_app.route('/<int:seller_account_id>/status', methods=['PUT'], endpoint='change_seller_status')
     @login_required

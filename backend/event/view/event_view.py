@@ -136,13 +136,13 @@ class EventView:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @event_app.route('', methods=['POST'], endpoint='register_event_info')
     @login_required
@@ -385,14 +385,14 @@ class EventView:
                 return jsonify({'view_message': 'NO_DATABASE_CONNECTION'}), 500
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
 
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @event_app.route("/type", methods=["GET"])
     @login_required
@@ -425,14 +425,14 @@ class EventView:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
 
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @event_app.route("/type/<int:event_type_id>", methods=["GET"], endpoint='get_event_sorts')
     @login_required
@@ -479,14 +479,14 @@ class EventView:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
 
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
 
     @event_app.route("/<int:event_no>", methods=["PUT"], endpoint='change_event_infos')
     @login_required
@@ -736,11 +736,11 @@ class EventView:
                 return jsonify({'message': 'NO_DATABASE_CONNECTION'}), 500
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
         finally:
             try:
                 db_connection.close()
 
             except Exception as e:
-                return jsonify({'message': f'{e}'}), 400
+                return jsonify({'message': f'{e}'}), 500
