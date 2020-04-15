@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from "react";
 import styled, { keyframes, css } from "styled-components";
-import { SHURL } from "src/utils/config";
+import { SHURL, YJURL } from "src/utils/config";
 import styles from "src/utils/styles";
 import { InfoCircle } from "@styled-icons/fa-solid";
 
-const SellerSelect = ({ showSellerSelect, getCategoryOne }) => {
+const SellerSelect = ({
+  showSellerSelect,
+  getCategoryOne,
+  postData,
+  setPostData
+}) => {
   const [input, setInput] = useState("");
 
   const [seller, setSeller] = useState([]);
 
-  const [currentSeller, setCurrentSeller] = useState("");
+  const [selectedSeller, setSelectedSeller] = useState({
+    id: "",
+    name: ""
+  });
 
   // 셀러검색 GET 함수
   const getSearchSeller = e => {
     setInput(e.target.value);
-    fetch(`${SHURL}/seller?name_kr=${input}`, {
+    fetch(`${YJURL}/seller?name_kr=${input}`, {
       method: "GET",
       headers: {
         Authorization:
@@ -23,10 +31,25 @@ const SellerSelect = ({ showSellerSelect, getCategoryOne }) => {
     })
       .then(res => res.json())
       .then(res => res && setSeller(res.seller_list))
+      .then(res => console.log(res, "seller!!!!!"))
       .catch(e => console.log("셀러검색 에러 이거!!", e));
   };
 
-  console.log("셀러검색 셀러 이거!!", seller);
+  useEffect(() => {
+    if (selectedSeller.id !== "" && selectedSeller.name !== "") {
+      setSeller([]);
+      setInput(selectedSeller.name);
+      setPostData({
+        ...postData,
+        selected_account_no: Number(selectedSeller.id)
+      });
+    }
+  }, [selectedSeller]);
+  console.log("셀러 이거!!", seller);
+  const handleSeller = () => {
+    getCategoryOne(selectedSeller);
+    showSellerSelect();
+  };
 
   return (
     <Container>
@@ -45,27 +68,39 @@ const SellerSelect = ({ showSellerSelect, getCategoryOne }) => {
               type="text"
               name="serchSlect"
               placeholder="Select..."
+              value={input}
               onChange={getSearchSeller}
             />
+          </Search>
+          <SellersBox>
             {seller
               ? seller.map((el, index) => {
-                  return (
-                    <Sellers key={index}>
-                      <SellerName>{el.name_kr}</SellerName>
-                    </Sellers>
-                  );
+                  console.log("프로필 이미지 이거!!", el.profile_image_url);
+                  if (el.profile_image_url) {
+                    return (
+                      <SellersMapBox
+                        key={index}
+                        onClick={() =>
+                          setSelectedSeller({
+                            ...selectedSeller,
+                            id: el.account_no,
+                            name: el.name_kr
+                          })
+                        }
+                      >
+                        <SellersMapImg src={el.profile_image_url} />
+                        <div>{el.name_kr}</div>
+                      </SellersMapBox>
+                    );
+                  }
                 })
-              : null}
-          </Search>
+              : none}
+          </SellersBox>
+          {/* <SellersMapImg src="https://brandi-intern.s3.ap-northeast-2.amazonaws.com/2a7f8d1b-7c26-49c6-a252-15b3613568f0" /> */}
         </Main>
         <Button>
           <Close onClick={showSellerSelect}>닫기</Close>
-
-          <ChooseSeller
-            onClick={() => getCategoryOne(seller.account_no, seller.name_kr)}
-          >
-            셀러 선택하기
-          </ChooseSeller>
+          <ChooseSeller onClick={handleSeller}>셀러 선택하기</ChooseSeller>
         </Button>
       </Box>
     </Container>
@@ -77,9 +112,6 @@ export default SellerSelect;
 const Container = styled.div`
   width: 100vw;
   height: 100vh;
-  /* display: flex;
-  justify-content: center;
-  align-items: center; */
   position: fixed;
   top: 0;
   z-index: 1;
@@ -157,6 +189,7 @@ const InfoIcon = styled.div`
 
 const Search = styled.div`
   padding-top: 10px;
+  position: relative;
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -178,20 +211,36 @@ const SearchInput = styled.input`
   font-size: 13px;
 `;
 
-const Sellers = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 270px;
-  height: 34px;
-  border: 1px solid #e5e5e5;
-  border-radius: 3px;
-  padding: 10px;
+const SellersBox = styled.div`
+  width: 238px;
+  position: absolute;
+  left: 210px;
+  background-color: white;
 `;
 
-const SellerName = styled.p`
-  width: 270px;
-  height: 34px;
-  font-size: 12px;
+const SellersMapBox = styled.div`
+  width: 238px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e5e5;
+  padding: 5px;
+  font-size: 13px;
+  cursor: pointer;
+  &:hover {
+    background-color: #ccf1ff;
+  }
+`;
+
+const SellersMapImg = styled.img`
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+  border: 1px solid #ffcce1;
+  border-radius: 3px;
+  /* background-size: cover;
+  background-repeat: no-repeat; */
+  /* background-image: url("${props => props.url}"); */
 `;
 
 const Button = styled.div`
@@ -199,7 +248,7 @@ const Button = styled.div`
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: 15px 10px 0px 0px;
+  padding: 10px;
 `;
 
 const Close = styled.div`

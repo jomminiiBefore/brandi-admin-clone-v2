@@ -181,7 +181,18 @@ li {
   cursor:pointer;
   border-radius: 2px;
 }
-
+.ReactTags__tagInputField{
+  width:390px;
+  height:34p;
+  margin-right: 5px;
+  border: 1px solid #e5e5e5;
+  border-radius: 3px;
+  padding: 10px;
+  font-size: 13px;
+  &:focus {
+    border: 1px solid #e5e5e5;
+  }
+}
 `;
 
 export default GlobalStyles;
