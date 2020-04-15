@@ -52,18 +52,17 @@ class ImageUpload:
     # 이미지 리사이즈 : big
     def resize_to_big(self, image_file):
         """ 이미지를 big 사이즈로 리사이즈
-        pillow 라이브러리를 사용하여 들어온 이미지 파일을 pillow객체로 만들고 pillow객체에 있는 매서드를 사용하여 리사이즈.
+        pillow 라이브러리를 사용하여 들어온 이미지 파일을 pillow 객체로 만들고 pillow 객체에 있는 매서드를 사용하여 리사이즈.
         가로의 길이를 고정 사이즈로 이용하여 세로의 길이를 구해서 리사이즈함.
-        리사이즈 된 pillow객체를 bytesIO buffer에 담고 랜덤으로 생성한 이름과 buffer 자체를 리턴함.
+        리사이즈 된 pillow 객체를 bytesIO buffer 에 담고 랜덤으로 생성한 이름과 buffer 자체를 리턴함.
         각파일의 확장자를 반영하여 메모리에 저장
 
         Args:
             image_file: 이미지 파일 객체
 
         Returns:
-            리사이즈 성공: ByteIO 객체, uuid를 리스트에 담아서 리턴
-            리사이즈 실패: None을 리턴해서 애러처리
-
+            [big_io, str(uuid.uuid4())]: ByteIO 객체, uuid 를 리스트에 담아서 리턴
+            None: 리사이즈 실패시 이 함수를 호출하는 함수에서의 에러처리를위해 None 을 리턴함.
         Authors:
             yoonhc@brandi.co.kr (윤희철)
 
@@ -87,23 +86,24 @@ class ImageUpload:
                     resized_image_big.save(big_io, 'jpeg')
                 big_io.seek(0)
                 return [big_io, str(uuid.uuid4())]
-
+        # 예외처리의 결과를 None 으로 리턴해서 이 함수를 호출하는 함수에서 에러를 잡아줌.
         except:
             return None
 
     # 이미지 리사이즈 : medium
     def resize_to_medium(self, image_file):
-        """ 이미지를 medium사이즈로 리사이즈
-        pillow 라이브러리를 사용하여 들어온 이미지 파일을 pillow객체로 만들고 pillow객체에 있는 매서드를 사용하여 리사이즈.
+        """ 이미지를 medium 사이즈로 리사이즈
+        pillow 라이브러리를 사용하여 들어온 이미지 파일을 pillow 객체로 만들고 pillow 객체에 있는 매서드를 사용하여 리사이즈.
         가로의 길이를 고정 사이즈로 이용하여 세로의 길이를 구해서 리사이즈함.
-        리사이즈 된 pillow객체를 bytesIO buffer에 담고 랜덤으로 생성한 이름과 buffer 자체를 리턴함.
+        리사이즈 된 pillow 객체를 bytesIO buffer 에 담고 랜덤으로 생성한 이름과 buffer 자체를 리턴함.
+        각파일의 확장자를 반영하여 메모리에 저장
 
         Args:
             image_file: 이미지 파일 객체
 
         Returns:
-            리사이즈 성공: ByteIO 객체, uuid를 리스트에 담아서 리턴
-            리사이즈 실패: None을 리턴해서 애러처리
+            [medium_io, str(uuid.uuid4())]: ByteIO 객체, uuid 를 리스트에 담아서 리턴
+            None: 리사이즈 실패시 이 함수를 호출하는 함수에서의 에러처리를위해 None 을 리턴함.
 
         Authors:
             yoonhc@brandi.co.kr (윤희철)
@@ -134,16 +134,17 @@ class ImageUpload:
     # 이미지 리사이즈 : small
     def resize_to_small(self, image_file):
         """ 이미지를 small 사이즈로 리사이즈
-        pillow 라이브러리를 사용하여 들어온 이미지 파일을 pillow객체로 만들고 pillow객체에 있는 매서드를 사용하여 리사이즈.
+        pillow 라이브러리를 사용하여 들어온 이미지 파일을 pillow 객체로 만들고 pillow 객체에 있는 매서드를 사용하여 리사이즈.
         가로의 길이를 고정 사이즈로 이용하여 세로의 길이를 구해서 리사이즈함.
-        리사이즈 된 pillow객체를 bytesIO buffer에 담고 랜덤으로 생성한 이름과 buffer 자체를 리턴함.
+        리사이즈 된 pillow 객체를 bytesIO buffer 에 담고 랜덤으로 생성한 이름과 buffer 자체를 리턴함.
+        각파일의 확장자를 반영하여 메모리에 저장
 
         Args:
             image_file: 이미지 파일 객체
 
         Returns:
-            리사이즈 성공: ByteIO 객체, uuid를 리스트에 담아서 리턴
-            리사이즈 실패: None을 리턴해서 애러처리
+            [small_io, str(uuid.uuid4())]: ByteIO 객체, uuid 를 리스트에 담아서 리턴
+            None: 리사이즈 실패시 이 함수를 호출하는 함수에서의 에러처리를위해 None 을 리턴함.
 
         Authors:
             yoonhc@brandi.co.kr (윤희철)
@@ -175,8 +176,8 @@ class ImageUpload:
     # 요청받은 상품 이미지를 리사이즈 하고 s3에 업로드
     def upload_product_image(self, request):
         """ 상품 이미지 파일을 3가지 크기로 리사이즈 해서 s3에 업로드 하고 업로드한 이미지의 url, 사이즈를 리턴하는 함수.
-        들어올 것으로 예상되는 key값을 지정하고 해당 key로 들어오지 않으면 None을 변수에 담아서 처리.
-        파일의 형식이 image가 아닐 경우 이미지를 업로드 하지 않음.
+        들어올 것으로 예상되는 key 값을 지정하고 해당 key로 들어오지 않으면 None 을 변수에 담아서 처리.
+        파일의 형식이 image 가 아닐 경우 이미지를 업로드 하지 않음.
         파일의 크기가 일정크기를 넘으면 업로드 하지 않음.
         이미지가 들어오지 않아도 해당 이미지 순서에 있는 key는 존재하도록 설계
 
@@ -184,7 +185,7 @@ class ImageUpload:
             request: 상품 이미지 파일을 포함한 요청 값.
 
         Returns:
-            data: s3 버킷에 올라간 이미지파일의 url(dictionary), size를 포함한 딕셔너리
+            data: s3 버킷에 올라간 이미지파일의 url(dictionary), size 를 포함한 딕셔너리
             400: 파일형식이 잘못된 경우, 파일 크기가 너무 큰 경우,
             500: s3에 업로드과정에서 애러가 난 경우.
 
@@ -193,8 +194,8 @@ class ImageUpload:
 
         History:
             2020-04-02 (yoonhc@brandi.co.kr): 초기 생성
-            2020-04-09 (yoonhc@brandi.co,kr): RESTful api형식에 맞추기 위해서 이미지 업로드 기능의 모듈화.
-            2020-04-11 (yoonhc@brandi.co.kr): s3에 업로드 되는 과정에서 발생하는 애러 except처리 추가.
+            2020-04-09 (yoonhc@brandi.co,kr): RESTful api 형식에 맞추기 위해서 이미지 업로드 기능의 모듈화.
+            2020-04-11 (yoonhc@brandi.co.kr): s3에 업로드 되는 과정에서 발생하는 애러 except 처리 추가.
         """
         # s3 연결
         s3 = get_s3_connection()
@@ -292,7 +293,7 @@ class ImageUpload:
             data['image_file_1']['small_size_url'] = small_size_url
             data['image_file_1']['small_image_size_id'] = 3
 
-        # 순서2번의 이미지파일 이 존재하면 업로드하고 url을 딕셔너리에 추가
+        # 순서2번의 이미지파일 이 존재하면 업로드하고 url 을 딕셔너리에 추가
         if image_file_2:
             # 들어온 파일의 사이즈와 확장자를 구함.
             image_file_size = os.fstat(image_file_2.fileno()).st_size
@@ -302,7 +303,7 @@ class ImageUpload:
             if not ('image' in image_file_form):
                 return jsonify({'message': 'INVALID_FILE'})
 
-            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            # 들어온 이미지 크기가 10MB 보다 크면 request 를 받지 않음.
             if image_file_size > 10485760:
                 return jsonify({'message': 'INVALID_IMAGE1'})
 
@@ -369,7 +370,7 @@ class ImageUpload:
             data['image_file_2']['small_size_url'] = small_size_url
             data['image_file_2']['small_image_size_id'] = 3
 
-        # 순서3번의 이미지파일 이 존재하면 업로드하고 url을 딕셔너리에 추가
+        # 순서3번의 이미지파일 이 존재하면 업로드하고 url 을 딕셔너리에 추가
         if image_file_3:
             # 들어온 파일의 사이즈와 확장자를 구함.
             image_file_size = os.fstat(image_file_3.fileno()).st_size
@@ -379,7 +380,7 @@ class ImageUpload:
             if not ('image' in image_file_form):
                 return jsonify({'message': 'INVALID_FILE'})
 
-            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            # 들어온 이미지 크기가 10MB 보다 크면 request 를 받지 않음.
             if image_file_size > 10485760:
                 return jsonify({'message': 'INVALID_IMAGE1'})
 
@@ -446,7 +447,7 @@ class ImageUpload:
             data['image_file_3']['small_size_url'] = small_size_url
             data['image_file_3']['small_image_size_id'] = 3
 
-        # 순서4번의 이미지파일 이 존재하면 업로드하고 url을 딕셔너리에 추가
+        # 순서4번의 이미지파일 이 존재하면 업로드하고 url 을 딕셔너리에 추가
         if image_file_4:
             # 들어온 파일의 사이즈와 확장자를 구함.
             image_file_size = os.fstat(image_file_4.fileno()).st_size
@@ -456,7 +457,7 @@ class ImageUpload:
             if not ('image' in image_file_form):
                 return jsonify({'message': 'INVALID_FIL4'}), 400
 
-            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            # 들어온 이미지 크기가 10MB 보다 크면 request 를 받지 않음.
             if image_file_size > 10485760:
                 return jsonify({'message': 'INVALID_IMAGE4'}), 400
 
@@ -523,7 +524,7 @@ class ImageUpload:
             data['image_file_4']['small_size_url'] = small_size_url
             data['image_file_4']['small_image_size_id'] = 3
 
-        # 순서5번의 이미지파일 이 존재하면 업로드하고 url을 딕셔너리에 추가
+        # 순서5번의 이미지파일 이 존재하면 업로드하고 url 을 딕셔너리에 추가
         if image_file_5:
             # 들어온 파일의 사이즈와 확장자를 구함.
             image_file_size = os.fstat(image_file_5.fileno()).st_size
@@ -533,7 +534,7 @@ class ImageUpload:
             if not ('image' in image_file_form):
                 return jsonify({'message': 'INVALID_FILE'})
 
-            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            # 들어온 이미지 크기가 10MB 보다 크면 request 를 받지 않음.
             if image_file_size > 10485760:
                 return jsonify({'message': 'INVALID_IMAGE1'})
 
@@ -602,13 +603,13 @@ class ImageUpload:
 
         return data
 
-    # 요청받은 셀러 이미지를 s3에 업로드
+    # 요청받은 셀러 이미지를 s3에 업로드 --> 현재 사용하지 않음.
     def upload_seller_image(self, request):
-        """ 셀러 이미지 파일을 업로드하고 url을 리턴하는 매서드
-        들어올 것으로 예상되는 key값을 지정하고 해당 key로 들어오지 않으면 None을 변수에 담아서 처리.
-        파일의 형식이 image가 아닐 경우 이미지를 업로드 하지 않음.
+        """ 셀러 이미지 파일을 업로드하고 url 을 리턴하는 매서드
+        들어올 것으로 예상되는 key 값을 지정하고 해당 key 로 들어오지 않으면 None 을 변수에 담아서 처리.
+        파일의 형식이 image 가 아닐 경우 이미지를 업로드 하지 않음.
         파일의 크기가 일정크기를 넘으면 업로드 하지 않음.
-        boto3 라이브러리를 이용하여 s3에 업로드하고 url을 리턴함.
+        boto3 라이브러리를 이용하여 s3에 업로드하고 url 을 리턴함.
 
         Args:
             request: 이미지 파일을 포함한 요청 값
@@ -623,8 +624,8 @@ class ImageUpload:
 
         History:
             2020-04-02 (yoonhc@brandi.co.kr): 초기 생성
-            2020-04-09 (yoonhc@brandi.co.kr): image파일 업로드 형식을 RESTful api 기준에 맞추어 모듈로 만들고 필요한 앱에서 import해서 사용하는 방식 채택
-            2020-04-11 (yoonhc@brandi.co.kr): s3에 업로드 되는 과정에서 발생하는 애러 except처리 추가.
+            2020-04-09 (yoonhc@brandi.co.kr): image 파일 업로드 형식을 RESTful api 기준에 맞추어 모듈로 만들고 필요한 앱에서 import 해서 사용하는 방식 채택
+            2020-04-11 (yoonhc@brandi.co.kr): s3에 업로드 되는 과정에서 발생하는 애러 except 처리 추가.
         """
 
         data = {}
@@ -644,7 +645,7 @@ class ImageUpload:
             if not ('image' in image_file_form):
                 return jsonify({'message': 'INVALID_FILE1'}), 400
 
-            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            # 들어온 이미지 크기가 10MB 보다 크면 request 를 받지 않음.
             if image_file_size > 10485760:
                 return jsonify({'message': 'INVALID_IMAGE1'}), 400
 
@@ -676,7 +677,7 @@ class ImageUpload:
             if not ('image' in image_file_form):
                 return jsonify({'message': 'INVALID_FILE2'}), 400
 
-            # 들어온 이미지 크기가 10MB보다 크면 request를 받지 않음.
+            # 들어온 이미지 크기가 10MB 보다 크면 request 를 받지 않음.
             if image_file_size > 10485760:
                 return jsonify({'message': 'INVALID_IMAGE2'}), 400
 
@@ -766,13 +767,13 @@ class ImageUpload:
 
         return data
 
-    # 요청받은 셀러 이미지를 s3에 업로드
+    # 요청받은 셀러 이미지를 s3에 업로드 --> 현재 사용하지 않음.
     def upload_event_image(self, request):
         """ 기획전 이미지 파일을 업로드하고 url을 리턴하는 매서드
         request 의 files 안에 파일객체를 가져와서 값이 있으면 s3에 올리는 작업 수행.
-        파일의 형식이 image가 아닐 경우 이미지를 업로드 하지 않음.
+        파일의 형식이 image 가 아닐 경우 이미지를 업로드 하지 않음.
         파일의 크기가 일정크기를 넘으면 업로드 하지 않음.
-        boto3 라이브러리를 이용하여 s3에 업로드하고 url을 리턴함.
+        boto3 라이브러리를 이용하여 s3에 업로드하고 url 을 리턴함.
 
         Args:
             request: 이미지 파일을 포함한 요청 값
@@ -787,8 +788,8 @@ class ImageUpload:
 
         History:
             2020-04-02 (yoonhc@brandi.co.kr): 초기 생성
-            2020-04-09 (yoonhc@brandi.co.kr): image파일 업로드 형식을 RESTful api 기준에 맞추어 모듈로 만들고 필요한 앱에서 import해서 사용하는 방식 채택
-            2020-04-11 (yoonhc@brandi.co.kr): s3에 업로드 되는 과정에서 발생하는 애러 except처리 추가.
+            2020-04-09 (yoonhc@brandi.co.kr): image 파일 업로드 형식을 RESTful api 기준에 맞추어 모듈로 만들고 필요한 앱에서 import 해서 사용하는 방식 채택
+            2020-04-11 (yoonhc@brandi.co.kr): s3에 업로드 되는 과정에서 발생하는 애러 except 처리 추가.
         """
 
         data = {}
@@ -885,7 +886,7 @@ class ImageUpload:
 
         History:
             2020-04-12 (leejm3@brandi.co.kr): 초기 생성
-            2020-04-14 (yoonhc@brandi.co.kr): 이미지 확장자별 s3업로드 로직 추가.
+            2020-04-14 (yoonhc@brandi.co.kr): 이미지 확장자별 s3업로드 로직 추가, 파일 객체를 s3에 업로드 하도록 수정.
         """
 
         # s3에서 만들어진 url 을 반환할 dictionary 생성
@@ -925,7 +926,7 @@ class ImageUpload:
                 print({'error': e})
                 return jsonify({'message': f'{name}_S3_UPLOAD_FAIL'}), 500
 
-            # s3주소에 올라간 파일 이름을 넣어주어 리턴할 url을 만들어줌.
+            # s3주소에 올라간 파일 이름을 넣어주어 리턴할 url 을 만들어줌.
             uploaded_image_url = f'https://brandi-intern.s3.ap-northeast-2.amazonaws.com/{uploaded_image_name}'
 
             # data dict 에 값 저장

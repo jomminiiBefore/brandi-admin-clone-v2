@@ -267,13 +267,13 @@ class SellerService:
 
         """ 마스터 권한 셀러 상태 변경
             Args:
-                valid_param: 유효성검사를 통과한 parameter
+                target_seller_info: 유효성검사를 통과한 parameter
                 user: 유저 정보
                 db_connection: 데이터베이스 커넥션 객체
 
             Returns:
-                200: 수정 성공
-                400: value값이 정확하게 안들어 온 경우
+                seller_list_result: seller_service 에서 받은 리턴 값.
+                400: value 값이 정확하게 안들어 온 경우
                 403: 마스터 권한이 아닌 경우 수정 권한 없음
 
             Authors:

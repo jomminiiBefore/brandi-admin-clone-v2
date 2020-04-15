@@ -472,6 +472,7 @@ class SellerDao:
             select_seller_list_statement += " AND accounts.login_id = %(login_id)s"
             filter_query_values_count_statement += " AND accounts.login_id = %(login_id)s"
 
+        # 셀러 한글명 같은 경우는 키워드로 들어온 값을 포함하는 모든 셀러를 검색해야 하기 때문에 like 문을 사용한다.
         name_kr = valid_param.get('name_kr', None)
         if valid_param.get('name_kr', None):
             valid_param['name_kr'] = '%'+name_kr+'%'
@@ -494,6 +495,7 @@ class SellerDao:
             select_seller_list_statement += " AND seller_statuses.name = %(seller_status)s"
             filter_query_values_count_statement += " AND seller_statuses.name = %(seller_status)s"
 
+        # 담당자 연락처 같은 경우는 키워드로 들어온 값을 포함하는 모든 셀러를 검색해야 하기 때문에 like 문을 사용한다
         manager_contact_number = valid_param.get('manager_contact_number', None)
         if valid_param.get('manager_contact_number', None):
             valid_param['manager_contact_number'] = '%'+manager_contact_number+'%'
@@ -562,7 +564,7 @@ class SellerDao:
                     # 파일을 엑셀파일로 변환해서 로컬에 저장
                     df.to_excel(file, encoding='utf8')
 
-                    # 로컬에 저장된 파일을 s3에 업로드
+                    # 로컬에 저장된 파일을 s3에 업로드. 업로드 할 때 실패할 것을 고려하여 try-except 사용.
                     try:
                         s3.upload_file(file, "brandi-intern", file_name)
                     except Exception as e:
@@ -979,12 +981,12 @@ class SellerDao:
 
         """ 마스터 권한 셀러 상태 변경
         마스터 권한을 가진 유저가 데이터베이스의 셀러의 상태를 변경함.
-        seller_infos테이블에 새로운 이력(row)를 생성하고 seller_infos의 foreign key룰 가지는
-        manager_infos테이블에도 새로운 셀러 정보 이력을 foregin key로 가지도록 row를 추가해줌.
+        seller_infos 테이블에 새로운 이력(row)를 생성하고 seller_infos 의 foreign key 룰 가지는
+        manager_infos 테이블에도 새로운 셀러 정보 이력을 foreign key 로 가지도록 row 를 추가해줌.
+        마지막으로 seller_status_change_histories 테이블에 변경 이력을 추가해줌.
 
             Args:
-                seller_status_id: 셀러 상태 아이디
-                seller_account_id: 셀러 정보 아이디
+                target_seller_info: 바꾸고자 하는 셀러의 정보
                 db_connection: 데이터베이스 커넥션 객체
 
             Returns:
@@ -997,6 +999,7 @@ class SellerDao:
             History:
                 2020-04-05 (yoonhc@brandi.co.kr): 초기 생성
                 2020-04-09 (yoonhc@brandi.co.kr): 셀러정보 선분이력 반영
+                2020-04-13 (yoonhc@brandi.co.kr): 셀러 상태를 변경하면 seller_status_change_histories 테이블에 row 추가.
 
         """
 
@@ -1026,7 +1029,7 @@ class SellerDao:
                 if previous_seller_info['seller_status_id'] == target_seller_info['seller_status_id']:
                     return jsonify({'message': 'INVALID_ACTION'}), 400
 
-                # 새로운 버전 이전의 버전의 셀러 번호를 target_seller_info에 저장장
+                # 새로운 버전 이전의 버전의 셀러 번호를 target_seller_info 에 저장장
                 target_seller_info['previous_seller_info_no'] = previous_seller_info['seller_info_no']
 
                 # seller_infos : 셀러 상태 변경 sql 명령문
@@ -1106,7 +1109,7 @@ class SellerDao:
                     seller_account_id = %(seller_account_id)s AND close_time = '2037-12-31 23:59:59'
                 """
 
-                # seller_infos : 데이터 sql명령문과 셀러 데이터 바인딩 후 새로운 셀러 정보 이력의 primary key 딕셔너리에 담음
+                # seller_infos: 데이터 sql 명령문과 셀러 데이터 바인딩 후 새로운 셀러 정보 이력의 primary key 딕셔너리에 담음
                 db_cursor.execute(update_seller_status_statement, target_seller_info)
                 new_seller_info_id = db_cursor.lastrowid
                 target_seller_info['new_seller_info_id'] = new_seller_info_id
@@ -1116,7 +1119,7 @@ class SellerDao:
                 close_time = db_cursor.fetchone()
                 target_seller_info['close_time'] = close_time['NOW()']
 
-                # seller_infos 테이블에 해당 seller_account의 새로운 이력이 생겼기 때문에 이전의 이력을 끊어주는 작업.
+                # seller_infos 테이블에 해당 seller_account 의 새로운 이력이 생겼기 때문에 이전의 이력을 끊어주는 작업.
                 update_previous_seller_infos_stat = '''
                 UPDATE
                 seller_infos
@@ -1128,7 +1131,7 @@ class SellerDao:
                 '''
                 db_cursor.execute(update_previous_seller_infos_stat, target_seller_info)
 
-                # manager_infos : 매니저 정보에서 셀러 인포 foreign key를 새로 생성된 이력으로 바꿔주는 명령문.
+                # manager_infos: 매니저 정보에서 셀러 인포 foreign key 를 새로 생성된 이력으로 바꿔주는 명령문.
                 insert_manager_info_statement = """
                     INSERT INTO manager_infos (
                         name,
