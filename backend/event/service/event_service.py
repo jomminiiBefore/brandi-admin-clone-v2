@@ -131,7 +131,7 @@ class EventService:
                 return registering_event_result
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
     # noinspection PyMethodMayBeStatic
     def get_event_types(self, db_connection):
@@ -161,7 +161,7 @@ class EventService:
             return types
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
     # noinspection PyMethodMayBeStatic
     def get_event_sorts(self, event_type_info, db_connection):
@@ -192,7 +192,7 @@ class EventService:
             return sorts
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
     # noinspection PyMethodMayBeStatic
     def get_event_infos(self, event_no, db_connection):
@@ -224,7 +224,7 @@ class EventService:
             return getting_event_info_result
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
     # noinspection PyMethodMayBeStatic
     def change_event_infos(self, event_info, event_product_info, db_connection):
@@ -357,7 +357,7 @@ class EventService:
                 return changing_event_result
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 
     # noinspection PyMethodMayBeStatic
     def get_all_events(self, event_info, db_connection):
@@ -393,5 +393,5 @@ class EventService:
             return jsonify({'message': 'NO_AUTHORIZATION'}), 403
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500
 

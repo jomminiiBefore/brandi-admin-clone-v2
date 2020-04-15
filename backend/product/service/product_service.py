@@ -12,7 +12,7 @@ class ProductService:
 
         """ 상품 1차 카테고리 목록 표출
 
-        seller마다 다른 product_type을 기준으로 1차 상품 카테고리를 표출
+        seller 마다 다른 product_type 을 기준으로 1차 상품 카테고리를 표출
 
         Args:
             account_info: 상품 등록시 상품 소유 셀러
@@ -29,9 +29,11 @@ class ProductService:
         """
         product_dao = ProductDao()
         auth_type_id = g.account_info['auth_type_id']
+
         # 상품을 등록하는 주체가 마스터이면, query string 에 담긴 셀러 어카운트 넘버로 셀러 선택해서 카테고리 탐색
         if auth_type_id == 1:
             account_no = account_info['account_no']
+
         # 상품을 등록하는 주체가 셀러이면, 자기 토큰을 이용해 카테고리 탐색
         elif auth_type_id == 2:
             account_no = g.account_info['account_no']
@@ -140,7 +142,7 @@ class ProductService:
         """ 상품 정보 수
 
         등록하려는 셀러의 정보에 따라 내부 내용이 달라지므로, 데코레이터에서 셀러 정보를 먼저 읽어옴.
-        상세 수정 정보는 request.body 내부에 존재함.
+        상세 수정 정보는 form 내부에 존재함.
 
         Args:
             product_info: 상품 수정 정보
@@ -148,12 +150,15 @@ class ProductService:
 
         Returns: Http 응답코드
             200: 상품 정보 수정 완료
+            400: INVALID_AUTH_ID
+            403: NO_AUTHORIZATION
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
 
         History:
             2020-04-08 (leesh3@brandi.co.kr): 초기 생성
+            2020-04-16 (leejm3@brandi.co.kr): 오류 주석 추가
         """
 
         product_dao = ProductDao()
@@ -226,4 +231,4 @@ class ProductService:
             return product_list_result
 
         except Exception as e:
-            return jsonify({'message': f'{e}'}), 400
+            return jsonify({'message': f'{e}'}), 500

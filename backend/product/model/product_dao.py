@@ -13,7 +13,7 @@ class ProductDao:
 
         """ 상품 1차 카테고리 목록 표출
 
-        seller마다 다른 product_type을 기준으로 1차 상품 카테고리를 표출
+        seller 마다 다른 product_type 을 기준으로 1차 상품 카테고리를 표출
 
         Args:
             account_no(integer): 선택된 셀러의 account_no
@@ -22,24 +22,38 @@ class ProductDao:
         Returns:
             200: 셀러의 상품 종류에 해당하는 1차 카테고리
             400: key error
-            400: database cursor error
+            500: database cursor error
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
+            leejm3@brandi.co.kr (이종민)
 
         History:
             2020-04-02 (leesh3@brandi.co.kr): 초기 생성
+            2020-04-16 (leejm3@brandi.co.kr): SQL 문 별칭 적용
 
         """
         try:
             with db_connection.cursor() as db_cursor:
                 get_stmt = """
-                    SELECT e.first_category_no, e.name
-                    FROM accounts AS a 
-                    INNER JOIN seller_accounts   AS b ON b.account_id = a.account_no 
-                    INNER JOIN seller_infos 	 AS c ON c.seller_account_id = b.seller_account_no
-                    INNER JOIN first_categories  AS e ON e.product_sort_id  = c.product_sort_id
-                    WHERE a.account_no=%(account_no)s AND c.close_time = '2037-12-31 23:59:59.0'
+                    SELECT 
+                        PC04.first_category_no, PC04.name
+                    
+                    FROM 
+                        accounts AS PC01 
+                    
+                    INNER JOIN seller_accounts AS PC02 
+                    ON PC02.account_id = PC01.account_no 
+                    
+                    INNER JOIN seller_infos AS PC03 
+                    ON PC03.seller_account_id = PC02.seller_account_no
+                    
+                    INNER JOIN first_categories AS PC04 
+                    ON PC04.product_sort_id  = PC03.product_sort_id
+                    
+                    WHERE 
+                        PC01.account_no=%(account_no)s 
+                        AND PC03.close_time = '2037-12-31 23:59:59.0'
                 """
 
                 db_cursor.execute(get_stmt, {'account_no': account_no})
@@ -55,7 +69,7 @@ class ProductDao:
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
-            return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
     # noinspection PyMethodMayBeStatic
     def get_second_categories(self, db_connection, first_category_no):
@@ -71,26 +85,38 @@ class ProductDao:
         Returns:
             200: 1차 카테고리에 해당하는 상품 2차 카테고리 목록
             400: key error
-            400: database cursor error
+            404: CATEGORY_DOES_NOT_EXIST
+            500: database cursor error
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
+            leejm3@brandi.co.kr (이종민)
 
         History:
             2020-04-02 (leesh3@brandi.co.kr): 초기 생성
+            2020-04-16 (leejm3@brandi.co.kr): SQL 문 별칭 적용, 에러 주석 추가
 
         """
         try:
             with db_connection.cursor() as db_cursor:
                 get_stmt = """
-                    SELECT sc.second_category_no, sc.name FROM second_categories AS sc
-                    INNER JOIN first_categories     AS fc ON fc.first_category_no = sc.first_category_id 
-                    WHERE fc.first_category_no = %(first_category_no)s;
+                    SELECT 
+                        PC01.second_category_no, PC01.name 
+                    
+                    FROM 
+                        second_categories AS PC01
+                    
+                    INNER JOIN first_categories AS PC02 
+                    ON PC02.first_category_no = PC01.first_category_id 
+                    
+                    WHERE 
+                        PC02.first_category_no = %(first_category_no)s;
                 """
                 db_cursor.execute(get_stmt, {'first_category_no': first_category_no})
                 second_categories = db_cursor.fetchall()
                 if second_categories:
                     return jsonify({'second_categories': second_categories}), 200
+
                 return jsonify({'message': 'CATEGORY_DOES_NOT_EXIST'}), 404
 
         except KeyError as e:
@@ -101,14 +127,14 @@ class ProductDao:
         except Error as e:
             print(f'DATABASE_CURSOR_ERROR_WITH {e}')
             db_connection.rollback()
-            return jsonify({'message': 'DB_CURSOR_ERROR'}), 400
+            return jsonify({'message': 'DB_CURSOR_ERROR'}), 500
 
     # noinspection PyMethodMayBeStatic
     def get_product_detail(self, product_no, db_connection):
 
         """상품 등록/수정시 나타나는 개별 상품의 기존 정보 표출
 
-        상품의 번호를 받아 해당하는 상품의 상세 정보를 표출.
+        상품의 번호를 받아 해당하는 상품의 상세 정보를 표출
 
         Args:
             product_no(integer): 동일 상품 변경 이력의 가장 최신 버전 인덱스 번호
@@ -159,7 +185,8 @@ class ProductDao:
                     FROM 
                         product_infos 
                     INNER JOIN 
-                        seller_accounts   ON product_infos.seller_id = seller_accounts.seller_account_no
+                        seller_accounts 
+                        ON product_infos.seller_id = seller_accounts.seller_account_no
                     WHERE 
                         product_id=%(product_id)s 
                     AND
@@ -199,6 +226,7 @@ class ProductDao:
                     product_information['images'] = images
 
                     return jsonify(product_information), 200
+
                 return jsonify({'message': 'PRODUCT_DOES_NOT_EXIST'}), 404
 
         except KeyError as e:
@@ -232,14 +260,17 @@ class ProductDao:
                 5. product_change_histories
 
             400: key_error
+            404: ACCOUNT_DOES_NOT_EXIST
             500: database_error
 
         Authors:
             leesh3@brandi.co.kr (이소헌)
+            leejm3@brandi.co.kr (이종민)
 
         History:
             2020-04-06 (leesh3@brandi.co.kr): 초기 생성
-            2020-04-09 (leesh3@brandi.co.kr): tag, image 정보 추가 부분 리스트 표현식으로 수
+            2020-04-09 (leesh3@brandi.co.kr): tag, image 정보 추가 부분 리스트 표현식으로 수정
+            2020-04-16 (leejm3@brandi.co.kr): 해당 셀러가 존재하지 않을 경우 에러 반환 추가
         """
 
         try:
@@ -255,17 +286,28 @@ class ProductDao:
                     SELECT
                         seller_account_no,
                         product_sort_id
+                        
                     FROM
                         seller_accounts
+                        
                     INNER JOIN
-                        seller_infos ON seller_infos.seller_account_id = seller_accounts.seller_account_no
+                        seller_infos 
+                        ON seller_infos.seller_account_id = seller_accounts.seller_account_no
+                    
                     WHERE
                         account_id=%(account_no)s  
                 """
                 db_cursor.execute(get_seller_account_stmt, {'account_no': product_info['selected_account_no']})
                 seller_account = db_cursor.fetchone()
-                product_info['seller_id'] = seller_account['seller_account_no']
-                product_info['product_sort_id'] = seller_account['product_sort_id']
+
+                # 셀러가 존재할 경우
+                if seller_account:
+                    product_info['seller_id'] = seller_account['seller_account_no']
+                    product_info['product_sort_id'] = seller_account['product_sort_id']
+
+                # 셀러가 존재하지 않을 경우
+                else:
+                    return jsonify({'message': 'ACCOUNT_DOES_NOT_EXIST'}), 404
 
                 # 1. TABLE products
                 # products 테이블에 먼저 요소 생성
@@ -397,6 +439,7 @@ class ProductDao:
                         price, discount_rate, 
                         is_deleted
                     )
+                    
                     SELECT 
                         product_id, 
                         modifier, 
@@ -406,8 +449,10 @@ class ProductDao:
                         price, 
                         discount_rate, 
                         is_deleted
+                    
                     FROM
                         product_infos
+                    
                     WHERE
                         product_info_no=%(product_info_no)s
                 """
@@ -438,7 +483,7 @@ class ProductDao:
         Returns:
             200: 상품 정보 수정됨.
             400: key_error
-            403: 셀러 불일
+            403: 셀러 불일치
             500: database_error
 
         Authors:
@@ -453,25 +498,32 @@ class ProductDao:
 
                 # 트랜잭션 시작
                 db_cursor.execute("START TRANSACTION")
+
                 # 자동 커밋 비활성화
                 db_cursor.execute("SET AUTOCOMMIT=0")
 
                 get_product_owner_stmt = """
                     SELECT
                         account_id
+                    
                     FROM
                         seller_accounts
+                    
                     INNER JOIN
                         product_infos ON product_infos.seller_id = seller_accounts.seller_account_no
+                    
                     WHERE
                         product_id=%(product_id)s
+                    
                     AND
                         product_infos.close_time='2037-12-31 23:59:59'
                 """
                 db_cursor.execute(get_product_owner_stmt, product_info)
                 validated_account = db_cursor.fetchone()
+
                 if not validated_account:
                     return jsonify({'message': 'PRODUCT_DOES_NOT_EXIST'}), 404
+
                 # 상품 변경을 시도하는 계정과 상품의 셀러가 다를 경우
                 if validated_account['account_id'] != product_info['token_account_no']:
                     return jsonify({'message': 'NO_AUTHORIZATION'}), 403
@@ -484,10 +536,13 @@ class ProductDao:
                 update_previous_product_info_stmt = """
                         UPDATE
                             product_infos
+                        
                         SET
                             close_time=%(close_time)s 
+                        
                         WHERE
                             product_id=%(product_id)s
+                        
                         AND
                             close_time='2037-12-31 23:59:59.0'
                     """
@@ -602,8 +657,10 @@ class ProductDao:
                                     image_size_id,
                                     image_order,
                                     %(product_info_id)s
+                                
                                 FROM
                                     product_images
+                                
                                 WHERE
                                     product_info_id=(
                                         SELECT 
@@ -661,8 +718,10 @@ class ProductDao:
                         price, 
                         discount_rate, 
                         is_deleted
+                    
                     FROM
                         product_infos
+                    
                     WHERE
                         product_info_no=%(product_info_no)s
                 """
@@ -705,8 +764,10 @@ class ProductDao:
                 get_colors_stmt = """
                     SELECT
                         *
+                    
                     FROM
                         color_filters
+                    
                     WHERE NOT
                         color_filter_no=19
                 """
