@@ -169,7 +169,7 @@ class ImageUpload:
                 small_io.seek(0)
                 return [small_io, str(uuid.uuid4())]
 
-        # 이미지를 pillow객체로 만들지 못하는 경우 애러처리를 위해 None을 리턴
+        # 이미지를 pillow 객체로 만들지 못하는 경우 애러처리를 위해 None 을 리턴
         except:
             return None
 
@@ -216,7 +216,7 @@ class ImageUpload:
         image_file_4 = request.files.get('image_file_4', None)
         image_file_5 = request.files.get('image_file_5', None)
 
-        # 순서1번의 이미지파일 이 존재하면 업로드하고 url을 딕셔너리에 추가
+        # 순서1번의 이미지파일 이 존재하면 업로드하고 url 을 딕셔너리에 추가
         if image_file_1:
             # 들어온 파일의 사이즈와 확장자를 구함.
             image_file_size = os.fstat(image_file_1.fileno()).st_size

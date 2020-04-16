@@ -119,6 +119,7 @@ class EventView:
 
         History:
             2020-04-10 (leejm3@brandi.co.kr): 초기 생성
+            2020-04-14 (yoonhc@brandi.co.kr): 데이터베이스 커넥션 호출 시 try-catch 추가
 
         """
 
@@ -238,7 +239,10 @@ class EventView:
         History:
             2020-04-07 (leejm3@brandi.co.kr): 초기생성 / 이벤트 기획전 부분 작성
             2020-04-08 (leejm3@brandi.co.kr): 기획전 기간 밸리데이션 추가
-            2020-04-10 (yoonhc@brandi.co.kr): 상품(이미지), 상품(텍스트), 유튜브 기획전 작성
+            2020-04-10 (yoonhc@brandi.co.kr):
+                - 상품(이미지), 상품(텍스트), 유튜브 기획전 작성
+                - request form 형태로 오는 매니저 정보 list 를 parsing 해서 사용하는 로직 추가
+                - 데이터베이스 커넥션을 호출 할 때 try/except 방식으로 변경
             2020-04-12 (leejm3@brandi.co.kr):
                 - event_type_id 를 int 로 받아오도록 validator 변경
                 - 기획전용 이미지 업로더를 사용하는 것에서 공통 업로더를 사용하도록 변경
@@ -588,11 +592,13 @@ class EventView:
         History:
             2020-04-10 (leejm3@brandi.co.kr): 초기 생성
             2020-04-11 (yoonhc@brandi.co.kr):
-                - utils.py 에서 나오는 결과값에 애러코드 400이있으면 애러메세지를 그대로 리턴하는 코드 추가
-                - 기획전 상품이 validation을 통과하면 json loads 를 통해서 array 자료형으로 파싱하는 코드 추가.
+                - utils.py(이미지 업로더) 에서 나오는 결과값에 애러코드 400이있으면 애러메세지를 그대로 리턴하는 코드 추가
+                - 기획전 상품이 validation 을 통과하면 json loads 를 통해서 array 자료형으로 파싱하는 코드 추가.
+                - 기획전 상품이 들어오면 따로 변수처리해서 service 로 넘기는 코드 추가
+                - 데이터베이스 커넥션을 호출 할 때 try/except 방식 추가
             2020-04-12 (leejm3@brandi.co.kr):
                 - 기획전용 이미지 업로더를 사용하는 것에서 공통 업로더를 사용하도록 변경
-                - 기획전 상품 정보를 json loads로 파싱하는 과정을 try/except 방식에서 if 문 방식으로 변경
+                - 기획전 상품 정보를 json loads 로 파싱하는 과정을 try/except 방식에서 if 문 방식으로 변경
                 - 기획전 타입이 상품(텍스트), 유튜브 일 경우 기획전 종류 유효성 확인 추가
             2020-04-15 (leejm3@brandi.co.kr:
                 - button_link_type_id 를 str 로 받던 것에서 int 로 받기로 변경

@@ -581,6 +581,7 @@ class SellerDao:
 
                     # 데이터베이스의 데이터를 기반으로 한 딕셔너리를 판다스 데이터 프레임으로 만들어줌.
                     df = pd.DataFrame(data=seller_list_dict)
+                    # 첫번제 인덱스의 컬럼명을 지정해주고, 번호가 1부터 시작하도록 한다.
                     df.index.name = '번호'
                     df.index += 1
 
@@ -1018,7 +1019,7 @@ class SellerDao:
                 # 새로운 버전 이전의 버전의 셀러 번호를 target_seller_info 에 저장장
                 target_seller_info['previous_seller_info_no'] = previous_seller_info['seller_info_no']
 
-                # seller_infos : 셀러 상태 변경 sql 명령문
+                # seller_infos : 셀러 상태 변경 sql 명령문, select 와 insert 를 같이 사용해서 기존에 있던 정보를 그대로 새로운 row 에 추가사킴
                 update_seller_status_statement = """
                     INSERT INTO seller_infos
                     (
@@ -1090,12 +1091,14 @@ class SellerDao:
                         bank_holder_name,
                         account_number,
                         %(modifier)s
-                    
                     FROM 
                         seller_infos                    
-                    
                     WHERE
-                        seller_account_id = %(seller_account_id)s AND close_time = '2037-12-31 23:59:59'
+                        seller_account_id = %(seller_account_id)s 
+                    AND 
+                        close_time = '2037-12-31 23:59:59'
+                    AND
+                        is_deleted = 0
                 """
 
                 # seller_infos: 데이터 sql 명령문과 셀러 데이터 바인딩 후 새로운 셀러 정보 이력의 primary key 딕셔너리에 담음
@@ -1110,13 +1113,13 @@ class SellerDao:
 
                 # seller_infos 테이블에 해당 seller_account 의 새로운 이력이 생겼기 때문에 이전의 이력을 끊어주는 작업.
                 update_previous_seller_infos_stat = '''
-                UPDATE
-                seller_infos
-                SET
-                close_time = %(close_time)s
-                WHERE
-                seller_info_no = %(previous_seller_info_no)s
-                AND seller_account_id = %(seller_account_id)s
+                    UPDATE
+                    seller_infos
+                    SET
+                    close_time = %(close_time)s
+                    WHERE
+                    seller_info_no = %(previous_seller_info_no)s
+                    AND seller_account_id = %(seller_account_id)s
                 '''
                 db_cursor.execute(update_previous_seller_infos_stat, target_seller_info)
 
@@ -1137,8 +1140,6 @@ class SellerDao:
                         %(new_seller_info_id)s
                         FROM manager_infos
                         WHERE seller_info_id = %(previous_seller_info_no)s
-                        -- WHERE manager_info_no = (SELECT manager_info_no FROM manager_infos WHERE seller_info_id = %(previous_seller_info_no)s AND ranking = 1)
-                        -- AND ranking = 1
                 """
                 db_cursor.execute(insert_manager_info_statement, target_seller_info)
 

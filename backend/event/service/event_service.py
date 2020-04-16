@@ -28,7 +28,7 @@ class EventService:
         Args:
             event_info: 유효성 검사를 통과한 기획전 등록 정보
             db_connection: 연결된 database connection 객체
-            event_product_info: 기획전타입이 3, 4, 5인 경우 기획전상품값이 들어옴..
+            event_product_info: 기획전타입이 3, 4, 5인 경우 기획전상품값이 들어옴
 
         Returns: http 응답코드
             200: SUCCESS 기획전 신규 등록 완료
