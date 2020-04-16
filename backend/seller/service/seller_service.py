@@ -303,7 +303,7 @@ class SellerService:
         seller_dao = SellerDao()
         auth_type_id = user.get('auth_type_id', None)
 
-        # 마스터 유저이면 dao에 db_connection 전달
+        # 마스터 유저이면 dao 에 db_connection 전달
         if auth_type_id == 1:
             seller_list_result = seller_dao.get_seller_list(valid_param, db_connection)
             return seller_list_result
@@ -334,7 +334,7 @@ class SellerService:
         seller_dao = SellerDao()
         auth_type_id = user.get('auth_type_id', None)
 
-        # 마스터 유저이면 dao에 db_connection 전달
+        # 마스터 유저이면 dao 에 db_connection 전달
         if auth_type_id == 1:
 
             # 셀러 상태 번호와 셀러 계정 번호가 둘다 들어오지 않으면 400 리턴

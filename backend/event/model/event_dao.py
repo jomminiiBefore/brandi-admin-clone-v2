@@ -495,7 +495,6 @@ class EventDao:
         History:
             2020-04-10 (yoonhc@brandi.co.kr): 초기 생성
             2020-04-15 (yoonhc@brandi.co.kr): 기획전 상품이 들어오지 않은 경우 에러 리턴 추가.
-
         """
         try:
             with db_connection.cursor() as db_cursor:
