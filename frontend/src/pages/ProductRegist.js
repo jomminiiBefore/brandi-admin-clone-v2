@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { render } from "react-dom";
 import { withRouter } from "react-router-dom";
 import styled from "styled-components";
-import { SHURL, YJURL } from "src/utils/config";
+import { SHURL, YJURL, JMURL } from "src/utils/config";
 import Layout from "src/component/common/Layout";
 import TableBox from "src/component/common/TableBox";
 import TableItem from "src/component/common/TableItem";
@@ -165,11 +165,12 @@ const ProductRegist = () => {
   // 카테고리 1 GET 함수
   const getCategoryOne = seller => {
     setSellerName(seller.name);
-    fetch(`${YJURL}/product/category?account_no=${seller.id}`, {
+    const token = localStorage.getItem("token");
+    fetch(`${JMURL}/product/category?account_no=${seller.id}`, {
       method: "GET",
       headers: {
-        Authorization:
-          "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
+        Authorization: token
+        // "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
       }
     })
       .then(res => res.json())
@@ -181,12 +182,12 @@ const ProductRegist = () => {
   useEffect(() => {
     if (postData.first_category_id !== null) {
       console.log("2차");
-      // const token = localStorage.getItem("token");
-      fetch(`${YJURL}/product/category/${postData.first_category_id}`, {
+      const token = localStorage.getItem("token");
+      fetch(`${JMURL}/product/category/${postData.first_category_id}`, {
         method: "GET",
         headers: {
-          Authorization:
-            "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
+          Authorization: token
+          // "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
         }
       })
         .then(res => res.json())
@@ -237,7 +238,7 @@ const ProductRegist = () => {
   const [colors, setColors] = useState([]);
   const showColorFilter = () => {
     if (postData.color_filter_id !== 19) {
-      fetch(`${YJURL}/product/color`)
+      fetch(`${JMURL}/product/color`)
         .then(res => res.json())
         .then(res => {
           if (res) {
@@ -331,11 +332,12 @@ const ProductRegist = () => {
       console.log("data: ", key, postData[key]);
       formData.append(key, postData[key]);
     }
-    fetch(`${YJURL}/product`, {
+    const token = localStorage.getItem("token");
+    fetch(`${JMURL}/product`, {
       method: "POST",
       headers: {
-        Authorization:
-          "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
+        Authorization: token
+        // "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
         // "Content-Type": "multipart/form-data"
       },
       body: formData

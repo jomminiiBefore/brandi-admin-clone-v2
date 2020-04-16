@@ -165,7 +165,7 @@ const ProductRegist = () => {
   // 카테고리 1 GET 함수
   const getCategoryOne = seller => {
     setSellerName(seller.name);
-    fetch(`${YJURL}/product/category?account_no=${seller.id}`, {
+    fetch(`${JMURL}/product/category?account_no=${seller.id}`, {
       method: "GET",
       headers: {
         Authorization:
@@ -182,7 +182,7 @@ const ProductRegist = () => {
     if (postData.first_category_id !== null) {
       console.log("2차");
       // const token = localStorage.getItem("token");
-      fetch(`${YJURL}/product/category/${postData.first_category_id}`, {
+      fetch(`${JMURL}/product/category/${postData.first_category_id}`, {
         method: "GET",
         headers: {
           Authorization:
@@ -237,7 +237,7 @@ const ProductRegist = () => {
   const [colors, setColors] = useState([]);
   const showColorFilter = () => {
     if (postData.color_filter_id !== 19) {
-      fetch(`${YJURL}/product/color`)
+      fetch(`${JMURL}/product/color`)
         .then(res => res.json())
         .then(res => {
           if (res) {
@@ -331,7 +331,7 @@ const ProductRegist = () => {
       console.log("data: ", key, postData[key]);
       formData.append(key, postData[key]);
     }
-    fetch(`${YJURL}/product`, {
+    fetch(`${JMURL}/product`, {
       method: "POST",
       headers: {
         Authorization:
