@@ -18,7 +18,7 @@ const Routes = () => {
     <Router>
       <GlobalStyles />
       <Switch>
-        <Route exact path="/" component={SideBar} />
+        <Route exact path="/" component={Login} />
         <Route exact path="/login" component={Login} />
         <Route exact path="/signup" component={SignUp} />
         <Route exact path="/loginOk" component={LoginOk} />

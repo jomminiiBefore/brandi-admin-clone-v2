@@ -56,6 +56,7 @@ const Input = ({
           isRequired={isRequired}
           disabled
           value={inputText}
+          isDisable={disabled}
         />
       ) : (
         <InputBox
@@ -117,6 +118,11 @@ const InputBox = styled.input`
   border-radius: 4px;
   color: #333333;
   font-size: 14px;
+  background-color: ${(props) => {
+    if (props.isDisable) {
+      return '#eee';
+    }
+  }};
   &:focus {
     border: 1px solid;
     border-color: ${(props) => {

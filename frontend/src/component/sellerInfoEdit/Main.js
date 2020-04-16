@@ -39,8 +39,13 @@ const Main = (props) => {
     setPasswordModal(!passwordModal);
     console.log('showshow');
   };
-
   const [isLoading, setIsLoading] = React.useState(false);
+  // master계정인지 seller계정인지 판단
+  const [isSeller, setIsSeller] = React.useState(false);
+  // 사업자 정보 입력 가능 유무 판단
+  const [isBusinessFormDisabled, setIsBusinessFormDisabled] = React.useState(
+    true
+  );
 
   // 정보 입력 폼
   const [input, setInput] = useState({
@@ -378,12 +383,28 @@ const Main = (props) => {
 
   const [sellerTypes, setSellerTypes] = useState([]);
   useEffect(() => {
+    // 셀러 계정에서 접근했을 경우
+    getMasterSellerInfo();
+  }, []);
+
+  const getMasterSellerInfo = () => {
     // 쿼리파라미터로 받은 셀러 id값
     const query = props.location.search.split('&');
-    const sellerId = query[0].split('=')[1];
-    console.log('useEffect() type: ', sellerId);
+    const parameter = query[0].split('=')[1];
+    console.log('useEffect() type: ', parameter);
 
-    fetch(`${JMURL}/seller/${sellerId}`, {
+    let resultParam;
+
+    // id가 undefined일 경우 셀러 계정
+    if (parameter === undefined) {
+      setIsSeller(true);
+      resultParam = 'mypage';
+    } else {
+      setIsSeller(false);
+      resultParam = parameter;
+    }
+
+    fetch(`${JMURL}/seller/${resultParam}`, {
       headers: {
         Authorization: localStorage.getItem('token'),
       },
@@ -391,28 +412,33 @@ const Main = (props) => {
       .then((res) => res.json())
       .then((res) => {
         console.log('res: ', res);
-        if (res.weekday_start_time.split(':')[0].length === 1) {
-          // openingWeekdayTime = '0' + openingWeekdayTime;
-          res.weekday_start_time = '0'.concat(res.weekday_start_time);
+
+        // 영업시간 정보가 있을 때만 split 실행
+        if (res.weekday_start_time) {
+          if (res.weekday_start_time.split(':')[0].length === 1) {
+            // openingWeekdayTime = '0' + openingWeekdayTime;
+            res.weekday_start_time = '0'.concat(res.weekday_start_time);
+          }
+          if (res.weekday_end_time.split(':')[0].length === 1) {
+            // openingWeekdayTime = '0' + openingWeekdayTime;
+            res.weekday_end_time = '0'.concat(res.weekday_end_time);
+          }
+          if (
+            res.weekend_start_time &&
+            res.weekend_start_time.split(':')[0].length === 1
+          ) {
+            // openingWeekdayTime = '0' + openingWeekdayTime;
+            res.weekend_start_time = '0'.concat(res.weekend_start_time);
+          }
+          if (
+            res.weekend_end_time &&
+            res.weekend_end_time.split(':')[0].length === 1
+          ) {
+            // openingWeekdayTime = '0' + openingWeekdayTime;
+            res.weekend_end_time = '0'.concat(res.weekend_end_time);
+          }
         }
-        if (res.weekday_end_time.split(':')[0].length === 1) {
-          // openingWeekdayTime = '0' + openingWeekdayTime;
-          res.weekday_end_time = '0'.concat(res.weekday_end_time);
-        }
-        if (
-          res.weekend_start_time &&
-          res.weekend_start_time.split(':')[0].length === 1
-        ) {
-          // openingWeekdayTime = '0' + openingWeekdayTime;
-          res.weekend_start_time = '0'.concat(res.weekend_start_time);
-        }
-        if (
-          res.weekend_end_time &&
-          res.weekend_end_time.split(':')[0].length === 1
-        ) {
-          // openingWeekdayTime = '0' + openingWeekdayTime;
-          res.weekend_end_time = '0'.concat(res.weekend_end_time);
-        }
+
         setInput({
           ...input,
           profileImage: res.profile_image_url,
@@ -445,21 +471,33 @@ const Main = (props) => {
           closingWeekdayTime: res.weekday_end_time,
           openingWeekendTime: res.weekend_start_time,
           closingWeekendTime: res.weekend_end_time,
+          accountNo: res.account_no,
           sellerStatusChangeHistories: res.seller_status_change_histories,
         });
         setManagerInfo(res.manager_infos);
+
         setSellerTypes({ ...sellerTypes, sellerTypes: res.seller_types });
       })
       .catch((e) => {
         console.log('catch: ', e);
       });
-  }, []);
+  };
 
   const onCheckBrandiAppId = (e) => {};
 
   useEffect(() => {
     openingWeekendTime && setWeekend(true);
   }, [openingWeekendTime]);
+
+  useEffect(() => {
+    if (ceoName === '' && isSeller) {
+      console.log('???');
+      setIsBusinessFormDisabled(false);
+    } else {
+      console.log('!!!');
+      setIsBusinessFormDisabled(true);
+    }
+  }, [isSeller]);
 
   // 셀러 상태
   let seller_status;
@@ -580,7 +618,14 @@ const Main = (props) => {
     }
     console.log('type:::', parseInt(sellerId));
 
-    fetch(`${JMURL}/seller/${sellerId}`, {
+    let resParam;
+    if (isSeller) {
+      resParam = input.accountNo;
+    } else {
+      resParam = sellerId;
+    }
+
+    fetch(`${JMURL}/seller/${resParam}`, {
       method: 'PUT',
       headers: {
         Authorization: localStorage.getItem('token'),
@@ -604,7 +649,11 @@ const Main = (props) => {
         if (res.message === 'SUCCESS') {
           alert('정상 처리 되었습니다.');
 
-          props.history.push(`/seller`);
+          if (isSeller) {
+            window.location.reload();
+          } else {
+            props.history.push(`/seller`);
+          }
         } else {
           let errorMessage;
           for (let key in res) {
@@ -633,6 +682,10 @@ const Main = (props) => {
   }
   if (closingWeekendTime) {
   }
+
+  // if()
+  // setIsBusinessFormValid()
+
   return (
     <>
       <Container>
@@ -707,25 +760,25 @@ const Main = (props) => {
               onClickEvent={showPasswordModal}
             />
           </TableItem>
-          {!brandiAppId && (
-            <TableItem title="브랜디 어플 아이디" isRequired={true}>
-              <InputContainer
-                width={345}
-                height={34}
-                placeholder="브랜디 어플 아이디"
-                name="brandiAppId"
-                setText={setValue}
-                setBlur={setBlur}
-                typed={isTyped.ceoName}
-                blurred={isBlurred.ceoName}
-                valid={isValid.ceoName}
-                validationText="존재하지 않는 어플 아이디입니다."
-                inputText={brandiAppId}
-                isRequired={true}
-              />
-              <InfoText content="'브랜디' 어플을 설치하여 회원가입하고, 브랜디 어플 아이디를 입력해 주세요. 어플 아이디는 어플 > MY > 설정 > 프로필 편집에서 확인 가능합니다." />
-            </TableItem>
-          )}
+          {/* {!brandiAppId && !isSeller && ( */}
+          <TableItem title="브랜디 어플 아이디" isRequired={true}>
+            <InputContainer
+              width={345}
+              height={34}
+              placeholder="브랜디 어플 아이디"
+              name="brandiAppId"
+              setText={setValue}
+              setBlur={setBlur}
+              typed={isTyped.ceoName}
+              blurred={isBlurred.ceoName}
+              valid={isValid.ceoName}
+              validationText="none"
+              inputText={brandiAppId}
+              isRequired={true}
+            />
+            <InfoText content="'브랜디' 어플을 설치하여 회원가입하고, 브랜디 어플 아이디를 입력해 주세요. 어플 아이디는 어플 > MY > 설정 > 프로필 편집에서 확인 가능합니다." />
+          </TableItem>
+          {/* )} */}
         </TableBox>
 
         {/* 사업자 정보 */}
@@ -744,6 +797,7 @@ const Main = (props) => {
               validationText="none"
               inputText={ceoName}
               isRequired={true}
+              disabled={isBusinessFormDisabled}
             />
           </TableItem>
           <TableItem title="사업자명" isRequired={true}>
@@ -760,6 +814,7 @@ const Main = (props) => {
               validationText="none"
               inputText={businessName}
               isRequired={true}
+              disabled={isBusinessFormDisabled}
             />
           </TableItem>
           <TableItem title="사업자번호" isRequired={true}>
@@ -776,6 +831,7 @@ const Main = (props) => {
               validationText="올바른 정보를 입력해주세요."
               inputText={businessNumber}
               isRequired={true}
+              disabled={isBusinessFormDisabled}
             />
           </TableItem>
           <TableItem title="사업자등록증" isRequired={true}>
@@ -801,6 +857,7 @@ const Main = (props) => {
               validationText="통신판매번호는 한글, 숫자, 하이픈만 가능합니다."
               inputText={telecommunicationsSalesNumber}
               isRequired={true}
+              disabled={isBusinessFormDisabled}
             />
           </TableItem>
           <TableItem title="통신판매업신고필증" isRequired={true}>

@@ -237,13 +237,16 @@ function TestingTable(props) {
       .then((res) => {
         if (res.ok) {
           return res.json();
+        } else if (res.status === 403) {
+          // 권한 에러
+          props.history.push(`/sellerInfoEdit`);
         } else {
           alert('네트워크 오류');
         }
       })
       .then((res) => {
         console.log('seller list::', res);
-        // input: 검색 필터가 담겨있는지 유무
+        // input: 검색 필터가 담겨있는지 유무를 확인하기 위한 값
         if (input) {
           setSellerList({
             ...sellerList,
@@ -293,9 +296,6 @@ function TestingTable(props) {
   };
 
   const isSelected = (name) => selected.indexOf(name) !== -1;
-
-  const emptyRows =
-    rowsPerPage - Math.min(rowsPerPage, itemRows.length - page * rowsPerPage);
 
   // 등록 조회 시작일 달력
   const onChangedStartPeriod = (e) => {
@@ -915,11 +915,6 @@ function TestingTable(props) {
                     );
                   })
                 }
-                {emptyRows > 0 && (
-                  <TableRow style={{ height: (dense ? 33 : 53) * emptyRows }}>
-                    <TableCell colSpan={6} />
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -1009,6 +1004,11 @@ const InputForm = styled.input`
   height: 30px;
   /* width: 100%; */
   border: 1px solid #bdbdbd;
+  padding: 0 10px;
+
+  &:focus {
+    border: 1px solid #0a0a0a;
+  }
 `;
 
 const DatePickerContainer = styled.div`
