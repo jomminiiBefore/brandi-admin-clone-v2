@@ -341,8 +341,8 @@ function Main(props) {
       method: 'GET',
       headers: {
         Authorization:
-          // localStorage.getItem("token");
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+          localStorage.getItem("token");
+          // 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
         'Content-Type': 'application/json',
       },
     })
@@ -452,8 +452,8 @@ function Main(props) {
       method: 'PUT',
       headers: {
         Authorization:
-          // localStorage.getItem("token");
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
+          localStorage.getItem("token");
+          // 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw',
         'Content-Type': 'application/json',
       },
 
