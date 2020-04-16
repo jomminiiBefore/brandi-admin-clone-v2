@@ -259,7 +259,6 @@ class SellerDao:
                         CS01.account_id = %(account_no)s
                         AND CS01.is_deleted = 0
                         AND CS02.close_time = '2037-12-31 23:59:59'
-                        AND CS06.is_deleted = 0
                     
                 """
 

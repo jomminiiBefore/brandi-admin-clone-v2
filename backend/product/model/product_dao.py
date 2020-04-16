@@ -913,7 +913,7 @@ class ProductDao:
                         select_product_list_statement += " AND PL02.discount_rate = 0"
 
                 # 등록순 정렬
-                select_product_list_statement += " ORDER BY PL01.created_at"
+                select_product_list_statement += " ORDER BY PL01.created_at DESC"
 
                 # 페이징 마지막
                 if filter_info.get('limit', None):
