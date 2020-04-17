@@ -544,7 +544,7 @@ class SellerDao:
             filter_query_values_count_statement += " AND seller_accounts.created_at > %(start_time)s AND seller_accounts.created_at < %(close_time)s"
 
         # sql 명령문에 키워드 추가가 완료되면 정렬, limit, offset 쿼리문을 추가해준다.
-        select_seller_list_statement += " ORDER BY seller_account_id ASC LIMIT %(limit)s OFFSET %(offset)s"
+        select_seller_list_statement += " ORDER BY seller_account_id DESC LIMIT %(limit)s OFFSET %(offset)s"
 
         try:
             with db_connection as db_cursor:
@@ -558,7 +558,7 @@ class SellerDao:
                     s3 = get_s3_connection()
 
                     # 엑셀파일로 만들경우 페이지네이션 적용을 받지않고 검색 적용만 받기 때문에 페이지네이션 부분 쿼리를 제거해준다.
-                    replaced_statement = select_seller_list_statement.replace('ORDER BY seller_account_id ASC LIMIT %(limit)s OFFSET %(offset)s', '')
+                    replaced_statement = select_seller_list_statement.replace('ORDER BY seller_account_id DESC LIMIT %(limit)s OFFSET %(offset)s', '')
                     db_cursor.execute(replaced_statement, valid_param)
                     seller_info = db_cursor.fetchall()
 
