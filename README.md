@@ -13,12 +13,12 @@ Click below image to see our demo.
 [![Brandi admin demo]()
 
 # Features
-+ [GET] displaying existing seller list under the master authorization type(Heechul Yoon).
++ [GET] displaying existing seller list under the master authorization(Heechul Yoon).
 + [GET] searching seller with keywords(Heechul Yoon).
 + [GET] downloading seller list as excel file(Heechul Yoon).
-+ [PUT] changing seller status under the master authorization type(Heechul Yoon).
++ [PUT] changing seller status under the master authorization(Heechul Yoon).
 + [POST] image resizing and uploading to S3 responsing back with URL(Heechul Yoon).
-+ [POST] registering promotional event under the master authorization type(Heechul Yoon, Jongmin Lee).
++ [POST] registering promotional event under the master authorization(Heechul Yoon, Jongmin Lee).
 + [GET] displaying existing event detail datas on editting page(Heechul Yoon, Jongmin Lee).
 + [PUT] updating new informations on existing event(Heechul Yoon, Jongmin Lee). 
 
