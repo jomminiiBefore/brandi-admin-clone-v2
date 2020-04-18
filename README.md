@@ -10,30 +10,35 @@ Fasion startup admin page building.
 Click below image to see our demo.
 
 
-[![SoundCloud demo](https://images.velog.io/images/valentin123/post/3c2d9978-8f14-4773-8ee3-6d634c295120/%EC%95%B1.png)](https://www.youtube.com/watch?v=u6SGpbk2x5A&feature=youtu.be)
+[![Brandi admin demo]()
 
 # Features
-+ Self-made sign-up and sign-in features.
-+ Google sign-up and sign-in features.
-+ Send and reciption of message.
-+ Follow and unfollow feature.
-+ Notification for message and follow.
-+ Comment on song giving timely position.
-+ User recommendation to follow.
++ [GET] displaying existing seller list under the master authorization type(Heechul Yoon).
++ [GET] searching seller with keywords(Heechul Yoon).
++ [GET] downloading seller list as excel file(Heechul Yoon).
++ [PUT] changing seller status under the master authorization type(Heechul Yoon).
++ [POST] image resizing and uploading to S3 responsing back with URL(Heechul Yoon).
++ [POST] registering promotional event under the master authorization type(Heechul Yoon, Jongmin Lee).
++ [GET] displaying existing event detail datas on editting page(Heechul Yoon, Jongmin Lee).
++ [PUT] updating new informations on existing event(Heechul Yoon, Jongmin Lee). 
 
 
-# Technologies
-+ Language      : Python
-+ Web Framework : Django 3.0
-+ Database      : AWS RDS with MySQL
-+ HTTP headers  : Cross-Origin Resource Sharing (CORS) headers
-+ Google Signup : OAuth 2.0
-+ Encryption    : bcrypt
-+ Web Token     : JWT
-+ Web Scraping  : BeautifulSoup 4.0, Pandas
+# Technologies(Backend)
++ Python 3.8.0 : language
++ Flask 1.1.2  : web framework
++ Git          : cooperation and version management tool
++ Pymysql      : database connector
++ Pillow       : image file resizing
++ Pandas       : excel file generating
++ Boto3        : image uploading
++ Bcrypt       : password hashing
++ JWT          : token generating
++ AWS RDS      : database server
++ AWS S3       : image file repository
++ HTTP headers : Cross-Origin Resource Sharing (CORS)
 
-# API Documentation
-+ [message, follow, notification](https://documenter.getpostman.com/view/10644576/SzS8rjpk?version=latest#db667abf-875b-4a91-8c64-466ad7f301f2)
+# API Documentation(Backend)
++ [seller, product, event]()
 
 # Database Modeling
 ![Brandi ERD](https://brandi-intern.s3.ap-northeast-2.amazonaws.com/242bbc15-dd4e-492c-8ec5-fb01d00c33f3)
