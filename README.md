@@ -21,7 +21,7 @@ Click below image to see our demo.
 + [POST] registering promotional event under the master authorization(Heechul Yoon, Jongmin Lee).
 + [GET] displaying existing event detail datas on editting page(Heechul Yoon, Jongmin Lee).
 + [PUT] updating new informations on existing event(Heechul Yoon, Jongmin Lee). 
-
++ [POST] login authentication and ID/password validation (Yeji Choi).
 
 # Technologies(Backend)
 + Python 3.8.0 : language
