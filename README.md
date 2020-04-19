@@ -38,7 +38,7 @@ Click below image to see our demo.
 + HTTP headers : Cross-Origin Resource Sharing (CORS)
 
 # API Documentation(Backend)
-+ [seller, product, event]()
++ [seller, product, event](https://documenter.getpostman.com/view/10892890/Szf6WTQ3?version=latest)
 
 # Database Modeling
 ![Brandi ERD](https://brandi-intern.s3.ap-northeast-2.amazonaws.com/242bbc15-dd4e-492c-8ec5-fb01d00c33f3)
