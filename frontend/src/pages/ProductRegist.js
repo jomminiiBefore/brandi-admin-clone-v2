@@ -314,7 +314,7 @@ const ProductRegist = () => {
       setPostData({ ...postData, min_unit: 1 });
       setRadioSelect({ ...radioSelect, more: false });
     } else if (boolean) {
-      setPostData({ ...postData, min_unit: moreQuantityCount });
+      setPostData({ ...postData, min_unit: Number(moreQuantityCount) });
       setRadioSelect({ ...radioSelect, more: true });
     }
   };
@@ -327,21 +327,26 @@ const ProductRegist = () => {
     // const jsonData = JSON.stringify(postData);
     // const formData = new FormData();
     // formData.append("data", jsonData);
-    let formData = new FormData();
-    for (let key in postData) {
-      console.log("data: ", key, postData[key]);
-      formData.append(key, postData[key]);
+
+    if (confirm("입력하신 정보로 상품등록을 하시겠습니까?")) {
+      let formData = new FormData();
+      for (let key in postData) {
+        console.log("data: ", key, postData[key]);
+        formData.append(key, postData[key]);
+      }
+      const token = localStorage.getItem("token");
+      fetch(`${JMURL}/product`, {
+        method: "POST",
+        headers: {
+          Authorization: token
+          // "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
+          // "Content-Type": "multipart/form-data"
+        },
+        body: formData
+      });
+      alert("상품등록이 완료되었습니다.");
+    } else {
     }
-    const token = localStorage.getItem("token");
-    fetch(`${JMURL}/product`, {
-      method: "POST",
-      headers: {
-        Authorization: token
-        // "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
-        // "Content-Type": "multipart/form-data"
-      },
-      body: formData
-    });
   };
 
   // 최대 판매 수량
@@ -350,7 +355,7 @@ const ProductRegist = () => {
       setPostData({ ...postData, max_unit: 20 });
       setRadioSelect({ ...radioSelect, less: false });
     } else if (boolean) {
-      setPostData({ ...postData, max_unit: lessQuantityCount });
+      setPostData({ ...postData, max_unit: Number(lessQuantityCount) });
       setRadioSelect({ ...radioSelect, less: true });
     }
   };
