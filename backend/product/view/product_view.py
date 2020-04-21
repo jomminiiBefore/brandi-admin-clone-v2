@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from flask import request, Blueprint, jsonify, g
 from flask_request_validator import (
@@ -348,7 +349,7 @@ class ProductView:
         Param('is_on_display', FORM, str,
               rules=[Pattern(r'^([0-1])$')]),
         Param('first_category_id', FORM, str,
-              rules=[Pattern(r'^([0-9]|[1][0-1])$')]),
+              rules=[Pattern(r'^([0-9]|[0-3][0-9])$')]),
         Param('second_category_id', FORM, str,
               rules=[Pattern(r'^([0-9]|[0-9][0-9]|[1][0][0-9]|[1][1][0-4])$')]),
         Param('max_unit', FORM, str,
@@ -357,6 +358,7 @@ class ProductView:
               rules=[Pattern(r'^([1-9]|[1-2][0-9])$')]),
     )
     def insert_new_product(*args):
+
         """ 상품 등록 엔드포인트
 
         새로운 상품을 등록하는 엔드포인트.
@@ -397,7 +399,6 @@ class ProductView:
             if uploaded_images[f'image_file_{i}']:
                 if not uploaded_images[f'image_file_{i-1}']:
                     return jsonify({'message': 'IMAGES_SHOULD_BE_IN_ORDER'}), 400
-
         product_info = {
             'auth_type_id': g.account_info['auth_type_id'],
             'account_no': g.account_info['account_no'],
@@ -416,15 +417,15 @@ class ProductView:
             'stock': args[10],
             'price': args[11],
             'discount_rate': args[12]/100,
-            'discount_start_time': args[13],
-            'discount_end_time': args[14],
+            'discount_start_time': str(datetime.strptime(args[13][:args[13].index('G')-1], "%a %b %d %Y %H:%M:%S")),
+            'discount_end_time': str(datetime.strptime(args[14][:args[14].index('G')-1], "%a %b %d %Y %H:%M:%S")),
             'min_unit': args[15],
             'max_unit': args[16],
             'tags': args[17],
             'selected_account_no': args[18],
             'images': uploaded_images,
         }
-
+        print(product_info)
         try:
             db_connection = get_db_connection()
             if db_connection:

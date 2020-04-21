@@ -60,7 +60,6 @@ class SellerView:
               rules=[Pattern(r"^[1-7]{1}$")])
     )
     def sign_up(*args):
-
         """ 계정 회원가입 엔드포인트
 
         회원가입 엔드포인트 입니다.
