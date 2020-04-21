@@ -10,7 +10,7 @@ Fasion startup admin page building.
 Click below image to see our demo.
 
 
-[![Brandi admin demo]()
+[![Brandi admin demo](https://www.youtube.com/watch?v=BuQ6t9gCedA&feature=youtu.be)
 
 # Features
 + [GET] Displaying existing seller list under the master authorization (Heechul Yoon).
