@@ -526,8 +526,9 @@ class ProductDao:
                     return jsonify({'message': 'PRODUCT_DOES_NOT_EXIST'}), 404
 
                 # 상품 변경을 시도하는 계정과 상품의 셀러가 다를 경우
-                if validated_account['account_id'] != product_info['token_account_no']:
-                    return jsonify({'message': 'NO_AUTHORIZATION'}), 403
+                if product_info['auth_type_id'] == 2:
+                    if validated_account['account_id'] != product_info['token_account_no']:
+                        return jsonify({'message': 'NO_AUTHORIZATION'}), 403
 
                 db_cursor.execute("SELECT NOW()")
                 updated_time = db_cursor.fetchone()

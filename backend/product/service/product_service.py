@@ -163,12 +163,15 @@ class ProductService:
 
         product_dao = ProductDao()
         auth_type = product_info['auth_type_id']
+        print(auth_type)
         if auth_type == 1:
+            print('master')
             update_product_result = product_dao.update_product_info(product_info, db_connection)
 
             return update_product_result
 
         elif auth_type == 2:
+            print('seller')
             if product_info['token_account_no'] == product_info['seller_account_id']:
                 update_product_result = product_dao.update_product_info(product_info, db_connection)
                 return update_product_result
