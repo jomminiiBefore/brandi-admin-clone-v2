@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled, { keyframes, css } from "styled-components";
-import { SHURL, YJURL } from "src/utils/config";
+import { SHURL, YJURL, JMURL } from "src/utils/config";
 import styles from "src/utils/styles";
 import { InfoCircle } from "@styled-icons/fa-solid";
 
@@ -22,20 +22,21 @@ const SellerSelect = ({
   // 셀러검색 GET 함수
   const getSearchSeller = e => {
     setInput(e.target.value);
-    fetch(`${YJURL}/seller?name_kr=${input}`, {
+    const token = localStorage.getItem("token");
+    fetch(`${JMURL}/seller?name_kr=${input}`, {
       method: "GET",
       headers: {
-        Authorization:
-          "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
+        Authorization: token
+        // "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2NvdW50X25vIjoxfQ.uxyTHQNJ5nNf6HQGXZtoq_xK5-ZPYjhpZ_I6MWzuGYw"
       }
     })
       .then(res => res.json())
       .then(res => res && setSeller(res.seller_list))
-      .then(res => console.log(res, "seller!!!!!"))
       .catch(e => console.log("셀러검색 에러 이거!!", e));
   };
 
   useEffect(() => {
+    console.log("셀러 아이디 이거!!", selectedSeller.id);
     if (selectedSeller.id !== "" && selectedSeller.name !== "") {
       setSeller([]);
       setInput(selectedSeller.name);
