@@ -49,7 +49,7 @@ Click below image to see our demo.
 + [seller, product, event](https://documenter.getpostman.com/view/10892890/Szf6WTQ3?version=latest)
 
 # Database Modeling
-![Brandi ERD](https://brandi-intern.s3.ap-northeast-2.amazonaws.com/242bbc15-dd4e-492c-8ec5-fb01d00c33f3)
+![Brandi ERD](https://brandi-intern.s3.ap-northeast-2.amazonaws.com/brandi_erd.png)
 
 # Participations
 ##### Heechul Yoon <a href="https://github.com/valentin1235">github</a>
