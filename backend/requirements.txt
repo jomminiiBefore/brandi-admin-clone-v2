@@ -24,7 +24,7 @@ Flask-SQLAlchemy==2.4.1
 idna==2.9
 itsdangerous==1.1.0
 jdcal==1.4.1
-Jinja2==2.11.1
+Jinja2==2.11.3
 jmespath==0.9.5
 jwt==1.0.0
 Mako==1.1.2
