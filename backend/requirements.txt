@@ -38,7 +38,7 @@ pandas==1.0.3
 Pillow==7.1.1
 pip-upgrader==1.4.15
 pycparser==2.20
-PyJWT==1.7.1
+PyJWT==2.4.0
 PyMySQL==0.9.3
 pyparsing==2.4.7
 python-dateutil==2.8.1
